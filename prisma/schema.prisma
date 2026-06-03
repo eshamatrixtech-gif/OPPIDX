@@ -1,0 +1,113 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  avatar        String?
+  brainScore    Int       @default(75)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  moments       Moment[]
+  reactions     Reaction[]
+  friends       Friendship[] @relation("UserFriends")
+  friendOf      Friendship[] @relation("FriendOf")
+  notifications Notification[]
+  captureWindows CaptureWindow[]
+}
+
+model Moment {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  frontImage  String    // Base64 or URL
+  backImage   String    // Base64 or URL
+  caption     String?
+  location    String?
+  
+  isLate      Boolean   @default(false)
+  lateByMins  Int       @default(0)
+  
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime  // 24 hours from creation
+  
+  reactions   Reaction[]
+  
+  // Brain health bonus
+  genuineScore Int      @default(0) // AI-scored authenticity
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  emoji     String
+  momentId  String
+  moment    Moment   @relation(fields: [momentId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([momentId, userId]) // One reaction per user per moment
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserFriends", fields: [userId], references: [id], onDelete: Cascade)
+  friendId  String
+  friend    User     @relation("FriendOf", fields: [friendId], references: [id], onDelete: Cascade)
+  status    FriendshipStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, friendId])
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  read      Boolean  @default(false)
+  sentAt    DateTime @default(now())
+}
+
+enum NotificationType {
+  CAPTURE_TIME
+  FRIEND_REQUEST
+  FRIEND_POSTED
+  REACTION
+  BRAIN_SCORE
+}
+
+model CaptureWindow {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduledAt DateTime
+  expiresAt   DateTime // scheduledAt + 2 minutes
+  captured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId, scheduledAt])
+}

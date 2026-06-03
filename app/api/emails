@@ -1,0 +1,23 @@
+import { analyzeEmail } from "../../lib/openai";
+
+export async function GET() {
+  const emails = [
+    {
+      subject: "Meeting tomorrow",
+      body: "Can you confirm the meeting for tomorrow at 10 AM?",
+    },
+    {
+      subject: "Invoice reminder",
+      body: "Please send the invoice by tonight.",
+    },
+  ];
+
+  const results = await Promise.all(
+    emails.map(async (email) => {
+      const analysis = await analyzeEmail(email.body);
+      return { ...email, analysis };
+    })
+  );
+
+  return Response.json({ emails: results });
+}

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { MomentCapture } from '@/components/ui/MomentCapture'
 
 /* ─── Types ──────────────────────────────────────────────────────── */
-type Platform = 'iMessage' | 'WhatsApp' | 'Instagram' | 'Gmail' | 'Slack' | 'Discord' | 'Twitter'
+type Platform = 'WhatsApp' | 'Instagram' | 'Gmail' | 'Discord' | 'Twitter'
 
 interface Message { id: string; from: 'me' | 'them'; text: string; time: string }
 interface Conversation {
@@ -28,16 +28,16 @@ type NavTab = 'home' | 'inbox' | 'instants' | 'brain'
 
 /* ─── Data ───────────────────────────────────────────────────────── */
 const PLATFORM_COLORS: Record<string, string> = {
-  iMessage: '#30d158', WhatsApp: '#25d366', Instagram: '#e1306c',
-  Gmail: '#ea4335', Slack: '#ecb22e', Discord: '#5865f2', Twitter: '#1d9bf0',
+  WhatsApp: '#25d366', Instagram: '#e1306c',
+  Gmail: '#ea4335', Discord: '#5865f2', Twitter: '#1d9bf0',
 }
 const PLATFORM_ICONS: Record<string, string> = {
-  iMessage: '💬', WhatsApp: '🟢', Instagram: '📸',
-  Gmail: '📧', Slack: '🔷', Discord: '🎮', Twitter: '🐦',
+  WhatsApp: '💬', Instagram: '📸',
+  Gmail: '📧', Discord: '🎮', Twitter: '🐦',
 }
 
 const CONVERSATIONS: Conversation[] = [
-  { id: '1', name: 'Mom', platform: 'iMessage', avatar: 'M', preview: 'Are you coming home this weekend?', time: '9:41 AM', unread: 2, color: '#30d158', brainScore: 94,
+  { id: '1', name: 'Mom', platform: 'WhatsApp', avatar: 'M', preview: 'Are you coming home this weekend?', time: '9:41 AM', unread: 2, color: '#30d158', brainScore: 94,
     messages: [
       { id: 'a', from: 'them', text: 'Hey! Are you free this weekend? 🏠', time: '9:38 AM' },
       { id: 'b', from: 'them', text: 'Are you coming home? Miss you so much!', time: '9:41 AM' },
@@ -45,7 +45,7 @@ const CONVERSATIONS: Conversation[] = [
       { id: 'd', from: 'them', text: "Amazing, I'll make your favourite food 💚", time: '9:44 AM' },
     ]
   },
-  { id: '2', name: 'Work Design', platform: 'Slack', avatar: 'W', preview: 'Can you review the Figma?', time: '9:30 AM', unread: 5, color: '#ecb22e', brainScore: 71,
+  { id: '2', name: 'Work Design', platform: 'Discord', avatar: 'W', preview: 'Can you review the Figma?', time: '9:30 AM', unread: 5, color: '#5865f2', brainScore: 71,
     messages: [
       { id: 'a', from: 'them', text: 'Hey team, standup in 10 mins', time: '9:00 AM' },
       { id: 'b', from: 'me', text: 'On it!', time: '9:05 AM' },
@@ -64,7 +64,7 @@ const CONVERSATIONS: Conversation[] = [
       { id: 'a', from: 'them', text: "This week in tech: AI race heats up, new iPhone leaks, and the app killing your productivity you don't know about yet.", time: '7:10 AM' },
     ]
   },
-  { id: '5', name: 'Priya ✨', platform: 'Instagram', avatar: 'P', preview: 'omg look at this 😭', time: 'Yesterday', unread: 3, color: '#e1306c', brainScore: 67,
+  { id: '5', name: 'Aysha ✨', platform: 'Instagram', avatar: 'A', preview: 'omg look at this 😭', time: 'Yesterday', unread: 3, color: '#e1306c', brainScore: 67,
     messages: [
       { id: 'a', from: 'them', text: 'omg look at this 😭', time: 'Yesterday' },
       { id: 'b', from: 'me', text: '💀💀💀', time: 'Yesterday' },
@@ -473,12 +473,12 @@ export default function Home() {
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#f5f0ff', marginBottom: 12 }}>Connected platforms</div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {([
-                    { label: 'iMessage', color: '#30d158', connected: true },
+                    { label: 'WhatsApp', color: '#30d158', connected: true },
                     { label: 'WhatsApp', color: '#25d366', connected: true },
                     { label: 'Instagram', color: '#e1306c', connected: true },
                     { label: 'Gmail', color: '#ea4335', connected: true },
                     { label: 'Discord', color: '#5865f2', connected: true },
-                    { label: 'Slack', color: '#ecb22e', connected: true },
+                    { label: 'Discord', color: '#ecb22e', connected: true },
                     { label: 'Twitter', color: '#1d9bf0', connected: false },
                     { label: 'LinkedIn', color: '#0077b5', connected: false },
                   ]).map(p => (

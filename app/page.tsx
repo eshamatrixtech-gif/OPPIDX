@@ -4,142 +4,263 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MomentCapture } from '@/components/ui/MomentCapture'
 
-/* ─── Types ──────────────────────────────────────────────────────── */
-type Platform = 'WhatsApp' | 'Instagram' | 'Gmail' | 'Discord' | 'Twitter'
-
-interface Message { id: string; from: 'me' | 'them'; text: string; time: string }
-interface Conversation {
-  id: string; name: string; platform: Platform; avatar: string
-  preview: string; time: string; unread: number; color: string
-  brainScore: number; messages: Message[]
+/* ═══════════════════════════════════════════════════════════════
+   COLOUR PALETTE — identical tokens to landing page
+   Day  (06:00–20:00): warm cream light
+   Night (20:00–06:00): warm near-black dark
+═══════════════════════════════════════════════════════════════ */
+const DARK = {
+  bg:        '#080705',
+  surface:   '#110F0C',
+  surfaceHi: '#1A1612',
+  border:    'rgba(240,235,227,0.07)',
+  borderHi:  'rgba(240,235,227,0.13)',
+  text1:     '#F0EBE3',
+  text2:     'rgba(240,235,227,0.52)',
+  text3:     'rgba(240,235,227,0.28)',
+  accent:    '#E8651A',
+  accentDim: 'rgba(232,101,26,0.13)',
+  accentGlow:'rgba(232,101,26,0.22)',
+  shadow:    '0 2px 16px rgba(0,0,0,0.4)',
 }
-interface Moment {
-  id: string; user: string; avatar: string; back: string; front: string
-  caption: string; time: string; reactions: Record<string, number>
-  brainScore: number
-}
-interface FeedItem {
-  id: string; platform: Platform; author: string; avatar: string
-  content: string; media?: string; time: string
-  brainScore: number; category: 'genuine' | 'neutral' | 'brainrot'
-}
-
-type NavTab = 'home' | 'inbox' | 'instants' | 'brain'
-
-/* ─── Data ───────────────────────────────────────────────────────── */
-const PLATFORM_COLORS: Record<string, string> = {
-  WhatsApp: '#25d366', Instagram: '#e1306c',
-  Gmail: '#ea4335', Discord: '#5865f2', Twitter: '#1d9bf0',
-}
-const PLATFORM_ICONS: Record<string, string> = {
-  WhatsApp: '💬', Instagram: '📸',
-  Gmail: '📧', Discord: '🎮', Twitter: '🐦',
+const LIGHT = {
+  bg:        '#F7F4EF',
+  surface:   '#EDEAE3',
+  surfaceHi: '#E4E0D8',
+  border:    'rgba(28,24,20,0.08)',
+  borderHi:  'rgba(28,24,20,0.14)',
+  text1:     '#1C1814',
+  text2:     'rgba(28,24,20,0.55)',
+  text3:     'rgba(28,24,20,0.3)',
+  accent:    '#E8651A',
+  accentDim: 'rgba(232,101,26,0.1)',
+  accentGlow:'rgba(232,101,26,0.18)',
+  shadow:    '0 2px 16px rgba(28,24,20,0.08)',
 }
 
-const CONVERSATIONS: Conversation[] = [
-  { id: '1', name: 'Mom', platform: 'WhatsApp', avatar: 'M', preview: 'Are you coming home this weekend?', time: '9:41 AM', unread: 2, color: '#30d158', brainScore: 94,
-    messages: [
-      { id: 'a', from: 'them', text: 'Hey! Are you free this weekend? 🏠', time: '9:38 AM' },
-      { id: 'b', from: 'them', text: 'Are you coming home? Miss you so much!', time: '9:41 AM' },
-      { id: 'c', from: 'me', text: 'Yes!! Arriving Friday evening 🙌', time: '9:43 AM' },
-      { id: 'd', from: 'them', text: "Amazing, I'll make your favourite food 💚", time: '9:44 AM' },
-    ]
-  },
-  { id: '2', name: 'Work Design', platform: 'Discord', avatar: 'W', preview: 'Can you review the Figma?', time: '9:30 AM', unread: 5, color: '#5865f2', brainScore: 71,
-    messages: [
-      { id: 'a', from: 'them', text: 'Hey team, standup in 10 mins', time: '9:00 AM' },
-      { id: 'b', from: 'me', text: 'On it!', time: '9:05 AM' },
-      { id: 'c', from: 'them', text: 'Can you review the Figma file before EOD?', time: '9:30 AM' },
-    ]
-  },
-  { id: '3', name: 'Rahul', platform: 'WhatsApp', avatar: 'R', preview: 'bro the match last night 💀', time: '8:55 AM', unread: 0, color: '#25d366', brainScore: 83,
-    messages: [
-      { id: 'a', from: 'them', text: 'bro did you see that match 💀', time: '8:55 AM' },
-      { id: 'b', from: 'me', text: 'insane ending ngl', time: '8:57 AM' },
-      { id: 'c', from: 'them', text: 'dropped my phone when they scored 😭', time: '8:59 AM' },
-    ]
-  },
-  { id: '4', name: 'TechDigest', platform: 'Gmail', avatar: 'T', preview: 'Your weekly digest is ready', time: '7:10 AM', unread: 1, color: '#ea4335', brainScore: 52,
-    messages: [
-      { id: 'a', from: 'them', text: "This week in tech: AI race heats up, new iPhone leaks, and the app killing your productivity you don't know about yet.", time: '7:10 AM' },
-    ]
-  },
-  { id: '5', name: 'Aysha ✨', platform: 'Instagram', avatar: 'A', preview: 'omg look at this 😭', time: 'Yesterday', unread: 3, color: '#e1306c', brainScore: 67,
-    messages: [
-      { id: 'a', from: 'them', text: 'omg look at this 😭', time: 'Yesterday' },
-      { id: 'b', from: 'me', text: '💀💀💀', time: 'Yesterday' },
-      { id: 'c', from: 'them', text: 'tell me why I spent 3 hours on reels today', time: 'Yesterday' },
-    ]
-  },
-  { id: '6', name: 'Gaming Crew', platform: 'Discord', avatar: 'G', preview: 'hop on we need a 4th', time: 'Yesterday', unread: 0, color: '#5865f2', brainScore: 78,
-    messages: [
-      { id: 'a', from: 'them', text: 'hop on we need a 4th', time: 'Yesterday' },
-      { id: 'b', from: 'me', text: 'omw give me 5', time: 'Yesterday' },
-    ]
-  },
-]
+function getTheme() {
+  const h = new Date().getHours()
+  return h >= 6 && h < 20 ? LIGHT : DARK
+}
 
-const MOMENTS: Moment[] = [
-  { id: '1', user: 'Ananya', avatar: 'A', back: '🏔️', front: '😄', caption: 'first sunrise hike of the year', time: '2 hours ago', brainScore: 96, reactions: { '❤️': 12, '🔥': 8, '💚': 5 } },
-  { id: '2', user: 'Dev', avatar: 'D', back: '☕', front: '🙂', caption: 'early morning, just me and coffee', time: '4 hours ago', brainScore: 91, reactions: { '❤️': 7, '✨': 3 } },
-  { id: '3', user: 'Meera', avatar: 'M', back: '📚', front: '🤓', caption: 'studying for finals. send help 😭', time: '6 hours ago', brainScore: 88, reactions: { '💀': 14, '🫡': 6 } },
-]
+function getGreeting() {
+  const h = new Date().getHours()
+  if (h >= 5  && h < 12) return 'Good morning'
+  if (h >= 12 && h < 17) return 'Good afternoon'
+  if (h >= 17 && h < 21) return 'Good evening'
+  return 'Good night'
+}
 
-const FEED_ITEMS: FeedItem[] = [
-  { id: '1', platform: 'Instagram', author: 'natgeo', avatar: 'N', content: 'The Amazon rainforest absorbs 2 billion tonnes of CO₂ per year. Protecting it is protecting ourselves. 🌿', time: '12m', brainScore: 89, category: 'genuine' },
-  { id: '2', platform: 'Twitter', author: 'paulg', avatar: 'P', content: "The secret to doing great work isn't talent — it's the willingness to feel uncertain and keep going anyway.", time: '1h', brainScore: 84, category: 'genuine' },
-  { id: '3', platform: 'Instagram', author: 'gossip_daily', avatar: 'G', content: 'You WONT believe what happened next 😱😱😱 (watch till the end) [VIDEO - 47 sec]', time: '2h', brainScore: 18, category: 'brainrot' },
-  { id: '4', platform: 'Twitter', author: 'sama', avatar: 'S', content: 'Models are getting so good so fast. The next 5 years will be weirder than most people expect. Stay curious.', time: '3h', brainScore: 78, category: 'genuine' },
-  { id: '5', platform: 'Instagram', author: 'meme.page', avatar: 'M', content: 'When you check your phone for the 47th time this hour 😂😂😂 #relatable', time: '4h', brainScore: 31, category: 'brainrot' },
-]
-
-/* ─── Helpers ────────────────────────────────────────────────────── */
+/* ─── Score colours — semantic but earthy ─────────────────────── */
 function scoreColor(s: number) {
-  if (s >= 80) return '#34d399'
-  if (s >= 60) return '#f97316'
-  return '#ef4444'
+  if (s >= 80) return '#4A7C59'   // sage green
+  if (s >= 60) return '#E8651A'   // saffron
+  return '#B85450'                // muted brick
 }
 function scoreLabel(s: number) {
   if (s >= 85) return 'Excellent'
   if (s >= 70) return 'Good'
   if (s >= 55) return 'Fair'
-  return 'Poor'
+  return 'Low'
 }
 
-/* ─── Sub-components ─────────────────────────────────────────────── */
-function ConvRow({ c, active, onClick }: { c: Conversation; active: boolean; onClick: () => void }) {
+/* ─── Types ───────────────────────────────────────────────────── */
+type Platform = 'WhatsApp' | 'Instagram' | 'Gmail' | 'Discord' | 'Twitter'
+interface Msg  { id: string; from: 'me' | 'them'; text: string; time: string }
+interface Conv {
+  id: string; name: string; platform: Platform; avatar: string
+  preview: string; time: string; unread: number
+  brainScore: number; messages: Msg[]
+}
+interface Moment {
+  id: string; user: string; avatar: string
+  scene: string; caption: string; time: string
+  brainScore: number; reactions: Record<string, number>
+}
+interface FeedItem {
+  id: string; platform: Platform; author: string; avatar: string
+  content: string; time: string
+  brainScore: number; category: 'genuine' | 'neutral' | 'brainrot'
+}
+type Tab = 'home' | 'inbox' | 'instants' | 'brain'
+
+/* ─── Platform meta ───────────────────────────────────────────── */
+const PCOLOR: Record<string, string> = {
+  WhatsApp: '#25d366', Instagram: '#e1306c',
+  Gmail: '#ea4335', Discord: '#5865f2', Twitter: '#1d9bf0',
+}
+
+/* ─── Data ────────────────────────────────────────────────────── */
+const CONVS: Conv[] = [
+  { id:'1', name:'Mom', platform:'WhatsApp', avatar:'M',
+    preview:'Are you coming home this weekend?', time:'9:41 AM', unread:2, brainScore:94,
+    messages:[
+      { id:'a', from:'them', text:'Hey, are you free this weekend?', time:'9:38 AM' },
+      { id:'b', from:'them', text:'Was thinking you could come home. Miss you.', time:'9:40 AM' },
+      { id:'c', from:'me',   text:'Yes! Arriving Friday evening.', time:'9:43 AM' },
+      { id:'d', from:'them', text:"Perfect. I'll make your favourite.", time:'9:44 AM' },
+    ]},
+  { id:'2', name:'Work Design', platform:'Discord', avatar:'W',
+    preview:'Can you review the Figma before EOD?', time:'9:30 AM', unread:5, brainScore:71,
+    messages:[
+      { id:'a', from:'them', text:'Standup in 10.', time:'9:00 AM' },
+      { id:'b', from:'me',   text:'On it.', time:'9:05 AM' },
+      { id:'c', from:'them', text:'Can you review the Figma file before EOD?', time:'9:30 AM' },
+    ]},
+  { id:'3', name:'Rahul', platform:'WhatsApp', avatar:'R',
+    preview:"Did you see the match last night?", time:'8:55 AM', unread:0, brainScore:83,
+    messages:[
+      { id:'a', from:'them', text:'Did you watch the match last night?', time:'8:55 AM' },
+      { id:'b', from:'me',   text:'Insane ending. Could not believe it.', time:'8:57 AM' },
+      { id:'c', from:'them', text:'Dropped my phone when they scored.', time:'8:59 AM' },
+    ]},
+  { id:'4', name:'TechDigest', platform:'Gmail', avatar:'T',
+    preview:'Your weekly digest is ready', time:'7:10 AM', unread:1, brainScore:52,
+    messages:[
+      { id:'a', from:'them', text:'This week in tech: AI models improving rapidly, new privacy legislation in the EU, and tools worth trying. Read time: 4 min.', time:'7:10 AM' },
+    ]},
+  { id:'5', name:'Sydney', platform:'Instagram', avatar:'S',
+    preview:'Did you see that post?', time:'Yesterday', unread:3, brainScore:67,
+    messages:[
+      { id:'a', from:'them', text:'Did you see that post going around?', time:'Yesterday' },
+      { id:'b', from:'me',   text:'Which one?', time:'Yesterday' },
+      { id:'c', from:'them', text:'I spent way too long on reels last night honestly.', time:'Yesterday' },
+    ]},
+  { id:'6', name:'Dev squad', platform:'Discord', avatar:'D',
+    preview:'Hop on, we need a fourth', time:'Yesterday', unread:0, brainScore:78,
+    messages:[
+      { id:'a', from:'them', text:'Hop on, we need a fourth.', time:'Yesterday' },
+      { id:'b', from:'me',   text:'Give me five minutes.', time:'Yesterday' },
+    ]},
+]
+
+const MOMENTS: Moment[] = [
+  { id:'1', user:'Ananya', avatar:'A', scene:'Sunrise hike', caption:'first hike of the year', time:'2 hours ago', brainScore:96, reactions:{ '❤': 12, '+': 8 } },
+  { id:'2', user:'Dev',    avatar:'D', scene:'Morning coffee', caption:'quiet morning', time:'4 hours ago', brainScore:91, reactions:{ '❤': 7 } },
+  { id:'3', user:'Meera',  avatar:'M', scene:'Library desk', caption:'finals season', time:'6 hours ago', brainScore:88, reactions:{ '❤': 14 } },
+]
+
+const FEED: FeedItem[] = [
+  { id:'1', platform:'Instagram', author:'natgeo',      avatar:'N', time:'12m', brainScore:89, category:'genuine',
+    content:'The Amazon absorbs 2 billion tonnes of CO₂ per year. Protecting it is protecting ourselves.' },
+  { id:'2', platform:'Twitter',   author:'paulg',       avatar:'P', time:'1h',  brainScore:84, category:'genuine',
+    content:"The secret to doing great work isn't talent — it's the willingness to feel uncertain and keep going anyway." },
+  { id:'3', platform:'Instagram', author:'gossip_daily',avatar:'G', time:'2h',  brainScore:18, category:'brainrot',
+    content:"You won't believe what happened. Watch till the end. [47 sec video]" },
+  { id:'4', platform:'Twitter',   author:'sama',        avatar:'S', time:'3h',  brainScore:78, category:'genuine',
+    content:'Models are improving faster than most people realise. Stay curious.' },
+  { id:'5', platform:'Instagram', author:'meme.page',   avatar:'M', time:'4h',  brainScore:31, category:'brainrot',
+    content:'When you check your phone for the 47th time this hour. #relatable' },
+]
+
+/* ─── Logo (same as landing) ──────────────────────────────────── */
+function NuroIcon({ size = 32 }: { size?: number }) {
   return (
-    <motion.div
-      onClick={onClick}
-      whileHover={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+      <rect width="40" height="40" rx="11" fill="#E8651A" />
+      <line x1="11" y1="28" x2="20" y2="12" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeOpacity="0.5" />
+      <line x1="20" y1="12" x2="29" y2="28" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeOpacity="0.5" />
+      <line x1="11" y1="28" x2="29" y2="28" stroke="white" strokeWidth="2"   strokeLinecap="round" strokeOpacity="0.3" />
+      <line x1="20" y1="12" x2="20" y2="28" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeOpacity="0.25" />
+      <circle cx="20" cy="12" r="3.2" fill="white" />
+      <circle cx="11" cy="28" r="2.7" fill="white" fillOpacity="0.88" />
+      <circle cx="29" cy="28" r="2.7" fill="white" fillOpacity="0.88" />
+    </svg>
+  )
+}
+
+/* ─── SVG nav icons ───────────────────────────────────────────── */
+function IconHome({ size=18, color='currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9.5L10 3l7 6.5V18a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" />
+      <path d="M7 19V12h6v7" />
+    </svg>
+  )
+}
+function IconInbox({ size=18, color='currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="4" width="16" height="13" rx="2" />
+      <path d="M2 8l8 5 8-5" />
+    </svg>
+  )
+}
+function IconCamera({ size=18, color='currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="6" width="18" height="12" rx="2" />
+      <circle cx="10" cy="12" r="3" />
+      <path d="M7 6l1.5-2.5h3L13 6" />
+    </svg>
+  )
+}
+function IconBrain({ size=18, color='currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 3C7.5 3 5 5 5 8c0 1.5.5 2.5 1 3.5-.5 1-1 2-1 3 0 1.5 1 2.5 2.5 2.5" />
+      <path d="M10 3c2.5 0 5 2 5 5 0 1.5-.5 2.5-1 3.5.5 1 1 2 1 3 0 1.5-1 2.5-2.5 2.5" />
+      <path d="M5 11.5c-1 .5-2 1.5-2 2.5" />
+      <path d="M15 11.5c1 .5 2 1.5 2 2.5" />
+      <line x1="10" y1="3" x2="10" y2="17" />
+    </svg>
+  )
+}
+
+/* ─── Score ring ──────────────────────────────────────────────── */
+function ScoreRing({ score, size = 120, C }: { score: number; size?: number; C: typeof DARK }) {
+  const r = size * 0.38
+  const circ = 2 * Math.PI * r
+  const offset = circ - (circ * score) / 100
+  const col = scoreColor(score)
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={C.border} strokeWidth={size * 0.055} />
+      <motion.circle
+        cx={size/2} cy={size/2} r={r} fill="none"
+        stroke={col} strokeWidth={size * 0.055} strokeLinecap="round"
+        strokeDasharray={circ}
+        initial={{ strokeDashoffset: circ }}
+        animate={{ strokeDashoffset: offset }}
+        transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
+        transform={`rotate(-90 ${size/2} ${size/2})`}
+        style={{ filter: `drop-shadow(0 0 6px ${col}60)` }}
+      />
+      <text x={size/2} y={size/2 - 2} textAnchor="middle" dominantBaseline="central"
+        fill={C.text1} fontSize={size * 0.24} fontWeight="700" fontFamily="'DM Sans',sans-serif">{score}</text>
+      <text x={size/2} y={size/2 + size*0.18} textAnchor="middle" dominantBaseline="central"
+        fill={col} fontSize={size * 0.09} fontFamily="'DM Sans',sans-serif" fontWeight="600">{scoreLabel(score)}</text>
+    </svg>
+  )
+}
+
+/* ─── Conversation row ────────────────────────────────────────── */
+function ConvRow({ cv, active, C, onClick }: { cv: Conv; active: boolean; C: typeof DARK; onClick: () => void }) {
+  return (
+    <motion.div onClick={onClick} whileHover={{ backgroundColor: C.accentDim }}
       style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        padding: '11px 14px', borderRadius: 12, cursor: 'pointer',
-        background: active ? 'rgba(249,115,22,0.12)' : 'transparent',
-        border: active ? '1px solid rgba(249,115,22,0.2)' : '1px solid transparent',
-        transition: 'all 0.15s',
-      }}
-    >
-      <div style={{
-        width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
-        background: `${c.color}18`, border: `1.5px solid ${c.color}40`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 14, fontWeight: 700, color: c.color,
+        display:'flex', alignItems:'center', gap:11,
+        padding:'10px 13px', borderRadius:11, cursor:'pointer',
+        background: active ? C.accentDim : 'transparent',
+        border: `1px solid ${active ? C.accent + '30' : 'transparent'}`,
+        transition:'all 0.15s',
       }}>
-        {c.avatar}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#f5f0ff' }}>{c.name}</span>
-          <span style={{ fontSize: 10, color: 'rgba(245,240,255,0.3)' }}>{c.time}</span>
+      <div style={{
+        width:36, height:36, borderRadius:'50%', flexShrink:0,
+        background: C.accentDim,
+        border: `1.5px solid ${C.accent}35`,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize:13, fontWeight:700, color: C.accent,
+      }}>{cv.avatar}</div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:2 }}>
+          <span style={{ fontSize:13, fontWeight:600, color:C.text1 }}>{cv.name}</span>
+          <span style={{ fontSize:10, color:C.text3 }}>{cv.time}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 11 }}>{PLATFORM_ICONS[c.platform]}</span>
-          <span style={{ fontSize: 12, color: 'rgba(245,240,255,0.38)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{c.preview}</span>
-          {c.unread > 0 && (
-            <span style={{ fontSize: 10, fontWeight: 700, background: '#f97316', color: 'white', borderRadius: 980, padding: '1px 6px', flexShrink: 0 }}>
-              {c.unread}
-            </span>
+        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+          <span style={{ fontSize:12, color:C.text2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>{cv.preview}</span>
+          {cv.unread > 0 && (
+            <span style={{ fontSize:10, fontWeight:700, background:C.accent, color:'white', borderRadius:980, padding:'1px 6px', flexShrink:0 }}>{cv.unread}</span>
           )}
         </div>
       </div>
@@ -147,110 +268,80 @@ function ConvRow({ c, active, onClick }: { c: Conversation; active: boolean; onC
   )
 }
 
-function ChatBubble({ msg }: { msg: Message }) {
+/* ─── Chat bubble ─────────────────────────────────────────────── */
+function Bubble({ msg, C }: { msg: Msg; C: typeof DARK }) {
   const isMe = msg.from === 'me'
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start', marginBottom: 8 }}
-    >
+    <motion.div initial={{ opacity:0, y:5 }} animate={{ opacity:1, y:0 }}
+      style={{ display:'flex', flexDirection:'column', alignItems: isMe ? 'flex-end' : 'flex-start', marginBottom:8 }}>
       <div style={{
-        maxWidth: '68%', padding: '11px 15px',
+        maxWidth:'66%', padding:'10px 14px',
         borderRadius: isMe ? '18px 4px 18px 18px' : '4px 18px 18px 18px',
-        background: isMe
-          ? 'linear-gradient(135deg, #f97316, #e879f9)'
-          : 'rgba(255,255,255,0.07)',
-        color: '#f5f0ff', fontSize: 14, lineHeight: 1.55,
-        border: isMe ? 'none' : '1px solid rgba(255,255,255,0.09)',
-        boxShadow: isMe ? '0 4px 20px rgba(249,115,22,0.25)' : 'none',
-      }}>
-        {msg.text}
-      </div>
-      <span style={{ fontSize: 10, color: 'rgba(245,240,255,0.28)', marginTop: 4 }}>{msg.time}</span>
+        background: isMe ? C.accent : C.surfaceHi,
+        color: isMe ? 'white' : C.text1,
+        fontSize:14, lineHeight:1.55,
+        border: isMe ? 'none' : `1px solid ${C.border}`,
+        boxShadow: isMe ? `0 4px 16px ${C.accentGlow}` : 'none',
+      }}>{msg.text}</div>
+      <span style={{ fontSize:10, color:C.text3, marginTop:4 }}>{msg.time}</span>
     </motion.div>
   )
 }
 
-function ScoreRing({ score, size = 120 }: { score: number; size?: number }) {
-  const r = size * 0.38
-  const circ = 2 * Math.PI * r
-  const offset = circ - (circ * score) / 100
-  const color = scoreColor(score)
+/* ─── Feed card ───────────────────────────────────────────────── */
+function FeedCard({ item, C }: { item: FeedItem; C: typeof DARK }) {
+  const col = scoreColor(item.brainScore)
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={size * 0.06} />
-      <motion.circle
-        cx={size / 2} cy={size / 2} r={r} fill="none"
-        stroke={color} strokeWidth={size * 0.06} strokeLinecap="round"
-        strokeDasharray={circ}
-        initial={{ strokeDashoffset: circ }}
-        animate={{ strokeDashoffset: offset }}
-        transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        style={{ filter: `drop-shadow(0 0 8px ${color}60)` }}
-      />
-      <text x={size / 2} y={size / 2 - 4} textAnchor="middle" dominantBaseline="central"
-        fill="#f5f0ff" fontSize={size * 0.24} fontWeight="700" fontFamily="'DM Sans', sans-serif">
-        {score}
-      </text>
-      <text x={size / 2} y={size / 2 + size * 0.18} textAnchor="middle" dominantBaseline="central"
-        fill={color} fontSize={size * 0.095} fontFamily="'DM Sans', sans-serif" fontWeight="600">
-        {scoreLabel(score)}
-      </text>
-    </svg>
+    <div style={{ padding:'14px 16px', borderRadius:14, marginBottom:10, background:C.surface, border:`1px solid ${C.border}` }}>
+      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+        <div style={{ width:32, height:32, borderRadius:'50%', background:`${PCOLOR[item.platform]}15`, border:`1.5px solid ${PCOLOR[item.platform]}40`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:700, color:PCOLOR[item.platform], flexShrink:0 }}>{item.avatar}</div>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:13, fontWeight:600, color:C.text1 }}>@{item.author}</div>
+          <div style={{ fontSize:11, color:C.text3 }}>{item.platform} · {item.time}</div>
+        </div>
+        <div style={{ textAlign:'right' }}>
+          <div style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:980, background:`${col}15`, color:col, border:`1px solid ${col}30` }}>{item.brainScore}</div>
+          <div style={{ fontSize:10, color:C.text3, marginTop:2 }}>
+            {item.category === 'genuine' ? 'Genuine' : item.category === 'brainrot' ? 'Brain rot' : 'Neutral'}
+          </div>
+        </div>
+      </div>
+      <p style={{ fontSize:13, color:C.text2, lineHeight:1.6 }}>{item.content}</p>
+    </div>
   )
 }
 
-function MomentCard({ m, own, onPost }: { m?: Moment; own?: boolean; onPost?: () => void }) {
+/* ─── Moment card ─────────────────────────────────────────────── */
+function MomentTile({ m, C, onPost, own }: { m?: Moment; C: typeof DARK; onPost?: () => void; own?: boolean }) {
   if (own) return (
-    <motion.div
-      whileHover={{ y: -2 }}
-      onClick={onPost}
-      style={{
-        borderRadius: 20, overflow: 'hidden', cursor: 'pointer',
-        background: 'rgba(249,115,22,0.08)', border: '2px dashed rgba(249,115,22,0.3)',
-        aspectRatio: '9/16', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', gap: 10, padding: 24,
-      }}
-    >
-      <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(249,115,22,0.15)', border: '1.5px solid rgba(249,115,22,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>📸</div>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: '#f97316', marginBottom: 4 }}>Post your Instant</div>
-        <div style={{ fontSize: 11, color: 'rgba(245,240,255,0.35)', lineHeight: 1.5 }}>Your friends posted.<br />Show them your real moment.</div>
+    <motion.div whileHover={{ y:-2 }} onClick={onPost}
+      style={{ borderRadius:18, aspectRatio:'9/16', cursor:'pointer', background:C.accentDim, border:`2px dashed ${C.accent}40`, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:10, padding:20 }}>
+      <div style={{ width:44, height:44, borderRadius:'50%', background:C.accentDim, border:`1.5px solid ${C.accent}50`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <IconCamera size={20} color={C.accent} />
+      </div>
+      <div style={{ textAlign:'center' }}>
+        <div style={{ fontSize:13, fontWeight:600, color:C.accent, marginBottom:3 }}>Post your Instant</div>
+        <div style={{ fontSize:11, color:C.text3, lineHeight:1.5 }}>Friends posted.<br />Your turn.</div>
       </div>
     </motion.div>
   )
   if (!m) return null
   return (
-    <motion.div whileHover={{ y: -2 }} style={{ borderRadius: 20, overflow: 'hidden', aspectRatio: '9/16', background: '#0d0a1f', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      {/* Back image */}
-      <div style={{ flex: 1, background: 'linear-gradient(145deg, #1a1040, #0d0a2e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 60, position: 'relative' }}>
-        {m.back}
-        {/* Selfie inset */}
-        <div style={{ position: 'absolute', top: 10, left: 10, width: 60, height: 75, borderRadius: 14, background: 'rgba(255,255,255,0.1)', border: '2px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
-          {m.front}
-        </div>
-        {/* Score badge */}
-        <div style={{ position: 'absolute', top: 10, right: 10, padding: '4px 10px', borderRadius: 980, background: `${scoreColor(m.brainScore)}20`, border: `1px solid ${scoreColor(m.brainScore)}40`, fontSize: 11, fontWeight: 700, color: scoreColor(m.brainScore) }}>
-          🧠 {m.brainScore}
-        </div>
+    <motion.div whileHover={{ y:-2 }} style={{ borderRadius:18, aspectRatio:'9/16', background:C.surface, border:`1px solid ${C.border}`, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+      <div style={{ flex:1, background:C.surfaceHi, display:'flex', alignItems:'center', justifyContent:'center', position:'relative', fontSize:36 }}>
+        {m.scene}
+        <div style={{ position:'absolute', top:8, right:8, padding:'3px 9px', borderRadius:980, background:`${scoreColor(m.brainScore)}15`, border:`1px solid ${scoreColor(m.brainScore)}30`, fontSize:10, fontWeight:700, color:scoreColor(m.brainScore) }}>{m.brainScore}</div>
       </div>
-      {/* Info */}
-      <div style={{ padding: '10px 12px', background: 'rgba(0,0,0,0.4)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-          <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg, #f97316, #e879f9)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'white' }}>
-            {m.avatar}
-          </div>
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#f5f0ff' }}>{m.user}</span>
-          <span style={{ fontSize: 10, color: 'rgba(245,240,255,0.35)', marginLeft: 'auto' }}>{m.time}</span>
+      <div style={{ padding:'10px 12px' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:5 }}>
+          <div style={{ width:24, height:24, borderRadius:'50%', background:C.accentDim, border:`1px solid ${C.accent}30`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, color:C.accent }}>{m.avatar}</div>
+          <span style={{ fontSize:12, fontWeight:600, color:C.text1 }}>{m.user}</span>
+          <span style={{ fontSize:10, color:C.text3, marginLeft:'auto' }}>{m.time}</span>
         </div>
-        <div style={{ fontSize: 12, color: 'rgba(245,240,255,0.6)', marginBottom: 8 }}>{m.caption}</div>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ fontSize:12, color:C.text2, marginBottom:7 }}>{m.caption}</div>
+        <div style={{ display:'flex', gap:5 }}>
           {Object.entries(m.reactions).map(([emoji, count]) => (
-            <button key={emoji} style={{ padding: '3px 8px', borderRadius: 980, background: 'rgba(255,255,255,0.07)', border: 'none', fontSize: 12, color: 'rgba(245,240,255,0.6)', cursor: 'pointer' }}>
-              {emoji} {count}
-            </button>
+            <button key={emoji} style={{ padding:'2px 8px', borderRadius:980, background:C.accentDim, border:`1px solid ${C.border}`, fontSize:11, color:C.text2, cursor:'pointer' }}>{emoji} {count}</button>
           ))}
         </div>
       </div>
@@ -258,241 +349,204 @@ function MomentCard({ m, own, onPost }: { m?: Moment; own?: boolean; onPost?: ()
   )
 }
 
-function FeedCard({ item }: { item: FeedItem }) {
-  const color = scoreColor(item.brainScore)
-  const catLabel = item.category === 'genuine' ? '✓ Genuine' : item.category === 'brainrot' ? '⚠ Brain rot' : '· Neutral'
-  return (
-    <motion.div
-      whileHover={{ y: -2 }}
-      style={{
-        padding: '16px 18px', borderRadius: 16, marginBottom: 12,
-        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
-        transition: 'all 0.2s',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <div style={{ width: 36, height: 36, borderRadius: '50%', background: `${PLATFORM_COLORS[item.platform]}20`, border: `1.5px solid ${PLATFORM_COLORS[item.platform]}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: PLATFORM_COLORS[item.platform] }}>
-          {item.avatar}
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#f5f0ff' }}>@{item.author}</div>
-          <div style={{ fontSize: 11, color: 'rgba(245,240,255,0.35)' }}>{PLATFORM_ICONS[item.platform]} {item.platform} · {item.time}</div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
-          <div style={{ padding: '3px 10px', borderRadius: 980, background: `${color}15`, border: `1px solid ${color}35`, fontSize: 11, fontWeight: 700, color }}>{item.brainScore}</div>
-          <div style={{ fontSize: 10, color: item.category === 'brainrot' ? '#ef4444' : item.category === 'genuine' ? '#34d399' : 'rgba(245,240,255,0.3)' }}>{catLabel}</div>
-        </div>
-      </div>
-      <p style={{ fontSize: 14, color: 'rgba(245,240,255,0.72)', lineHeight: 1.6 }}>{item.content}</p>
-    </motion.div>
-  )
-}
+/* ═══════════════════════════════════════════════════════════════
+   MAIN APP
+═══════════════════════════════════════════════════════════════ */
+export default function App() {
+  const [tab, setTab]               = useState<Tab>('inbox')
+  const [activeId, setActiveId]     = useState('1')
+  const [input, setInput]           = useState('')
+  const [convs, setConvs]           = useState(CONVS)
+  const [capturing, setCapturing]   = useState(false)
+  const [moments, setMoments]       = useState(MOMENTS)
+  const [C, setC]                   = useState(getTheme)
+  const bottomRef                   = useRef<HTMLDivElement>(null)
 
-/* ─── Main App ───────────────────────────────────────────────────── */
-export default function Home() {
-  const [tab, setTab] = useState<NavTab>('inbox')
-  const [activeConvoId, setActiveConvoId] = useState('1')
-  const [input, setInput] = useState('')
-  const [conversations, setConversations] = useState(CONVERSATIONS)
-  const [capturing, setCapturing] = useState(false)
-  const [moments, setMoments] = useState(MOMENTS)
-  const bottomRef = useRef<HTMLDivElement>(null)
-
-  const activeConvo = conversations.find(c => c.id === activeConvoId) ?? conversations[0]
-  const avgBrainScore = Math.round(conversations.reduce((a, c) => a + c.brainScore, 0) / conversations.length)
+  /* Update theme every minute */
+  useEffect(() => {
+    const id = setInterval(() => setC(getTheme()), 60_000)
+    return () => clearInterval(id)
+  }, [])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [activeConvoId])
+    bottomRef.current?.scrollIntoView({ behavior:'smooth' })
+  }, [activeId])
 
-  const sendMessage = () => {
+  const active    = convs.find(c => c.id === activeId) ?? convs[0]
+  const avgScore  = Math.round(convs.reduce((a, c) => a + c.brainScore, 0) / convs.length)
+  const totalUnread = convs.reduce((a, c) => a + c.unread, 0)
+
+  function send() {
     if (!input.trim()) return
-    setConversations(prev => prev.map(c =>
-      c.id === activeConvoId
-        ? { ...c, messages: [...c.messages, { id: Date.now().toString(), from: 'me', text: input.trim(), time: 'Now' }], preview: input.trim() }
-        : c
+    setConvs(prev => prev.map(c => c.id === activeId
+      ? { ...c, messages:[...c.messages, { id:Date.now().toString(), from:'me', text:input.trim(), time:'Now' }], preview:input.trim() }
+      : c
     ))
     setInput('')
   }
 
-  const handleCapture = (front: string, back: string, caption: string) => {
-    const newMoment: Moment = {
-      id: Date.now().toString(), user: 'You', avatar: 'Y',
-      back: '📷', front: '🤳',
-      caption: caption || 'My instant moment',
-      time: 'Just now', brainScore: 90,
-      reactions: {},
-    }
-    setMoments(prev => [newMoment, ...prev])
+  function onCapture(_f: string, _b: string, caption: string) {
+    setMoments(prev => [{ id:Date.now().toString(), user:'You', avatar:'Y', scene:'Your moment', caption: caption || 'A moment', time:'Just now', brainScore:90, reactions:{} }, ...prev])
   }
 
+  const NAV: { id: Tab; label: string; Icon: React.FC<{ size?: number; color?: string }> }[] = [
+    { id:'home',     label:'Home',     Icon: IconHome   },
+    { id:'inbox',    label:'Inbox',    Icon: IconInbox  },
+    { id:'instants', label:'Instants', Icon: IconCamera },
+    { id:'brain',    label:'Brain',    Icon: IconBrain  },
+  ]
+
+  /* ── Shared card style ── */
+  const card = (extra?: object) => ({
+    borderRadius:18, background:C.surface, border:`1px solid ${C.border}`, ...extra
+  })
+
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#070510', color: '#f5f0ff', overflow: 'hidden', fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+    <div style={{ display:'flex', height:'100vh', background:C.bg, color:C.text1, overflow:'hidden', fontFamily:"'DM Sans', system-ui, sans-serif", transition:'background 0.6s, color 0.6s' }}>
 
-      {/* ── Left Sidebar ── */}
-      <div style={{ width: 68, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', background: 'rgba(255,255,255,0.025)', borderRight: '1px solid rgba(255,255,255,0.07)', gap: 6, flexShrink: 0 }}>
-        {/* Logo */}
-        <div style={{ width: 38, height: 38, borderRadius: 11, background: 'linear-gradient(135deg, #f97316, #e879f9)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, marginBottom: 16, boxShadow: '0 4px 16px rgba(249,115,22,0.4)' }}>
-          🧠
-        </div>
+      {/* ════════════════════════════
+          SIDEBAR
+      ════════════════════════════ */}
+      <div style={{ width:64, display:'flex', flexDirection:'column', alignItems:'center', padding:'18px 0', background:C.surface, borderRight:`1px solid ${C.border}`, gap:4, flexShrink:0, transition:'background 0.6s' }}>
+        <div style={{ marginBottom:18 }}><NuroIcon size={30} /></div>
 
-        {/* Nav */}
-        {([
-          { id: 'home', icon: '◉', label: 'Home' },
-          { id: 'inbox', icon: '💬', label: 'Inbox' },
-          { id: 'instants', icon: '📸', label: 'Instants' },
-          { id: 'brain', icon: '✧', label: 'Brain' },
-        ] as { id: NavTab; icon: string; label: string }[]).map(item => (
-          <motion.button
-            key={item.id}
-            onClick={() => setTab(item.id)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            title={item.label}
-            style={{
-              width: 44, height: 44, borderRadius: 13, border: 'none',
-              background: tab === item.id ? 'linear-gradient(135deg, rgba(249,115,22,0.25), rgba(232,121,249,0.2))' : 'transparent',
-              outline: tab === item.id ? '1px solid rgba(249,115,22,0.35)' : '1px solid transparent',
-              cursor: 'pointer', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: tab === item.id ? '#f97316' : 'rgba(245,240,255,0.35)',
-              transition: 'all 0.15s',
-            }}
-          >
-            {item.icon}
-          </motion.button>
-        ))}
+        {NAV.map(({ id, label, Icon }) => {
+          const isActive = tab === id
+          return (
+            <motion.button key={id} onClick={() => setTab(id)} whileTap={{ scale:0.93 }} title={label}
+              style={{
+                width:42, height:42, borderRadius:11, border:'none',
+                background: isActive ? C.accentDim : 'transparent',
+                outline: `1px solid ${isActive ? C.accent+'35' : 'transparent'}`,
+                cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                color: isActive ? C.accent : C.text3,
+                transition:'all 0.15s',
+              }}>
+              <Icon size={17} color={isActive ? C.accent : C.text3} />
+            </motion.button>
+          )
+        })}
 
-        {/* Bottom: Connect + Avatar */}
-        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-          <div style={{ fontSize: 10, color: 'rgba(245,240,255,0.25)', textAlign: 'center', lineHeight: 1.4 }}>
-            Platforms<br />
-            <span style={{ fontWeight: 700, color: '#34d399' }}>6 live</span>
+        <div style={{ marginTop:'auto', display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
+          <div style={{ fontSize:9, color:C.text3, textAlign:'center', lineHeight:1.4 }}>
+            4 live
           </div>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #5865f2, #22d3ee)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: 'white', cursor: 'pointer' }}>
+          <div style={{ width:32, height:32, borderRadius:'50%', background:C.accentDim, border:`1.5px solid ${C.accent}40`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:700, color:C.accent, cursor:'pointer' }}>
             Y
           </div>
         </div>
       </div>
 
-      {/* ── Main content ── */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      {/* ════════════════════════════
+          CONTENT
+      ════════════════════════════ */}
+      <div style={{ flex:1, display:'flex', overflow:'hidden' }}>
         <AnimatePresence mode="wait">
 
-          {/* ── HOME TAB ── */}
+          {/* ── HOME ── */}
           {tab === 'home' && (
-            <motion.div key="home" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.2 }}
-              style={{ flex: 1, padding: '28px 32px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <motion.div key="home" initial={{ opacity:0, x:10 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-10 }} transition={{ duration:0.18 }}
+              style={{ flex:1, padding:'28px 30px', overflowY:'auto', display:'flex', flexDirection:'column', gap:20 }}>
 
-              {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                 <div>
-                  <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', color: '#f5f0ff', marginBottom: 2 }}>Good morning 👋</h1>
-                  <p style={{ fontSize: 14, color: 'rgba(245,240,255,0.45)' }}>Here&rsquo;s your mind health overview</p>
+                  <h1 style={{ fontSize:21, fontWeight:700, letterSpacing:'-0.02em', color:C.text1, marginBottom:3, fontFamily:"'Instrument Serif', serif", fontStyle:'italic' }}>
+                    {getGreeting()}
+                  </h1>
+                  <p style={{ fontSize:13, color:C.text3 }}>Here's your mind health overview</p>
                 </div>
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
+                <motion.button whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
                   onClick={() => setCapturing(true)}
-                  style={{ padding: '10px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #f97316, #e879f9)', border: 'none', color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 20px rgba(249,115,22,0.3)' }}
-                >
-                  📸 Post Instant
+                  style={{ padding:'9px 18px', borderRadius:11, background:C.accent, border:'none', color:'white', fontWeight:600, fontSize:13, cursor:'pointer', boxShadow:`0 4px 16px ${C.accentGlow}` }}>
+                  Post Instant
                 </motion.button>
               </div>
 
-              {/* Stats row */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+              {/* Stats */}
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:14 }}>
                 {[
-                  { label: 'Brain Score', val: `${avgBrainScore}`, sub: 'avg today', color: scoreColor(avgBrainScore), icon: '🧠' },
-                  { label: 'Unread DMs', val: `${conversations.reduce((a, c) => a + c.unread, 0)}`, sub: 'across 6 apps', color: '#f97316', icon: '💬' },
-                  { label: 'Screen time', val: '3.2h', sub: '↓ 0.8h vs avg', color: '#34d399', icon: '⏱️' },
-                  { label: 'Instants', val: `${moments.length}`, sub: 'friends posted', color: '#e879f9', icon: '✨' },
+                  { label:'Mind Score',  val:`${avgScore}`,     sub:'average today',       color:scoreColor(avgScore) },
+                  { label:'Unread',      val:`${totalUnread}`,  sub:'across 4 platforms',  color:C.accent },
+                  { label:'Screen time', val:'3.2h',            sub:'0.8h below average',  color:'#4A7C59' },
+                  { label:'Instants',    val:`${moments.length}`,sub:'friends posted today',color:C.accent },
                 ].map((s, i) => (
-                  <motion.div key={i} whileHover={{ y: -3 }} style={{ padding: '18px 20px', borderRadius: 18, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div style={{ fontSize: 20, marginBottom: 10 }}>{s.icon}</div>
-                    <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', color: s.color, marginBottom: 2 }}>{s.val}</div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#f5f0ff', marginBottom: 2 }}>{s.label}</div>
-                    <div style={{ fontSize: 11, color: 'rgba(245,240,255,0.35)' }}>{s.sub}</div>
+                  <motion.div key={i} whileHover={{ y:-2 }} style={{ ...card(), padding:'16px 18px' }}>
+                    <div style={{ fontSize:24, fontWeight:800, letterSpacing:'-0.03em', color:s.color, marginBottom:2, fontFamily:"'Instrument Serif', serif" }}>{s.val}</div>
+                    <div style={{ fontSize:12, fontWeight:600, color:C.text1, marginBottom:1 }}>{s.label}</div>
+                    <div style={{ fontSize:11, color:C.text3 }}>{s.sub}</div>
                   </motion.div>
                 ))}
               </div>
 
-              {/* Two column: inbox preview + instants preview */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20 }}>
-                {/* Recent conversations */}
-                <div style={{ padding: '20px', borderRadius: 18, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: '#f5f0ff' }}>Recent messages</span>
-                    <button onClick={() => setTab('inbox')} style={{ fontSize: 12, color: '#f97316', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>View all →</button>
+              {/* Two columns */}
+              <div style={{ display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:16 }}>
+                {/* Recent messages */}
+                <div style={{ ...card(), padding:'18px' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+                    <span style={{ fontSize:13, fontWeight:600, color:C.text1 }}>Recent messages</span>
+                    <button onClick={() => setTab('inbox')} style={{ fontSize:12, color:C.accent, background:'none', border:'none', cursor:'pointer', fontWeight:500 }}>View all →</button>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {conversations.slice(0, 4).map(c => (
-                      <div key={c.id} onClick={() => { setTab('inbox'); setActiveConvoId(c.id) }}
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 11, cursor: 'pointer', transition: 'background 0.15s' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                      >
-                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: `${c.color}18`, border: `1.5px solid ${c.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: c.color, flexShrink: 0 }}>{c.avatar}</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: '#f5f0ff' }}>{c.name}</span>
-                            <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 980, background: `${scoreColor(c.brainScore)}15`, color: scoreColor(c.brainScore), fontWeight: 700 }}>{c.brainScore}</span>
-                          </div>
-                          <span style={{ fontSize: 12, color: 'rgba(245,240,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{c.preview}</span>
+                  {convs.slice(0,4).map(c => (
+                    <div key={c.id} onClick={() => { setTab('inbox'); setActiveId(c.id) }}
+                      style={{ display:'flex', alignItems:'center', gap:9, padding:'8px 8px', borderRadius:9, cursor:'pointer', transition:'background 0.12s' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = C.accentDim)}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                      <div style={{ width:30, height:30, borderRadius:'50%', background:C.accentDim, border:`1.5px solid ${C.accent}35`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:C.accent, flexShrink:0 }}>{c.avatar}</div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ display:'flex', justifyContent:'space-between' }}>
+                          <span style={{ fontSize:12, fontWeight:600, color:C.text1 }}>{c.name}</span>
+                          <span style={{ fontSize:10, padding:'1px 6px', borderRadius:980, background:`${scoreColor(c.brainScore)}14`, color:scoreColor(c.brainScore), fontWeight:700 }}>{c.brainScore}</span>
                         </div>
-                        {c.unread > 0 && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#f97316', flexShrink: 0 }} />}
+                        <span style={{ fontSize:11, color:C.text3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', display:'block' }}>{c.preview}</span>
                       </div>
-                    ))}
-                  </div>
+                      {c.unread > 0 && <span style={{ width:7, height:7, borderRadius:'50%', background:C.accent, flexShrink:0 }} />}
+                    </div>
+                  ))}
                 </div>
 
                 {/* Feed preview */}
-                <div style={{ padding: '20px', borderRadius: 18, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: '#f5f0ff' }}>Feed intelligence</span>
-                    <span style={{ fontSize: 12, color: 'rgba(245,240,255,0.4)' }}>Sorted by brain value</span>
+                <div style={{ ...card(), padding:'18px' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+                    <span style={{ fontSize:13, fontWeight:600, color:C.text1 }}>Feed</span>
+                    <span style={{ fontSize:11, color:C.text3 }}>By brain value</span>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {FEED_ITEMS.slice(0, 4).map(item => (
-                      <div key={item.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', borderRadius: 11 }}>
-                        <div style={{ width: 30, height: 30, borderRadius: '50%', background: `${PLATFORM_COLORS[item.platform]}18`, border: `1.5px solid ${PLATFORM_COLORS[item.platform]}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: PLATFORM_COLORS[item.platform], flexShrink: 0 }}>{item.avatar}</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: '#f5f0ff' }}>@{item.author}</span>
-                            <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 980, background: `${scoreColor(item.brainScore)}15`, color: scoreColor(item.brainScore), fontWeight: 700 }}>{item.brainScore}</span>
-                          </div>
-                          <span style={{ fontSize: 12, color: 'rgba(245,240,255,0.45)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{item.content}</span>
+                  {FEED.slice(0,4).map(item => (
+                    <div key={item.id} style={{ display:'flex', gap:9, padding:'7px 0', borderBottom:`1px solid ${C.border}` }}>
+                      <div style={{ width:28, height:28, borderRadius:'50%', background:`${PCOLOR[item.platform]}14`, border:`1.5px solid ${PCOLOR[item.platform]}35`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:PCOLOR[item.platform], flexShrink:0 }}>{item.avatar}</div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:2 }}>
+                          <span style={{ fontSize:11, fontWeight:600, color:C.text1 }}>@{item.author}</span>
+                          <span style={{ fontSize:10, padding:'1px 5px', borderRadius:980, background:`${scoreColor(item.brainScore)}13`, color:scoreColor(item.brainScore), fontWeight:700 }}>{item.brainScore}</span>
                         </div>
+                        <span style={{ fontSize:11, color:C.text3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', display:'block' }}>{item.content}</span>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Platform connect row */}
-              <div style={{ padding: '18px 20px', borderRadius: 18, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#f5f0ff', marginBottom: 12 }}>Connected platforms</div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {([
-                    { label: 'WhatsApp', color: '#30d158', connected: true },
-                    { label: 'WhatsApp', color: '#25d366', connected: true },
-                    { label: 'Instagram', color: '#e1306c', connected: true },
-                    { label: 'Gmail', color: '#ea4335', connected: true },
-                    { label: 'Discord', color: '#5865f2', connected: true },
-                    { label: 'Discord', color: '#ecb22e', connected: true },
-                    { label: 'Twitter', color: '#1d9bf0', connected: false },
-                    { label: 'LinkedIn', color: '#0077b5', connected: false },
-                  ]).map(p => (
+              {/* Platforms */}
+              <div style={{ ...card(), padding:'16px 18px' }}>
+                <div style={{ fontSize:12, fontWeight:600, color:C.text1, marginBottom:10 }}>Connected platforms</div>
+                <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                  {[
+                    { label:'WhatsApp',  color:'#25d366', on:true  },
+                    { label:'Instagram', color:'#e1306c', on:true  },
+                    { label:'Gmail',     color:'#ea4335', on:true  },
+                    { label:'Discord',   color:'#5865f2', on:true  },
+                    { label:'Twitter/X', color:'#1d9bf0', on:false },
+                    { label:'LinkedIn',  color:'#0077b5', on:false },
+                  ].map(p => (
                     <div key={p.label} style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      padding: '6px 12px', borderRadius: 980, fontSize: 12, fontWeight: 500,
-                      background: p.connected ? `${p.color}12` : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${p.connected ? `${p.color}30` : 'rgba(255,255,255,0.08)'}`,
-                      color: p.connected ? p.color : 'rgba(245,240,255,0.4)',
-                      cursor: 'pointer',
+                      display:'flex', alignItems:'center', gap:6,
+                      padding:'5px 12px', borderRadius:980, fontSize:12, fontWeight:500,
+                      background: p.on ? `${p.color}10` : C.surface,
+                      border:`1px solid ${p.on ? p.color+'28' : C.border}`,
+                      color: p.on ? p.color : C.text3, cursor:'pointer',
                     }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: p.connected ? p.color : 'rgba(255,255,255,0.2)' }} />
+                      <span style={{ width:5, height:5, borderRadius:'50%', background: p.on ? p.color : C.text3, display:'inline-block' }} />
                       {p.label}
-                      {!p.connected && <span style={{ fontSize: 10, opacity: 0.6 }}>+ Connect</span>}
+                      {!p.on && <span style={{ fontSize:10, color:C.accent }}>Connect</span>}
                     </div>
                   ))}
                 </div>
@@ -500,188 +554,152 @@ export default function Home() {
             </motion.div>
           )}
 
-          {/* ── INBOX TAB ── */}
+          {/* ── INBOX ── */}
           {tab === 'inbox' && (
-            <motion.div key="inbox" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.2 }}
-              style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+            <motion.div key="inbox" initial={{ opacity:0, x:10 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-10 }} transition={{ duration:0.18 }}
+              style={{ flex:1, display:'flex', overflow:'hidden' }}>
 
-              {/* Conversation list */}
-              <div style={{ width: 280, borderRight: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.015)', flexShrink: 0 }}>
-                <div style={{ padding: '20px 16px 12px' }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#f5f0ff', marginBottom: 12 }}>Messages</div>
-                  <input
-                    placeholder="Search…"
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)', color: '#f5f0ff', fontSize: 13, outline: 'none' }}
-                  />
+              {/* Conv list */}
+              <div style={{ width:270, borderRight:`1px solid ${C.border}`, display:'flex', flexDirection:'column', background:C.surface, flexShrink:0, transition:'background 0.6s' }}>
+                <div style={{ padding:'18px 14px 10px' }}>
+                  <div style={{ fontSize:14, fontWeight:600, color:C.text1, marginBottom:10 }}>Messages</div>
+                  <input placeholder="Search" style={{ width:'100%', padding:'8px 11px', borderRadius:9, background:C.surfaceHi, border:`1px solid ${C.border}`, color:C.text1, fontSize:13, outline:'none' }} />
                 </div>
-                <div style={{ flex: 1, overflowY: 'auto', padding: '0 10px 16px' }}>
-                  {conversations.map(c => (
-                    <ConvRow key={c.id} c={c} active={c.id === activeConvoId} onClick={() => setActiveConvoId(c.id)} />
-                  ))}
+                <div style={{ flex:1, overflowY:'auto', padding:'0 8px 14px' }}>
+                  {convs.map(c => <ConvRow key={c.id} cv={c} active={c.id === activeId} C={C} onClick={() => setActiveId(c.id)} />)}
                 </div>
               </div>
 
-              {/* Chat area */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                {/* Chat header */}
-                <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.02)', flexShrink: 0 }}>
-                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${activeConvo.color}18`, border: `1.5px solid ${activeConvo.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: activeConvo.color }}>
-                    {activeConvo.avatar}
-                  </div>
+              {/* Chat */}
+              <div style={{ flex:1, display:'flex', flexDirection:'column' }}>
+                <div style={{ padding:'13px 18px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', gap:11, background:C.surface, flexShrink:0, transition:'background 0.6s' }}>
+                  <div style={{ width:36, height:36, borderRadius:'50%', background:C.accentDim, border:`1.5px solid ${C.accent}35`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:700, color:C.accent }}>{active.avatar}</div>
                   <div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#f5f0ff' }}>{activeConvo.name}</div>
-                    <div style={{ fontSize: 12, color: 'rgba(245,240,255,0.35)' }}>
-                      {PLATFORM_ICONS[activeConvo.platform]} via {activeConvo.platform}
-                    </div>
+                    <div style={{ fontSize:14, fontWeight:600, color:C.text1 }}>{active.name}</div>
+                    <div style={{ fontSize:11, color:C.text3 }}>via {active.platform}</div>
                   </div>
-                  <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ padding: '5px 12px', borderRadius: 980, background: `${scoreColor(activeConvo.brainScore)}12`, border: `1px solid ${scoreColor(activeConvo.brainScore)}30`, fontSize: 12, fontWeight: 700, color: scoreColor(activeConvo.brainScore) }}>
-                      🧠 {activeConvo.brainScore} mind score
-                    </div>
+                  <div style={{ marginLeft:'auto', padding:'4px 12px', borderRadius:980, background:C.accentDim, border:`1px solid ${C.accent}30`, fontSize:11, fontWeight:700, color:C.accent }}>
+                    {active.brainScore} mind score
                   </div>
                 </div>
 
-                {/* Messages */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column' }}>
-                  {activeConvo.messages.map(msg => <ChatBubble key={msg.id} msg={msg} />)}
+                <div style={{ flex:1, overflowY:'auto', padding:'18px 22px', display:'flex', flexDirection:'column' }}>
+                  {active.messages.map(m => <Bubble key={m.id} msg={m} C={C} />)}
                   <div ref={bottomRef} />
                 </div>
 
-                {/* Input */}
-                <div style={{ padding: '14px 20px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
-                  <input
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') sendMessage() }}
-                    placeholder={`Reply to ${activeConvo.name}…`}
-                    style={{ flex: 1, padding: '12px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)', color: '#f5f0ff', fontSize: 14, outline: 'none' }}
-                  />
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={sendMessage}
-                    style={{ width: 44, height: 44, borderRadius: 13, background: 'linear-gradient(135deg, #f97316, #e879f9)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: 'white', flexShrink: 0, boxShadow: '0 4px 16px rgba(249,115,22,0.35)' }}
-                  >
-                    ↑
-                  </motion.button>
+                <div style={{ padding:'12px 18px', borderTop:`1px solid ${C.border}`, display:'flex', gap:9, flexShrink:0 }}>
+                  <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key==='Enter' && send()}
+                    placeholder={`Reply to ${active.name}`}
+                    style={{ flex:1, padding:'11px 14px', borderRadius:12, background:C.surfaceHi, border:`1px solid ${C.border}`, color:C.text1, fontSize:13, outline:'none' }} />
+                  <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }} onClick={send}
+                    style={{ width:42, height:42, borderRadius:11, background:C.accent, border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:17, flexShrink:0, boxShadow:`0 4px 14px ${C.accentGlow}` }}>↑</motion.button>
                 </div>
               </div>
 
-              {/* Right: Brain score panel */}
-              <div style={{ width: 220, borderLeft: '1px solid rgba(255,255,255,0.07)', padding: '24px 18px', display: 'flex', flexDirection: 'column', gap: 20, background: 'rgba(255,255,255,0.015)', overflowY: 'auto', flexShrink: 0 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(245,240,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Mind Health</div>
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <ScoreRing score={activeConvo.brainScore} size={130} />
+              {/* Brain panel */}
+              <div style={{ width:210, borderLeft:`1px solid ${C.border}`, padding:'20px 16px', display:'flex', flexDirection:'column', gap:18, background:C.surface, overflowY:'auto', flexShrink:0, transition:'background 0.6s' }}>
+                <div style={{ fontSize:10, fontWeight:700, color:C.text3, letterSpacing:'0.09em', textTransform:'uppercase' }}>Mind Health</div>
+                <div style={{ display:'flex', justifyContent:'center' }}>
+                  <ScoreRing score={active.brainScore} size={120} C={C} />
                 </div>
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.07)' }} />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(245,240,255,0.3)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 4 }}>All conversations</div>
-                  {conversations.map(c => (
-                    <div key={c.id} onClick={() => setActiveConvoId(c.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', opacity: c.id === activeConvoId ? 1 : 0.6 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: `${c.color}15`, border: `1px solid ${c.color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: c.color, flexShrink: 0 }}>{c.avatar}</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: '#f5f0ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
-                        <div style={{ width: '100%', height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.08)', marginTop: 3 }}>
-                          <div style={{ width: `${c.brainScore}%`, height: '100%', borderRadius: 2, background: scoreColor(c.brainScore), transition: 'width 0.8s ease' }} />
-                        </div>
+                <div style={{ height:1, background:C.border }} />
+                <div style={{ fontSize:10, fontWeight:700, color:C.text3, letterSpacing:'0.08em', textTransform:'uppercase' }}>All conversations</div>
+                {convs.map(c => (
+                  <div key={c.id} onClick={() => setActiveId(c.id)} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', opacity: c.id === activeId ? 1 : 0.55 }}>
+                    <div style={{ width:26, height:26, borderRadius:'50%', background:C.accentDim, border:`1px solid ${C.accent}30`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, color:C.accent, flexShrink:0 }}>{c.avatar}</div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:11, fontWeight:600, color:C.text1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{c.name}</div>
+                      <div style={{ width:'100%', height:3, borderRadius:2, background:C.border, marginTop:3 }}>
+                        <motion.div initial={{ width:0 }} animate={{ width:`${c.brainScore}%` }} transition={{ duration:0.9, ease:[0.22,1,0.36,1] }}
+                          style={{ height:'100%', borderRadius:2, background:scoreColor(c.brainScore) }} />
                       </div>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: scoreColor(c.brainScore), flexShrink: 0 }}>{c.brainScore}</span>
                     </div>
-                  ))}
-                </div>
+                    <span style={{ fontSize:11, fontWeight:700, color:scoreColor(c.brainScore), flexShrink:0 }}>{c.brainScore}</span>
+                  </div>
+                ))}
               </div>
             </motion.div>
           )}
 
-          {/* ── INSTANTS TAB ── */}
+          {/* ── INSTANTS ── */}
           {tab === 'instants' && (
-            <motion.div key="instants" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.2 }}
-              style={{ flex: 1, padding: '28px 32px', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <motion.div key="instants" initial={{ opacity:0, x:10 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-10 }} transition={{ duration:0.18 }}
+              style={{ flex:1, padding:'26px 28px', overflowY:'auto' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:22 }}>
                 <div>
-                  <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', color: '#f5f0ff', marginBottom: 2 }}>Instants ✨</h1>
-                  <p style={{ fontSize: 14, color: 'rgba(245,240,255,0.4)' }}>Real moments, unfiltered — see your friends&rsquo; actual life</p>
+                  <h1 style={{ fontSize:20, fontWeight:700, letterSpacing:'-0.02em', color:C.text1, marginBottom:2, fontFamily:"'Instrument Serif', serif", fontStyle:'italic' }}>Instants</h1>
+                  <p style={{ fontSize:13, color:C.text3 }}>Real moments, unfiltered</p>
                 </div>
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => setCapturing(true)}
-                  style={{ padding: '11px 22px', borderRadius: 13, background: 'linear-gradient(135deg, #f97316, #e879f9)', border: 'none', color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 20px rgba(249,115,22,0.35)' }}
-                >
-                  📸 Post your Instant
+                <motion.button whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }} onClick={() => setCapturing(true)}
+                  style={{ padding:'9px 18px', borderRadius:11, background:C.accent, border:'none', color:'white', fontWeight:600, fontSize:13, cursor:'pointer', boxShadow:`0 4px 16px ${C.accentGlow}` }}>
+                  Post Instant
                 </motion.button>
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
-                <MomentCard own onPost={() => setCapturing(true)} />
-                {moments.map(m => <MomentCard key={m.id} m={m} />)}
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(160px, 1fr))', gap:14 }}>
+                <MomentTile own C={C} onPost={() => setCapturing(true)} />
+                {moments.map(m => <MomentTile key={m.id} m={m} C={C} />)}
               </div>
             </motion.div>
           )}
 
-          {/* ── BRAIN TAB ── */}
+          {/* ── BRAIN ── */}
           {tab === 'brain' && (
-            <motion.div key="brain" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.2 }}
-              style={{ flex: 1, padding: '28px 32px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <motion.div key="brain" initial={{ opacity:0, x:10 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-10 }} transition={{ duration:0.18 }}
+              style={{ flex:1, padding:'26px 28px', overflowY:'auto', display:'flex', flexDirection:'column', gap:18 }}>
+
               <div>
-                <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', color: '#f5f0ff', marginBottom: 2 }}>Brain Health 🧠</h1>
-                <p style={{ fontSize: 14, color: 'rgba(245,240,255,0.4)' }}>How social media is affecting your mind today</p>
+                <h1 style={{ fontSize:20, fontWeight:700, letterSpacing:'-0.02em', color:C.text1, marginBottom:2, fontFamily:"'Instrument Serif', serif", fontStyle:'italic' }}>Brain Health</h1>
+                <p style={{ fontSize:13, color:C.text3 }}>How your digital life is affecting your mind</p>
               </div>
 
-              {/* Main score + breakdown */}
-              <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 20 }}>
-                <div style={{ padding: '28px 24px', borderRadius: 20, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(245,240,255,0.35)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Overall Score</div>
-                  <ScoreRing score={avgBrainScore} size={160} />
-                  <div style={{ fontSize: 13, color: 'rgba(245,240,255,0.5)', textAlign: 'center', lineHeight: 1.6 }}>
-                    Your conversations and feeds are <strong style={{ color: scoreColor(avgBrainScore) }}>mostly healthy</strong>. Watch your Instagram feed usage.
-                  </div>
+              <div style={{ display:'grid', gridTemplateColumns:'240px 1fr', gap:16 }}>
+                <div style={{ ...card(), padding:'24px 20px', display:'flex', flexDirection:'column', alignItems:'center', gap:14 }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:C.text3, letterSpacing:'0.09em', textTransform:'uppercase' }}>Overall</div>
+                  <ScoreRing score={avgScore} size={150} C={C} />
+                  <p style={{ fontSize:12, color:C.text2, textAlign:'center', lineHeight:1.65 }}>
+                    Your conversations are <strong style={{ color:scoreColor(avgScore) }}>{scoreLabel(avgScore).toLowerCase()}</strong>. Watch your Instagram feed time.
+                  </p>
                 </div>
 
-                <div style={{ padding: '24px', borderRadius: 20, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#f5f0ff', marginBottom: 20 }}>Score breakdown by platform</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    {conversations.map(c => (
-                      <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: `${c.color}18`, border: `1.5px solid ${c.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: c.color, flexShrink: 0 }}>{c.avatar}</div>
-                        <div style={{ width: 80, flexShrink: 0 }}>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: '#f5f0ff' }}>{c.name}</div>
-                          <div style={{ fontSize: 10, color: 'rgba(245,240,255,0.3)' }}>{c.platform}</div>
+                <div style={{ ...card(), padding:'20px' }}>
+                  <div style={{ fontSize:13, fontWeight:600, color:C.text1, marginBottom:18 }}>Score by conversation</div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:13 }}>
+                    {convs.map(c => (
+                      <div key={c.id} style={{ display:'flex', alignItems:'center', gap:12 }}>
+                        <div style={{ width:26, height:26, borderRadius:'50%', background:C.accentDim, border:`1.5px solid ${C.accent}30`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:C.accent, flexShrink:0 }}>{c.avatar}</div>
+                        <div style={{ width:72, flexShrink:0 }}>
+                          <div style={{ fontSize:12, fontWeight:600, color:C.text1 }}>{c.name}</div>
+                          <div style={{ fontSize:10, color:C.text3 }}>{c.platform}</div>
                         </div>
-                        <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.06)' }}>
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${c.brainScore}%` }}
-                            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-                            style={{ height: '100%', borderRadius: 3, background: `linear-gradient(90deg, ${scoreColor(c.brainScore)}, ${scoreColor(c.brainScore)}80)` }}
-                          />
+                        <div style={{ flex:1, height:5, borderRadius:3, background:C.border }}>
+                          <motion.div initial={{ width:0 }} animate={{ width:`${c.brainScore}%` }} transition={{ duration:1, ease:[0.22,1,0.36,1] }}
+                            style={{ height:'100%', borderRadius:3, background:scoreColor(c.brainScore) }} />
                         </div>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: scoreColor(c.brainScore), width: 28, textAlign: 'right', flexShrink: 0 }}>{c.brainScore}</span>
+                        <span style={{ fontSize:12, fontWeight:700, color:scoreColor(c.brainScore), width:26, textAlign:'right', flexShrink:0 }}>{c.brainScore}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* Feed score breakdown */}
-              <div style={{ padding: '24px', borderRadius: 20, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#f5f0ff', marginBottom: 4 }}>Ranked feed — sorted by brain value</div>
-                <div style={{ fontSize: 12, color: 'rgba(245,240,255,0.4)', marginBottom: 20 }}>AI-sorted content from your platforms</div>
-                {FEED_ITEMS.map(item => <FeedCard key={item.id} item={item} />)}
+              <div style={{ ...card(), padding:'20px' }}>
+                <div style={{ fontSize:13, fontWeight:600, color:C.text1, marginBottom:4 }}>Feed — ranked by brain value</div>
+                <div style={{ fontSize:11, color:C.text3, marginBottom:16 }}>AI-sorted content from your platforms</div>
+                {FEED.map(item => <FeedCard key={item.id} item={item} C={C} />)}
               </div>
 
-              {/* Tips */}
-              <div style={{ padding: '24px', borderRadius: 20, background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)' }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#f97316', marginBottom: 16 }}>💡 Personalized recommendations</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ padding:'20px', borderRadius:16, background:C.accentDim, border:`1px solid ${C.accent}20` }}>
+                <div style={{ fontSize:13, fontWeight:600, color:C.accent, marginBottom:14 }}>Recommendations</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:11 }}>
                   {[
-                    { icon: '📵', text: 'You spend 45 min/day on Instagram Reels. Try a 20-min limit to boost your score.' },
-                    { icon: '⏰', text: 'Your peak brain-rot window is 9–11 PM. Schedule Do Not Disturb during this time.' },
-                    { icon: '🌱', text: 'Conversations with Mom and Rahul score highest — they\'re genuine connections. Nurture them.' },
+                    'You spend 45 min/day on Instagram Reels. A 20-min limit would improve your score significantly.',
+                    'Your peak distraction window is 9–11 PM. Consider scheduling Do Not Disturb.',
+                    'Conversations with Mom and Rahul score highest — genuine connections worth nurturing.',
                   ].map((tip, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: 18, flexShrink: 0 }}>{tip.icon}</span>
-                      <span style={{ fontSize: 14, color: 'rgba(245,240,255,0.65)', lineHeight: 1.6 }}>{tip.text}</span>
+                    <div key={i} style={{ display:'flex', gap:10, alignItems:'flex-start' }}>
+                      <span style={{ width:5, height:5, borderRadius:'50%', background:C.accent, marginTop:6, flexShrink:0, display:'inline-block' }} />
+                      <span style={{ fontSize:13, color:C.text2, lineHeight:1.62 }}>{tip}</span>
                     </div>
                   ))}
                 </div>
@@ -692,13 +710,7 @@ export default function Home() {
         </AnimatePresence>
       </div>
 
-      {/* ── MomentCapture modal ── */}
-      <MomentCapture
-        isOpen={capturing}
-        onClose={() => setCapturing(false)}
-        onCapture={handleCapture}
-        timeRemaining={120}
-      />
+      <MomentCapture isOpen={capturing} onClose={() => setCapturing(false)} onCapture={onCapture} timeRemaining={120} />
     </div>
   )
 }

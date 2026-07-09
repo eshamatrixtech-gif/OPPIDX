@@ -1,33 +1,55 @@
-export type BrainState = 'fresh' | 'tired' | 'fried' | 'cooked';
+export type Audience = 'STUDENT' | 'EARLY_CAREER' | 'FOUNDER' | 'GENERAL'
+export type Difficulty = 'Easy' | 'Medium' | 'Hard'
 
-export interface BrainHealth {
-  state: BrainState;
-  score: number;
-  lastDecay: number;
-  lastHeal: number;
-  scrollTime: number;
+export interface Opportunity {
+  id: string
+  title: string
+  description: string
+  url: string
+  org: string | null
+  audience: Audience
+  eligibility: string
+  prepResources: string
+  difficulty: Difficulty
+  tags: string
+  location: string | null
+  region: string
+  country: string
+  compType: string | null
+  viewCount: number
+  verified: boolean
+  featured: boolean
+  source: string
+  sourceUrl: string | null
+  addedAt: string
 }
 
-export interface User {
-  id: string;
-  name: string;
-  avatar?: string;
-  brainHealth: BrainHealth;
-  friends: string[];
+export interface Stats {
+  opportunities: number
+  viewed: number
+  subscribers: number
 }
 
-export interface RealPost {
-  id: string;
-  userId: string;
-  imageUrl: string;
-  caption?: string;
-  createdAt: number;
-  healPoints: number;
+export interface Facet {
+  value: string
+  count: number
 }
 
-export interface FeedItem {
-  id: string;
-  platform: 'instagram' | 'twitter' | 'youtube' | 'tiktok' | 'real';
-  content: any;
-  timestamp: number;
+export interface ScrapeRun {
+  id: string
+  startedAt: string
+  finishedAt: string
+  added: number
+  details: string
+}
+
+export interface Subscriber {
+  id: string
+  email: string
+  subscribedAt: string
+  plan: string
+  paymentProvider: string | null
+  paymentSubscriptionId: string | null
+  subscriptionStatus: string | null
+  currentPeriodEnd: string | null
 }

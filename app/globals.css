@@ -1,26 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
 @import "tailwindcss";
 
-/* ─── Design Tokens ─────────────────────────────────────────────────── */
+/* ─── Design Tokens — warm cream, navy accent, stamped card boxes ────── */
 :root {
-  --void:        #070510;
-  --deep:        #0d0a1f;
-  --surface:     #13102a;
-  --glass:       rgba(255,255,255,0.045);
-  --border:      rgba(255,255,255,0.08);
-  --border-hi:   rgba(255,255,255,0.15);
+  --board:       #f3e9cf;   /* page background — warm cream */
+  --board-deep:  #ead9ad;   /* deeper cream for banded sections */
+  --card:        #fbf3df;   /* card fill — lighter cream */
 
-  --saffron:     #f97316;
-  --saffron-glow:rgba(249,115,22,0.25);
-  --magenta:     #e879f9;
-  --magenta-glow:rgba(232,121,249,0.2);
-  --cyan:        #22d3ee;
-  --cyan-glow:   rgba(34,211,238,0.2);
-  --green:       #34d399;
+  --ink:         #2b2620;   /* primary text */
+  --ink-2:       rgba(43,38,32,0.62);
+  --ink-3:       rgba(43,38,32,0.4);
 
-  --text-1:      #f5f0ff;
-  --text-2:      rgba(245,240,255,0.6);
-  --text-3:      rgba(245,240,255,0.35);
+  --line:        rgba(43,38,32,0.22);   /* card borders */
+  --shadow:      rgba(43,38,32,0.16);   /* hard offset shadow */
+
+  --pin:         #1f3a5c;   /* navy accent — labels, borders, buttons */
+  --pin-glow:    rgba(31,58,92,0.18);
+  --green:       #4a7c59;   /* verified / paid */
+  --danger:      #b6392c;   /* destructive actions only */
+  --terracotta:  #a8552e;   /* brand mark accent — matches the OppIDX logo */
+
+  --btn-bg:      #1f3a5c;   /* solid button fill */
+  --btn-text:    #f3e9cf;   /* button label on solid fill */
+
+  --font-display: 'Special Elite', 'Courier New', monospace;
+  --font-mono:    'IBM Plex Mono', 'Courier New', monospace;
 }
 
 /* ─── Reset & Base ──────────────────────────────────────────────────── */
@@ -36,34 +39,62 @@ html {
 }
 
 body {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  background: var(--void);
-  color: var(--text-1);
+  font-family: var(--font-mono), monospace;
+  color: var(--ink);
   min-height: 100vh;
   overflow-x: hidden;
   line-height: 1.6;
+  background-color: var(--board);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display), var(--font-mono), monospace;
+  letter-spacing: -0.01em;
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(249,115,22,0.3); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(249,115,22,0.5); }
+::-webkit-scrollbar-thumb { background: rgba(43,38,32,0.25); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(43,38,32,0.4); }
 
-/* ─── Glass morphism ────────────────────────────────────────────────── */
-.glass {
-  background: var(--glass);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--border);
+/* ─── Card box — flat, bordered, hard offset shadow ──────────────────
+   No tilt, no pins. A stamped rectangle sitting on the page. ─────── */
+.card-box {
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 3px;
+  border: 1.5px solid var(--line);
+  box-shadow: 4px 4px 0 var(--shadow);
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* ─── Gradient text ─────────────────────────────────────────────────── */
-.gradient-text {
-  background: linear-gradient(135deg, var(--saffron) 0%, var(--magenta) 50%, var(--cyan) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.card-box:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--shadow);
+}
+
+/* ─── Section divider: thin rule broken by a centered label ──────────
+   Usage: <div class="divider"><span>◆ LABEL ◆</span></div>          */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--pin);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
 }
 
 /* ─── Animations ────────────────────────────────────────────────────── */
@@ -76,10 +107,3 @@ body {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-8px); }
-}
-
-.float { animation: float 6s ease-in-out infinite; }

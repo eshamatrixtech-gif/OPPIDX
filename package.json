@@ -6,10 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "setup-db": "npx prisma db push && npx prisma generate",
+    "seed-opportunities": "npx ts-node scripts/seed-opportunities.ts",
+    "postinstall": "npx prisma generate"
   },
   "dependencies": {
-    "next": "16.2.1",
+    "@prisma/client": "^5.22.0",
+    "framer-motion": "^12.40.0",
+    "next": "16.2.10",
+    "prisma": "^5.22.0",
+    "razorpay": "^2.9.6",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -18,9 +25,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "^10.5.0",
     "eslint": "^9",
-    "eslint-config-next": "16.2.1",
-    "tailwindcss": "^4",
+    "eslint-config-next": "16.2.10",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^4.3.0",
     "typescript": "^5"
   }
 }

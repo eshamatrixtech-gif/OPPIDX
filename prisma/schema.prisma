@@ -1,4 +1,5 @@
 // prisma/schema.prisma
+// SQLite-compatible: enums → String, Json → String
 
 generator client {
   provider = "prisma-client-js"
@@ -9,105 +10,73 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Admin-only account (the site owner). No public signup flow is linked from
+// the UI — this exists purely to gate /admin.
 model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+}
+
+// audience values: STUDENT | EARLY_CAREER | FOUNDER | GENERAL (stored as String for SQLite)
+// difficulty values: Easy | Medium | Hard
+// tags: comma-separated free text, e.g. "remote,paid,ai"
+// source values: user-provided | researched
+model Opportunity {
   id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  avatar        String?
-  brainScore    Int       @default(75)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  title         String
+  description   String
+  url           String
+  org           String?
+  audience      String
+  eligibility   String    @default("")
+  prepResources String    @default("")
+  difficulty    String    @default("Medium")
+  tags          String    @default("")
+  location      String?
+  region        String    @default("") // North America | South America | Europe | Africa | Asia | Oceania | Remote / Global | "" (unknown)
+  country       String    @default("") // best-effort from location text, e.g. "India" — "" if not confidently known
+  compType      String?
+  viewCount     Int       @default(0)
+  verified      Boolean   @default(false)
+  featured      Boolean   @default(false)
+  source        String    @default("user-provided")
+  sourceUrl     String?
+  addedAt       DateTime  @default(now())
+  deletedAt     DateTime?
 
-  // Relations
-  moments       Moment[]
-  reactions     Reaction[]
-  friends       Friendship[] @relation("UserFriends")
-  friendOf      Friendship[] @relation("FriendOf")
-  notifications Notification[]
-  captureWindows CaptureWindow[]
+  @@index([audience, addedAt])
+  @@index([verified])
+  @@index([featured])
+  @@index([region])
 }
 
-model Moment {
-  id          String    @id @default(cuid())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  frontImage  String    // Base64 or URL
-  backImage   String    // Base64 or URL
-  caption     String?
-  location    String?
-  
-  isLate      Boolean   @default(false)
-  lateByMins  Int       @default(0)
-  
-  createdAt   DateTime  @default(now())
-  expiresAt   DateTime  // 24 hours from creation
-  
-  reactions   Reaction[]
-  
-  // Brain health bonus
-  genuineScore Int      @default(0) // AI-scored authenticity
+// plan/subscriptionStatus are only ever written by a verified payment-provider
+// webhook (lib/billing) — never trust a client request to set them directly.
+model Subscriber {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  subscribedAt DateTime @default(now())
+
+  plan                   String    @default("free") // "free" | "paid"
+  paymentProvider        String?                     // "razorpay" — more can be added later (e.g. "paypal")
+  paymentSubscriptionId  String?   @unique
+  subscriptionStatus     String?                     // provider's own status string, e.g. "active" | "halted" | "cancelled"
+  currentPeriodEnd       DateTime?
+
+  @@index([plan])
 }
 
-model Reaction {
-  id        String   @id @default(cuid())
-  emoji     String
-  momentId  String
-  moment    Moment   @relation(fields: [momentId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+// One row per native scraper pass (see lib/scraper). `details` is a JSON
+// string keyed by source name: { fetched, added, error }.
+model ScrapeRun {
+  id         String   @id @default(cuid())
+  startedAt  DateTime
+  finishedAt DateTime
+  added      Int      @default(0)
+  details    String   @default("{}")
 
-  @@unique([momentId, userId]) // One reaction per user per moment
-}
-
-model Friendship {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation("UserFriends", fields: [userId], references: [id], onDelete: Cascade)
-  friendId  String
-  friend    User     @relation("FriendOf", fields: [friendId], references: [id], onDelete: Cascade)
-  status    FriendshipStatus @default(PENDING)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, friendId])
-}
-
-enum FriendshipStatus {
-  PENDING
-  ACCEPTED
-  BLOCKED
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      NotificationType
-  title     String
-  body      String
-  data      Json?
-  read      Boolean  @default(false)
-  sentAt    DateTime @default(now())
-}
-
-enum NotificationType {
-  CAPTURE_TIME
-  FRIEND_REQUEST
-  FRIEND_POSTED
-  REACTION
-  BRAIN_SCORE
-}
-
-model CaptureWindow {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  scheduledAt DateTime
-  expiresAt   DateTime // scheduledAt + 2 minutes
-  captured    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-
-  @@index([userId, scheduledAt])
+  @@index([startedAt])
 }

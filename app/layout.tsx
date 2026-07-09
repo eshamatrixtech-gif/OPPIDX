@@ -1,24 +1,35 @@
 import type { Metadata } from 'next'
+import { Special_Elite, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
 
+const typewriter = Special_Elite({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-display',
+  display: 'swap',
+})
+
+const mono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-mono',
+  display: 'swap',
+})
+
 export const metadata: Metadata = {
-  title: 'Nuro — Unified Messaging & Brain Health',
-  description: 'All your DMs in one place. AI-powered brain health scoring. Authentic moments. Stop scrolling. Start living.',
-  keywords: ['unified inbox', 'brain health', 'social media wellness', 'messaging', 'WhatsApp', 'Instagram', 'Discord'],
+  title: 'OppIDX — the opportunity board',
+  description: 'Internships, scholarships, fellowships, grants, and competitions for students, early-career job seekers, founders, and anyone chasing a real shot. Pinned up, updated constantly, free to browse.',
+  keywords: ['internships', 'scholarships', 'fellowships', 'grants', 'competitions', 'opportunities', 'students', 'founders'],
   openGraph: {
-    title: 'Nuro — Unified Messaging & Brain Health',
-    description: 'All your DMs. Your mind, protected.',
+    title: 'OppIDX — the opportunity board',
+    description: 'Every opportunity worth applying to, pinned up in one place.',
     type: 'website',
   },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" style={{ height: '100%' }}>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      </head>
+    <html lang="en" className={`${typewriter.variable} ${mono.variable}`} style={{ height: '100%' }}>
       <body style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
         {children}
       </body>

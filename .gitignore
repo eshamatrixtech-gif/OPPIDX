@@ -39,3 +39,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Nuro — sensitive runtime data (NEVER commit)
+/whatsapp-auth/
+/data/*.json
+!/data/opportunities-import.json
+*.db
+*.db-journal
+
+# Claude Code local tooling config — not application code
+/.claude/
+
+# stray build artifact — .next should never end up under public/
+/public/.next/

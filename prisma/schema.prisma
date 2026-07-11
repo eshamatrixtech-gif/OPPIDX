@@ -2,7 +2,8 @@
 // SQLite-compatible: enums → String, Json → String
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -67,6 +68,23 @@ model Subscriber {
   currentPeriodEnd       DateTime?
 
   @@index([plan])
+}
+
+// A paid public submission ("enlist your opportunity"). Nothing here ever
+// becomes a live Opportunity on its own — the Razorpay webhook is the only
+// thing allowed to flip status to "paid" once payment is actually confirmed,
+// and even then the resulting Opportunity is created unverified so it still
+// goes through the same human review queue as everything else.
+model OpportunitySubmission {
+  id               String    @id @default(cuid())
+  razorpayOrderId  String    @unique
+  status           String    @default("pending") // pending | paid | rejected
+  submitterEmail   String
+  payload          String    // JSON string of the submitted opportunity fields
+  opportunityId    String?   // set once the paid Opportunity row is created
+  createdAt        DateTime  @default(now())
+
+  @@index([status])
 }
 
 // One row per native scraper pass (see lib/scraper). `details` is a JSON

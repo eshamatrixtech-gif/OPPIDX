@@ -4,10 +4,19 @@ import { requireAuth }               from '@/lib/auth'
 import { rateLimit }                 from '@/lib/rateLimit'
 import { getClientIp }               from '@/lib/ip'
 import { inferGeo }                  from '@/lib/scraper/geo'
+import { getCurrentPaidSubscriber }  from '@/lib/subscriberSession'
 
 const PAGE_SIZE = 24
 const VALID_AUDIENCES = ['STUDENT', 'EARLY_CAREER', 'FOUNDER', 'GENERAL']
 const VALID_DIFFICULTIES = ['Easy', 'Medium', 'Hard']
+
+// Free tier's cap on the full-catalog /browse search — the homepage's
+// hourly-rotating "best opportunities" picks (?featured=true) are exempt,
+// as is anything an authenticated admin requests. Subscribers with an
+// active paid plan see every result, same as admin. Free visitors see at
+// most 10 hourly picks + 10 search results (20 total) before hitting the
+// paywall — this is a premium, hand-curated collection, not a free-for-all.
+const FREE_SEARCH_LIMIT = 10
 
 /**
  * GET /api/opportunities — public listing.
@@ -31,13 +40,22 @@ export async function GET(req: NextRequest) {
   const page       = Math.max(1, parseInt(searchParams.get('page') ?? '1') || 1)
 
   const where: Record<string, unknown> = { deletedAt: null }
+  const isAdminQuery = status === 'unverified' || status === 'all'
+  const isFeaturedQuery = featured === 'true'
 
-  if (status === 'unverified' || status === 'all') {
+  if (isAdminQuery) {
     const admin = await requireAuth()
     if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     if (status === 'unverified') where.verified = false
   } else {
     where.verified = true
+  }
+
+  // Gate the full-catalog search (not the hourly homepage picks, not admin).
+  let restricted = false
+  if (!isAdminQuery && !isFeaturedQuery) {
+    const paidSubscriber = await getCurrentPaidSubscriber()
+    restricted = !paidSubscriber
   }
 
   if (audience) {
@@ -68,17 +86,20 @@ export async function GET(req: NextRequest) {
     ]
   }
 
+  const skip = (page - 1) * PAGE_SIZE
+  const take = restricted ? Math.max(0, Math.min(PAGE_SIZE, FREE_SEARCH_LIMIT - skip)) : PAGE_SIZE
+
   const [items, total] = await Promise.all([
-    prisma.opportunity.findMany({
-      where,
-      orderBy: { addedAt: 'desc' },
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-    }),
-    prisma.opportunity.count({ where }),
+    take > 0
+      ? prisma.opportunity.findMany({ where, orderBy: { addedAt: 'desc' }, skip, take })
+      : Promise.resolve([]),
+    prisma.opportunity.count({ where }), // always the real count — never hide this number
   ])
 
-  return NextResponse.json({ items, total, page, pageSize: PAGE_SIZE })
+  return NextResponse.json({
+    items, total, page, pageSize: PAGE_SIZE,
+    ...(restricted ? { restricted: true, visibleLimit: FREE_SEARCH_LIMIT } : {}),
+  })
 }
 
 /** POST /api/opportunities — admin-only create. */

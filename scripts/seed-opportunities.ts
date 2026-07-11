@@ -28,7 +28,7 @@
 
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '../lib/db'
 import { inferGeo } from '../lib/scraper/geo'
 
 const IMPORT_FILE = join(__dirname, '..', 'data', 'opportunities-import.json')
@@ -47,7 +47,6 @@ async function main() {
     process.exit(1)
   }
 
-  const prisma = new PrismaClient()
   let imported = 0
   let skipped = 0
 

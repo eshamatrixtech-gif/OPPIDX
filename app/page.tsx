@@ -7,6 +7,31 @@ import { Wordmark } from '@/components/ui/Wordmark'
 import { useCountUp } from '@/lib/hooks/useCountUp'
 import type { Opportunity, Stats } from '@/types'
 
+/** Hours since epoch (UTC) — the pick changes every hour, in step with the
+ * scraper's own hourly cadence, and is identical for every visitor within
+ * that hour. No server-side state needed. */
+function hourSeed(): number {
+  return Math.floor(Date.now() / (60 * 60 * 1000))
+}
+
+/** Deterministic pick of `count` items from `pool`, stable for a given seed —
+ * same picks for everyone this hour, different picks next hour. This is the
+ * free tier's "keep checking back" hook: a real, honest, ever-changing
+ * sample — not the whole board (that's the paid /browse search). */
+function pickHourly<T>(pool: T[], count: number): T[] {
+  let seed = hourSeed()
+  const rand = () => {
+    seed = (seed * 9301 + 49297) % 233280
+    return seed / 233280
+  }
+  const shuffled = [...pool]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled.slice(0, count)
+}
+
 function Sparkle({ size = 22 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="var(--pin)" strokeWidth="1.2" opacity={0.55}>
@@ -53,7 +78,7 @@ function SubscribeForm() {
   }
 
   if (state === 'done') {
-    return <div style={{ fontSize: 13, color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>✓ You're on the list.</div>
+    return <div style={{ fontSize: 13, color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>✓ You're on the list — we'll email you the moment the newsletter goes live.</div>
   }
 
   return (
@@ -76,7 +101,7 @@ function SubscribeForm() {
         fontSize: 13, fontWeight: 700, letterSpacing: '0.02em',
         boxShadow: '3px 3px 0 var(--shadow)',
       }}>
-        {state === 'sending' ? 'Joining…' : 'Get the newsletter'}
+        {state === 'sending' ? 'Joining…' : 'Join the list'}
       </button>
       {state === 'error' && <span style={{ fontSize: 12, color: 'var(--danger)' }}>{msg}</span>}
     </form>
@@ -100,7 +125,7 @@ export default function Home() {
   useEffect(() => {
     fetch('/api/opportunities?featured=true')
       .then(r => r.json())
-      .then(data => setFeatured((data.items ?? []).slice(0, 10)))
+      .then(data => setFeatured(pickHourly(data.items ?? [], 10)))
       .catch(() => {})
   }, [])
 
@@ -112,7 +137,7 @@ export default function Home() {
         padding: '7px 12px', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.12em',
         fontFamily: 'var(--font-mono)', textTransform: 'uppercase',
       }}>
-        ◆ Building the largest database of genuine opportunities. ◆ Real sources, updated hourly ◆
+        ◆ A premium, hand-curated collection of genuine opportunities. ◆ It comes at a cost — that's the point ◆
       </div>
 
       {/* ── Header / hero ── */}
@@ -137,13 +162,13 @@ export default function Home() {
             fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700, letterSpacing: '0.02em',
             color: 'var(--pin)', maxWidth: 560, marginBottom: 16, textTransform: 'uppercase',
           }}>
-            Building the largest database of genuine opportunities.
+            Building the largest database of authentic opportunities.
           </p>
           <p style={{ color: 'var(--ink-2)', fontSize: 14.5, maxWidth: 560, marginBottom: 30, lineHeight: 1.7 }}>
-            Internships, scholarships, fellowships, grants, and competitions — for students, early-career job seekers, founders, and anyone chasing a real shot. Every listing checked before it's posted.
+            Internships, scholarships, fellowships, grants, and competitions — for students, early-career job seekers, founders, and anyone chasing a real shot. A premium, hand-curated collection, built for the ambitious ones — and it comes at a cost.
           </p>
 
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 34 }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
             <Link href="/browse" style={{
               display: 'inline-block', padding: '13px 26px', borderRadius: 2,
               background: 'var(--btn-bg)', color: 'var(--btn-text)', textDecoration: 'none',
@@ -152,20 +177,47 @@ export default function Home() {
             }}>
               Browse the database →
             </Link>
+            <Link href="/pricing" style={{
+              display: 'inline-block', padding: '13px 26px', borderRadius: 2,
+              background: 'var(--card)', color: 'var(--ink)', textDecoration: 'none',
+              border: '1.5px solid var(--line)',
+              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13.5, letterSpacing: '0.02em',
+            }}>
+              Unlock full search — ₹299/yr
+            </Link>
+          </div>
+
+          <div style={{
+            fontSize: 12.5, fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--pin)',
+            letterSpacing: '0.02em', marginBottom: 6,
+          }}>
+            Less than ₹1/day — cancel anytime. Prefer to pay monthly? <Link href="/pricing" style={{ color: 'var(--pin)', textDecoration: 'underline' }}>₹29/month</Link> works too.
+          </div>
+          <div style={{ fontSize: 12.5, color: 'var(--ink-2)', fontFamily: 'var(--font-mono)', marginBottom: 34 }}>
+            Less than your OTT subscription. Less than the data you'll burn doomscrolling this week. This one buys an authentic shot.
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, borderTop: '1px solid var(--line)', paddingTop: 22 }}>
             <Counter value={stats.opportunities} label="Opportunities" />
-            <Counter value={stats.viewed} label="Opportunities Viewed" />
+            <Counter value={stats.viewed} label="Opportunity Viewers" />
             <Counter value={stats.subscribers} label="Subscribers" />
+          </div>
+          <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 12 }}>
+            The board is constantly updated with new opportunities — this isn't a static list.
           </div>
         </div>
       </header>
 
       <main style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 24px 80px' }}>
         {/* ── Best of the week ── */}
-        <div className="divider" style={{ marginBottom: 26 }}>
-          <span>◆ Best opportunities this week ◆</span>
+        <div className="divider" style={{ marginBottom: 10 }}>
+          <span>◆ Best opportunities right now — refreshed hourly ◆</span>
+        </div>
+        <div style={{ textAlign: 'center', marginBottom: 26 }}>
+          <span style={{ fontSize: 14, color: 'var(--pin)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.01em' }}>
+            This is an elite, hand-curated collection, and full access needs{' '}
+            <Link href="/pricing" style={{ color: 'var(--pin)', textDecoration: 'underline' }}>a paid subscription</Link>.
+          </span>
         </div>
 
         {featured.length === 0 ? (
@@ -193,10 +245,10 @@ export default function Home() {
         <div className="card-box" style={{ padding: '30px 28px', marginBottom: 70, textAlign: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><Sparkle size={18} /></div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--ink)', marginBottom: 8 }}>
-            Don't check the board every day.
+            Our newsletter is launching soon.
           </h2>
           <p style={{ color: 'var(--ink-2)', fontSize: 13.5, marginBottom: 20 }}>
-            One email, once a week, with the best new opportunities. No spam, no noise.
+            We're not sending it yet — leave your email now and you'll be first in line the moment it goes live. No spam, ever.
           </p>
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <SubscribeForm />
@@ -229,7 +281,15 @@ export default function Home() {
               What it costs
             </div>
             <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.65 }}>
-              Free to browse and search today. We're not running this as a charity — some features may come with a paid plan down the line.
+              We're not running this as a charity, and we're not chasing volume for its own sake. A slice is free to browse. Full search is a paid subscription, and listing something here costs the submitter a review fee. Keeping this collection genuinely elite costs something — that's by design.
+            </p>
+          </div>
+          <div className="card-box" style={{ padding: '20px 20px' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 8 }}>
+              Have an opportunity to list?
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.65, marginBottom: 10 }}>
+              We hand-review every public submission — genuine, verifiable, one clean application link, nothing else. <Link href="/submit" style={{ color: 'var(--pin)' }}>Submit it →</Link>
             </p>
           </div>
         </div>
@@ -238,6 +298,8 @@ export default function Home() {
       <footer style={{ borderTop: '1px solid var(--line)', padding: '22px 24px', textAlign: 'center' }}>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 20, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)' }}>
           <Link href="/philosophy" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Our philosophy</Link>
+          <Link href="/pricing" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Full search (₹299/yr)</Link>
+          <Link href="/submit" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Enlist your opportunity (₹1,000)</Link>
           <Link href="/terms" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Terms &amp; privacy</Link>
         </div>
       </footer>

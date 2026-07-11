@@ -14,3 +14,9 @@ export const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     })
   : null
+
+/** Flat fee to submit an opportunity for review — this is a premium,
+ * hand-curated board, not a free-for-all bulletin. Paying gets a listing a
+ * human review; it never buys approval. */
+export const SUBMISSION_FEE_INR = 1000
+export const SUBMISSION_FEE_PAISE = SUBMISSION_FEE_INR * 100

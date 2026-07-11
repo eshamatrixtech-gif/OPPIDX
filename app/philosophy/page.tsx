@@ -51,7 +51,7 @@ export default function PhilosophyPage() {
             </p>
             <p>
               That's not a meritocracy. That's a rolodex. The information exists; it's just gated by who
-              you happen to know.
+              you happen to know — not by who's actually ambitious enough to go after it.
             </p>
           </Section>
 
@@ -62,8 +62,26 @@ export default function PhilosophyPage() {
               impressive. If a source stops publishing a listing, it comes down.
             </p>
             <p>
+              The Subscribers and Opportunity Viewers counts both include people reached offline — at school
+              and college campus drives, not on this website — added by hand, honestly, on top of the live
+              numbers. We're telling you that plainly instead of quietly folding it in. See /terms for the full
+              accounting.
+            </p>
+            <p>
               If we don't know something about a listing — exact eligibility, what to prepare — we leave it
               blank. We'd rather show you less than show you something we made up.
+            </p>
+          </Section>
+
+          <Section title="On standards">
+            <p>
+              This is a curated collection, not an open bulletin board. Every listing that reaches the board —
+              whether it arrived through the scraper or was submitted by hand — is held to the same bar:
+              nothing illegal, nothing suggestive, nothing that reads like bait. A listing gets exactly one
+              link, and it goes straight to the organization's own application page — secure, direct, nothing
+              shortened or redirected. Nothing else. No phone numbers. No @handles. No "DM us to apply." No
+              email address standing in for a real process. If the only way to "apply" is to message someone,
+              it isn't a listing here — it's a contact request, and we don't carry those.
             </p>
           </Section>
 
@@ -81,22 +99,40 @@ export default function PhilosophyPage() {
 
           <Section title="On what automation actually is">
             <p>
-              We want to be honest about what the automation behind this site can and can't do. Every hour,
-              it checks a fixed set of real public sources — job boards, hackathon platforms, government
-              grant databases, community-maintained lists, and companies' own career-page APIs — for
-              anything new, and adds it using plain, fixed rules.
+              We want to be honest about what the automation behind this site can and can't do — and, just as
+              important, what it's allowed to touch. Every hour, it checks a short, fixed list of real,
+              already-vetted public sources — job boards, hackathon platforms, government grant databases,
+              community-maintained lists, and companies' own career-page APIs — for anything new, and adds it
+              using plain, fixed rules. Nobody reviews those listings one by one before they go up. They don't
+              need to: the trust was already spent vetting the source itself, once, not re-litigated per listing.
             </p>
             <p>
-              There is no AI writing, guessing, or embellishing any part of a listing here. It cannot judge
-              whether you're a good fit, and it cannot know anything a source didn't already publish. What it
-              can do — what it's built to do — is check more places, more often, than one person could on
-              their own, and get out of the way once it's found something real.
+              That trust does not extend to a stranger with a browser. Anyone submitting a listing from outside
+              that fixed list — the paid submission route — gets no such pass. Every one of those is read by an
+              actual person before it's allowed anywhere near the board, and paying for that review buys the
+              review, never the outcome.
+            </p>
+            <p>
+              What's constant across both paths: there is no AI writing, guessing, embellishing, or deciding
+              what's "genuine" anywhere in this pipeline. It cannot judge whether you're a good fit, and it
+              cannot know anything a source didn't already publish. The judgment — what's real, what clears the
+              bar, what doesn't — is made by a person or it isn't made at all.
             </p>
           </Section>
 
           <div style={{ textAlign: 'center', margin: '34px 0 30px', fontFamily: 'var(--font-display)', fontSize: 15, color: 'var(--pin)', fontStyle: 'italic' }}>
             "The rest is yours."
           </div>
+
+          <Section title="On cost">
+            <p>
+              Keeping this list this clean isn't free, and we're not going to pretend it is. Full search is a
+              subscription, not a growth-hack "free trial." Listing something here costs the person submitting
+              it, not just us — because a fee is the simplest filter against noise that a human still has to
+              review either way. We are not chasing volume or ad revenue. We would rather have a smaller,
+              genuinely elite collection than a large noisy one.
+            </p>
+          </Section>
 
           <Section title="Why we built this">
             <p>
@@ -105,8 +141,9 @@ export default function PhilosophyPage() {
               scattered spreadsheets, whoever's Twitter you happen to follow — all have their own gates.
             </p>
             <p>
-              We built OppIDX because we believe that putting real opportunities in one honest, free place
-              can change who finds them. We believe that's worth building.
+              We built OppIDX because we believe that putting real, hand-checked opportunities in one honest
+              place — not the biggest place, the most honest one — can change who finds them. Built brick by
+              brick, for the ambitious ones willing to pay a little to be taken seriously.
             </p>
           </Section>
 

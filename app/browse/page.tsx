@@ -41,6 +41,7 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
 export default function Browse() {
   const [items, setItems] = useState<Opportunity[]>([])
   const [total, setTotal] = useState(0)
+  const [restricted, setRestricted] = useState(false)
   const [page, setPage] = useState(1)
   const [audiences, setAudiences] = useState<string[]>([])
   const [difficulties, setDifficulties] = useState<string[]>([])
@@ -83,6 +84,7 @@ export default function Browse() {
         if (thisRequest !== requestId.current) return
         setItems(data.items ?? [])
         setTotal(data.total ?? 0)
+        setRestricted(!!data.restricted)
         setPage(1)
       } finally {
         if (thisRequest === requestId.current) setLoading(false)
@@ -106,7 +108,8 @@ export default function Browse() {
   }
 
   const emptyState = useMemo(() => !loading && items.length === 0, [loading, items])
-  const hasMore = !loading && items.length < total
+  const hasMore = !loading && items.length < total && !restricted
+  const lockedCount = restricted ? Math.max(0, total - items.length) : 0
   const anyFilterActive = audiences.length > 0 || difficulties.length > 0 || regions.length > 0 || countries.length > 0 || search.trim().length > 0
 
   const orderedRegionFacets = useMemo(() => {
@@ -126,6 +129,9 @@ export default function Browse() {
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(24px, 4vw, 34px)', color: 'var(--ink)', marginTop: 14 }}>
             Browse the database
           </h1>
+          <p style={{ fontSize: 13.5, color: 'var(--pin)', fontFamily: 'var(--font-mono)', fontWeight: 700, marginTop: 10, letterSpacing: '0.01em' }}>
+            An elite, hand-curated collection — not a free-for-all. Full search is a paid subscription.
+          </p>
         </div>
       </header>
 
@@ -249,6 +255,22 @@ export default function Browse() {
                 }}>
                   {loadingMore ? 'Loading…' : `Load more (${(total - items.length).toLocaleString()} left)`}
                 </button>
+              </div>
+            )}
+
+            {lockedCount > 0 && (
+              <div className="card-box" style={{ textAlign: 'center', marginTop: 40, padding: '26px 24px' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13.5, color: 'var(--ink)', marginBottom: 12 }}>
+                  {lockedCount.toLocaleString()} more matching opportunities are subscriber-only — free search shows the first {items.length}.
+                </div>
+                <Link href="/pricing" style={{
+                  display: 'inline-block', padding: '11px 24px', borderRadius: 2,
+                  background: 'var(--btn-bg)', color: 'var(--btn-text)', textDecoration: 'none',
+                  fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, letterSpacing: '0.02em',
+                  boxShadow: '3px 3px 0 var(--shadow)',
+                }}>
+                  Unlock full search — ₹299/yr
+                </Link>
               </div>
             )}
           </>

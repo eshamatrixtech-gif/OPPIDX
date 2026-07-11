@@ -3,13 +3,20 @@ import { prisma } from '@/lib/db'
 import { rateLimit } from '@/lib/rateLimit'
 import { getClientIp } from '@/lib/ip'
 import { razorpay, SUBSCRIPTION_CYCLES } from '@/lib/billing/razorpay'
+import { createSubscriberSession } from '@/lib/subscriberSession'
 
 function isPlausibleEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s) && s.length <= 320
 }
 
+const PLAN_IDS: Record<'monthly' | 'annual', string | undefined> = {
+  monthly: process.env.RAZORPAY_PLAN_ID_MONTHLY,
+  annual: process.env.RAZORPAY_PLAN_ID_ANNUAL,
+}
+
 /**
- * POST /api/billing/checkout — public. Starts a paid-subscription checkout.
+ * POST /api/billing/checkout — public. Starts a paid-subscription checkout
+ * for whichever cycle ("monthly" | "annual") the pricing page's toggle sent.
  *
  * This never marks anyone as paid. It creates a Razorpay subscription and
  * records its id against the Subscriber row so the webhook (the only thing
@@ -17,7 +24,7 @@ function isPlausibleEmail(s: string): boolean {
  * confirms the payment actually went through.
  */
 export async function POST(req: NextRequest) {
-  if (!razorpay || !process.env.RAZORPAY_PLAN_ID) {
+  if (!razorpay) {
     return NextResponse.json({ error: 'Billing is not set up yet.' }, { status: 503 })
   }
 
@@ -32,15 +39,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 })
   }
 
+  const cycle = body?.cycle === 'monthly' ? 'monthly' : 'annual'
+  const planId = PLAN_IDS[cycle]
+  if (!planId) {
+    return NextResponse.json({ error: 'Billing is not set up yet.' }, { status: 503 })
+  }
+
   try {
     const subscription = await razorpay.subscriptions.create({
-      plan_id: process.env.RAZORPAY_PLAN_ID,
+      plan_id: planId,
       total_count: SUBSCRIPTION_CYCLES,
       customer_notify: true,
       notify_info: { notify_email: email },
     })
 
-    await prisma.subscriber.upsert({
+    const subscriber = await prisma.subscriber.upsert({
       where: { email },
       create: {
         email,
@@ -54,6 +67,11 @@ export async function POST(req: NextRequest) {
         subscriptionStatus: subscription.status,
       },
     })
+
+    // Identify this browser as the subscriber now. This alone grants nothing —
+    // every paid-feature check re-reads plan/subscriptionStatus from the DB,
+    // which only the Razorpay webhook can ever set to "paid"/"active".
+    await createSubscriberSession(subscriber.id)
 
     return NextResponse.json({ ok: true, subscriptionId: subscription.id, checkoutUrl: subscription.short_url })
   } catch (err) {

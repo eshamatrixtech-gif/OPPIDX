@@ -41,9 +41,30 @@ export default function TermsPage() {
           </div>
 
           <Section title="What this is">
-            OppIDX is a free, public directory of internships, scholarships, fellowships, grants, and
+            OppIDX is a premium, hand-curated directory of internships, scholarships, fellowships, grants, and
             competitions. It is not a recruiter, not an application service, and not affiliated with any
-            organization listed here. It is an index — a pointer to real opportunities elsewhere on the web.
+            organization listed here. It is an index — a pointer to real opportunities elsewhere on the web. A
+            limited slice of the board is free to browse; full search is a paid subscription (see /pricing).
+          </Section>
+
+          <Section title="Content standards">
+            Every listing — scraped or submitted — must link to exactly one place: a secure (https) URL on the
+            organization's own site where the application actually happens. No shortened, redirected, or
+            social-platform link may stand in for that. Listings may not contain phone numbers, email
+            addresses, @handles, or any instruction to contact someone directly (WhatsApp, Telegram, DMs, or
+            otherwise) in place of a real application process. Nothing illegal or suggestive is permitted. We
+            reserve the right to reject, remove, or unpublish any listing that fails these standards, at our
+            discretion, at any time — including one that was previously live.
+          </Section>
+
+          <Section title="Submitting a listing">
+            Anyone may submit a listing for review at /submit for a flat, non-refundable review fee (currently
+            ₹1,000). Paying the fee gets a submission read by a person and checked against the content
+            standards above — it does not guarantee the listing is approved or published, and the fee is not
+            returned either way. We do not review submissions on any guaranteed timeline. Submitted listings
+            that are approved are published unverified-by-source (we have not independently confirmed every
+            detail with the organization) and may be removed later if they turn out to be false, stale, or in
+            violation of these terms.
           </Section>
 
           <Section title="We are not responsible for what happens next">
@@ -61,13 +82,26 @@ export default function TermsPage() {
           </Section>
 
           <Section title="How listings get here">
-            Two ways. First, a native scraper built into this site checks a fixed set of real public sources
-            (job boards, hackathon platforms, government grant databases, community-maintained listings, and
-            individual companies' own career-page APIs) automatically, on an hourly schedule. It maps what
-            those sources publish onto plain, deterministic rules — no AI writes or invents any part of a
-            listing. Where a source doesn't state something (like eligibility), we leave that field blank
-            rather than guess. Second, listings are occasionally added by hand after being checked directly
-            against the organization's own page.
+            Three ways. First, a native scraper built into this site checks a short, fixed list of real,
+            already-vetted public sources (job boards, hackathon platforms, government grant databases,
+            community-maintained listings, and individual companies' own career-page APIs) automatically, on
+            an hourly schedule, and maps what those sources publish onto plain, deterministic rules — no AI
+            writes, invents, or selects any part of a listing, and no person reviews these one by one before
+            they go live; the vetting happened at the source level, once. Second, listings are occasionally
+            added by hand by us after being checked directly against the organization's own page. Third,
+            anyone can submit a listing for a fee at /submit — unlike the first two paths, every one of these
+            is read and checked by a real person before it's allowed anywhere near the board, since it didn't
+            come from a source we'd already vetted. Where a source or submitter doesn't state something (like
+            eligibility), we leave that field blank rather than guess.
+          </Section>
+
+          <Section title="Where the Subscribers and Opportunity Viewers counts come from">
+            OppIDX also runs in person — the same subscription, sold offline at school and college campus
+            drives, not just on this website. Both the "Subscribers" and "Opportunity Viewers" numbers on the
+            home page are the honest total of two sources: everyone who subscribed or viewed a listing here on
+            the website, plus everyone reached through an offline run. We add the offline totals by hand as
+            each run reports its numbers, since those people don't create a website account or generate a page
+            view here. Neither figure is a website-only number, and we're not going to pretend otherwise.
           </Section>
 
           <Section title="No guarantees">
@@ -103,7 +137,8 @@ export default function TermsPage() {
 
           <div style={{ borderTop: '1px solid var(--line)', paddingTop: 20, marginTop: 30, textAlign: 'center' }}>
             <p style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
-              Last updated: July 2026 · OppIDX is free, forever.
+              Last updated: July 2026 · A limited slice of OppIDX is free to browse. Full search and listing
+              submissions come at a cost.
             </p>
           </div>
         </div>

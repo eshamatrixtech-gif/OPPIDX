@@ -136,6 +136,8 @@ export async function proxy(req: NextRequest) {
     pathname.startsWith('/browse')         ||
     pathname.startsWith('/opportunities')  ||
     pathname.startsWith('/philosophy')     ||
+    pathname.startsWith('/pricing')        ||
+    pathname.startsWith('/submit')         ||
     pathname.startsWith('/terms')          ||
     pathname.startsWith('/auth')           ||
     pathname.startsWith('/api/')           ||

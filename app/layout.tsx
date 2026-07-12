@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Special_Elite, IBM_Plex_Mono } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 const typewriter = Special_Elite({
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${typewriter.variable} ${mono.variable}`} style={{ height: '100%' }}>
       <body style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
         {children}
+        <Analytics />
       </body>
     </html>
   )

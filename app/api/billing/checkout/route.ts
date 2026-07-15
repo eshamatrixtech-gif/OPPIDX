@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { rateLimit } from '@/lib/rateLimit'
 import { getClientIp } from '@/lib/ip'
-import { razorpay, SUBSCRIPTION_CYCLES } from '@/lib/billing/razorpay'
+import { razorpay, getSubscriptionCycles } from '@/lib/billing/razorpay'
 import { createSubscriberSession } from '@/lib/subscriberSession'
 import { generateReferralCode, REFERRALS_ENABLED } from '@/lib/referral'
 
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   try {
     const subscription = await razorpay.subscriptions.create({
       plan_id: planId,
-      total_count: SUBSCRIPTION_CYCLES,
+      total_count: getSubscriptionCycles(cycle),
       customer_notify: true,
       notify_info: { notify_email: email },
     })

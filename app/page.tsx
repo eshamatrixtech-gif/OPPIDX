@@ -148,7 +148,15 @@ export default function Home() {
               <img src="/logo.png" alt="" width={46} height={46} style={{ display: 'block' }} />
               <Wordmark size={26} />
             </div>
-            <Sparkle />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+              <Link href="/account" style={{
+                fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, color: 'var(--ink-2)',
+                textDecoration: 'none', letterSpacing: '0.02em',
+              }}>
+                Log in →
+              </Link>
+              <Sparkle />
+            </div>
           </div>
 
           <h1 style={{

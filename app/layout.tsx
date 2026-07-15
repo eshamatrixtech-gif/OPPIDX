@@ -31,6 +31,11 @@ export const metadata: Metadata = {
     description: 'Every opportunity worth applying to, pinned up in one place.',
     type: 'website',
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'OppIDX — the opportunity board',
+    description: 'Every opportunity worth applying to, pinned up in one place.',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import type { Facet, Opportunity } from '@/types'
@@ -39,11 +40,22 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
 }
 
 export default function Browse() {
+  return (
+    <Suspense fallback={null}>
+      <BrowseInner />
+    </Suspense>
+  )
+}
+
+function BrowseInner() {
+  const searchParams = useSearchParams()
+  const initialAudience = searchParams.get('audience')
+
   const [items, setItems] = useState<Opportunity[]>([])
   const [total, setTotal] = useState(0)
   const [restricted, setRestricted] = useState(false)
   const [page, setPage] = useState(1)
-  const [audiences, setAudiences] = useState<string[]>([])
+  const [audiences, setAudiences] = useState<string[]>(initialAudience ? [initialAudience] : [])
   const [difficulties, setDifficulties] = useState<string[]>([])
   const [regions, setRegions] = useState<string[]>([])
   const [countries, setCountries] = useState<string[]>([])

@@ -2,6 +2,11 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import { ViewTracker } from '@/components/ui/ViewTracker'
+import { ShareBar } from '@/components/ui/ShareBar'
+import { SaveButton } from '@/components/ui/SaveButton'
+import { OpportunityCard } from '@/components/ui/OpportunityCard'
+import { SITE_URL } from '@/lib/siteUrl'
+import type { Opportunity } from '@/types'
 
 const AUDIENCE_LABEL: Record<string, string> = {
   STUDENT: 'Student',
@@ -22,6 +27,25 @@ async function getOpportunity(id: string) {
   return opp
 }
 
+/** A few other live listings sharing this one's audience or region — keeps a
+ * visitor browsing instead of leaving after a single listing. */
+async function getSimilar(opp: { id: string; audience: string; region: string }) {
+  const rows = await prisma.opportunity.findMany({
+    where: {
+      id: { not: opp.id },
+      verified: true,
+      deletedAt: null,
+      OR: [{ audience: opp.audience }, ...(opp.region ? [{ region: opp.region }] : [])],
+    },
+    orderBy: { addedAt: 'desc' },
+    take: 4,
+  })
+  // OpportunityCard expects the shared Opportunity type (addedAt as an ISO string,
+  // matching the client-side /api/opportunities JSON shape, and audience/difficulty
+  // narrowed to their known literal unions), not Prisma's raw String columns.
+  return rows.map(r => ({ ...r, addedAt: r.addedAt.toISOString() })) as unknown as Opportunity[]
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const opp = await getOpportunity(id)
@@ -38,6 +62,8 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
   if (!opp) notFound()
 
   const tags = opp.tags.split(',').map(t => t.trim()).filter(Boolean)
+  const similar = await getSimilar(opp)
+  const pageUrl = `${SITE_URL}/opportunities/${opp.id}`
 
   return (
     <div style={{ minHeight: '100vh', padding: '40px 20px 80px' }}>
@@ -89,6 +115,15 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
             </div>
           )}
 
+          {opp.prepResources && (
+            <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 6 }}>
+                How to prepare
+              </div>
+              <div style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{opp.prepResources}</div>
+            </div>
+          )}
+
           {tags.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 30 }}>
               {tags.map(t => (
@@ -100,12 +135,34 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
             </div>
           )}
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10, fontFamily: 'var(--font-mono)', fontSize: 13, marginBottom: 24 }}>
             <a href={opp.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--pin)', fontWeight: 700, textDecoration: 'none' }}>
               Apply → {opp.url}
             </a>
+            <SaveButton opportunityId={opp.id} />
+          </div>
+
+          <div>
+            <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8 }}>
+              Know someone this is for?
+            </div>
+            <ShareBar title={opp.title} url={pageUrl} />
           </div>
         </div>
+
+        {similar.length > 0 && (
+          <div style={{ marginTop: 40 }}>
+            <div className="divider" style={{ marginBottom: 20 }}>
+              <span>◆ Similar opportunities ◆</span>
+            </div>
+            <div style={{
+              display: 'grid', gap: 20,
+              gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
+            }}>
+              {similar.map(s => <OpportunityCard key={s.id} opp={s} />)}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

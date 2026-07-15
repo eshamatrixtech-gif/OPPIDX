@@ -65,10 +65,21 @@ export async function POST(req: NextRequest) {
     data.plan = 'free'
   }
 
-  await prisma.subscriber.updateMany({
-    where: { paymentSubscriptionId: subscriptionId },
-    data,
-  })
+  try {
+    const result = await prisma.subscriber.updateMany({
+      where: { paymentSubscriptionId: subscriptionId },
+      data,
+    })
+    // Razorpay's own retry/idempotency means this event may legitimately
+    // arrive before the checkout route's upsert finishes writing the
+    // subscription id — log it so a real drift is visible, not silent.
+    if (result.count === 0) {
+      console.error(`[billing webhook] no Subscriber found for subscriptionId=${subscriptionId} (event=${event.event}) — payment may not be reflected`)
+    }
+  } catch (err) {
+    console.error(`[billing webhook] failed to update Subscriber for subscriptionId=${subscriptionId} (event=${event.event}):`, err)
+    return NextResponse.json({ error: 'Internal error — will retry.' }, { status: 500 })
+  }
 
   return NextResponse.json({ ok: true })
 }

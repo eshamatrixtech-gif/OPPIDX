@@ -5,6 +5,7 @@ import { rateLimit }                 from '@/lib/rateLimit'
 import { getClientIp }               from '@/lib/ip'
 import { inferGeo }                  from '@/lib/scraper/geo'
 import { getCurrentPaidSubscriber }  from '@/lib/subscriberSession'
+import { FREE_SEARCH_LIMIT }         from '@/lib/limits'
 
 const PAGE_SIZE = 24
 const VALID_AUDIENCES = ['STUDENT', 'EARLY_CAREER', 'FOUNDER', 'GENERAL']
@@ -16,7 +17,6 @@ const VALID_DIFFICULTIES = ['Easy', 'Medium', 'Hard']
 // active paid plan see every result, same as admin. Free visitors see at
 // most 10 hourly picks + 10 search results (20 total) before hitting the
 // paywall — this is a premium, hand-curated collection, not a free-for-all.
-const FREE_SEARCH_LIMIT = 10
 
 /**
  * GET /api/opportunities — public listing.

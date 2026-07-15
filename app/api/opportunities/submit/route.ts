@@ -17,7 +17,7 @@ import { validateSubmission, type SubmissionInput } from '@/lib/submissions/vali
  */
 export async function POST(req: NextRequest) {
   if (!razorpay) {
-    return NextResponse.json({ error: 'Submissions are not open yet.' }, { status: 503 })
+    return NextResponse.json({ error: 'Billing is not set up yet.' }, { status: 503 })
   }
 
   const rl = rateLimit(`submit-opp:${getClientIp(req)}`, 60_000, 5)

@@ -1,0 +1,18 @@
+name: Monthly billing reconciliation
+
+# Safety net, not the primary mechanism — the Razorpay webhook keeps
+# Subscriber status in sync in near real-time. This catches drift from any
+# webhook that was missed. See app/api/cron/reconcile-billing/route.ts.
+on:
+  schedule:
+    - cron: '0 3 1 * *' # 03:00 UTC on the 1st of every month
+  workflow_dispatch: {}
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger billing reconciliation
+        run: |
+          curl -sf -X GET "https://www.oppidx.com/api/cron/reconcile-billing" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

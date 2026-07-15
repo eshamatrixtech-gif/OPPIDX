@@ -79,14 +79,23 @@ function applySecurityHeaders(res: NextResponse, req: NextRequest): NextResponse
   // Content Security Policy
   // • script-src includes 'unsafe-inline' because Next.js injects inline scripts
   // • style-src includes 'unsafe-inline' because Framer Motion uses inline styles
+  // • script-src/connect-src/frame-src include Razorpay's domains because /submit
+  //   loads their Checkout.js widget, which opens a payment iframe and talks to
+  //   their API directly from the browser — without these the widget silently
+  //   fails to load once live Razorpay keys are configured.
+  // • script-src/connect-src include va.vercel-scripts.com for Vercel Analytics —
+  //   in production on Vercel it loads via a same-origin proxied path ('self'
+  //   covers it), but `next dev` falls back to this direct host, so it's needed
+  //   for a clean local console too.
   // • Tighten further once you move to a CDN / nonces
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://va.vercel-scripts.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https:",
-    "connect-src 'self'",
+    "connect-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://lumberjack.razorpay.com https://va.vercel-scripts.com https://vitals.vercel-insights.com",
+    "frame-src https://api.razorpay.com https://checkout.razorpay.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -127,28 +136,19 @@ export async function proxy(req: NextRequest) {
     }
   }
 
-  /* ── Public paths — no auth required ──
-     OppIDX is a public opportunities board: the home page and every
-     opportunity page are open to anyone. Only /admin (anything not listed
-     here) requires a session. ── */
-  const isPublic = (
-    pathname === '/'                       ||
-    pathname.startsWith('/browse')         ||
-    pathname.startsWith('/opportunities')  ||
-    pathname.startsWith('/philosophy')     ||
-    pathname.startsWith('/pricing')        ||
-    pathname.startsWith('/submit')         ||
-    pathname.startsWith('/terms')          ||
-    pathname.startsWith('/auth')           ||
-    pathname.startsWith('/api/')           ||
-    pathname.startsWith('/_next')          ||
-    // Static files served from /public — favicon, logo, fonts, etc.
-    /\.(?:ico|svg|png|jpe?g|webp|gif|woff2?|ttf|txt|xml|webmanifest)$/.test(pathname)
-  )
+  /* ── Protected paths — session required ──
+     OppIDX is a public opportunities board: everything is open by default,
+     including nonexistent/mistyped URLs (which should fall through to
+     Next.js's normal 404, not get redirected to /auth). Only /admin itself
+     needs a session — this used to be an ever-growing allowlist of "public"
+     prefixes that defaulted to *protected* for anything not listed, which
+     silently 302'd every unknown path (typos, bad links, new routes we
+     forgot to add here) to the admin login screen instead of 404ing. ── */
+  const isProtected = pathname === '/admin' || pathname.startsWith('/admin/')
 
   const session = req.cookies.get(COOKIE)?.value
 
-  if (!isPublic) {
+  if (isProtected) {
     const authed = await isValidSession(session)
     if (!authed) {
       const url = req.nextUrl.clone()

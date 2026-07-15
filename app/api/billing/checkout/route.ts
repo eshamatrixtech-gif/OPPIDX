@@ -4,6 +4,7 @@ import { rateLimit } from '@/lib/rateLimit'
 import { getClientIp } from '@/lib/ip'
 import { razorpay, SUBSCRIPTION_CYCLES } from '@/lib/billing/razorpay'
 import { createSubscriberSession } from '@/lib/subscriberSession'
+import { generateReferralCode, REFERRALS_ENABLED } from '@/lib/referral'
 
 function isPlausibleEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s) && s.length <= 320
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
   if (!planId) {
     return NextResponse.json({ error: 'Billing is not set up yet.' }, { status: 503 })
   }
+  const referredBy = REFERRALS_ENABLED && typeof body?.ref === 'string' && body.ref.trim() ? body.ref.trim().toUpperCase() : null
 
   try {
     const subscription = await razorpay.subscriptions.create({
@@ -60,6 +62,8 @@ export async function POST(req: NextRequest) {
         paymentProvider: 'razorpay',
         paymentSubscriptionId: subscription.id,
         subscriptionStatus: subscription.status,
+        referralCode: REFERRALS_ENABLED ? generateReferralCode() : null,
+        referredBy,
       },
       update: {
         paymentProvider: 'razorpay',

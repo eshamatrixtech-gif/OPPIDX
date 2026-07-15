@@ -62,10 +62,10 @@ export default function PhilosophyPage() {
               impressive. If a source stops publishing a listing, it comes down.
             </p>
             <p>
-              The Subscribers and Opportunity Viewers counts both include people reached offline — at school
-              and college campus drives, not on this website — added by hand, honestly, on top of the live
-              numbers. We're telling you that plainly instead of quietly folding it in. See /terms for the full
-              accounting.
+              The Subscribers and Opportunity Viewers counts both include
+              people reached offline — at school and college campus drives, not on this website — added by
+              hand, honestly, on top of the live numbers. We're telling you that plainly instead of quietly
+              folding it in. See /terms for the full accounting.
             </p>
             <p>
               If we don't know something about a listing — exact eligibility, what to prepare — we leave it

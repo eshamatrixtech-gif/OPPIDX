@@ -60,6 +60,17 @@ export async function destroySubscriberSession() {
  * subscriber, else null. Always re-checks plan/subscriptionStatus in the
  * DB — the cookie only claims an identity, it never grants paid status. */
 export async function getCurrentPaidSubscriber() {
+  const subscriber = await getCurrentSubscriber()
+  if (!subscriber || !isPaidSubscriber(subscriber)) return null
+  return subscriber
+}
+
+/** Returns the subscriber for the current request regardless of paid status
+ * — free and paid alike. Used for low-stakes, non-monetary features (saved
+ * opportunities) that don't need the paid check, per the same tradeoff
+ * already accepted for browsing access: identity, not payment, is what this
+ * cookie ever claims. */
+export async function getCurrentSubscriber() {
   const cookieStore = await cookies()
   const token = cookieStore.get(COOKIE)?.value
   if (!token) return null
@@ -67,8 +78,5 @@ export async function getCurrentPaidSubscriber() {
   const subscriberId = verify(token)
   if (!subscriberId) return null
 
-  const subscriber = await prisma.subscriber.findUnique({ where: { id: subscriberId } })
-  if (!subscriber || !isPaidSubscriber(subscriber)) return null
-
-  return subscriber
+  return prisma.subscriber.findUnique({ where: { id: subscriberId } })
 }

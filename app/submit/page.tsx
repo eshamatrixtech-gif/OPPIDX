@@ -95,6 +95,7 @@ export default function SubmitPage() {
     }
   }
 
+
   if (stage === 'done') {
     return (
       <div style={{ minHeight: '100vh', padding: '40px 20px 80px' }}>

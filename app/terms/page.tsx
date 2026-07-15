@@ -43,8 +43,8 @@ export default function TermsPage() {
           <Section title="What this is">
             OppIDX is a premium, hand-curated directory of internships, scholarships, fellowships, grants, and
             competitions. It is not a recruiter, not an application service, and not affiliated with any
-            organization listed here. It is an index — a pointer to real opportunities elsewhere on the web. A
-            limited slice of the board is free to browse; full search is a paid subscription (see /pricing).
+            organization listed here. It is an index — a pointer to real opportunities elsewhere on the web.
+            A limited slice of the board is free to browse; full search is a paid subscription (see /pricing).
           </Section>
 
           <Section title="Content standards">
@@ -65,6 +65,16 @@ export default function TermsPage() {
             that are approved are published unverified-by-source (we have not independently confirmed every
             detail with the organization) and may be removed later if they turn out to be false, stale, or in
             violation of these terms.
+          </Section>
+
+          <Section title="Subscriptions, billing, and cancellation">
+            Full search is a recurring paid subscription (₹29/month or ₹299/year, billed by Razorpay). You can
+            cancel anytime, effective immediately, with no login or password required — go to /account, enter
+            the email you subscribed with, and cancel. We never store your card or payment details ourselves;
+            Razorpay handles and holds all of that. If a renewal payment fails, your subscription is paused and
+            your account returns to the free tier — /account will tell you if that's happened. Refunds for
+            already-completed billing periods are not automatic; contact us if you believe a charge was made in
+            error.
           </Section>
 
           <Section title="We are not responsible for what happens next">
@@ -95,13 +105,13 @@ export default function TermsPage() {
             eligibility), we leave that field blank rather than guess.
           </Section>
 
-          <Section title="Where the Subscribers and Opportunity Viewers counts come from">
-            OppIDX also runs in person — the same subscription, sold offline at school and college campus
-            drives, not just on this website. Both the "Subscribers" and "Opportunity Viewers" numbers on the
-            home page are the honest total of two sources: everyone who subscribed or viewed a listing here on
-            the website, plus everyone reached through an offline run. We add the offline totals by hand as
-            each run reports its numbers, since those people don't create a website account or generate a page
-            view here. Neither figure is a website-only number, and we're not going to pretend otherwise.
+          <Section title="Where the home page's people-count numbers come from">
+            OppIDX also runs in person — the same idea, offline at school and college campus drives, not just
+            on this website. Both the "Subscribers" and "Opportunity Viewers" numbers on the home page are the
+            honest total of two sources: everyone who joined here on the website, plus everyone reached through
+            an offline run. We add the offline totals by hand as each run reports its numbers, since those
+            people don't create a website account or generate a page view here. Neither figure is a
+            website-only number, and we're not going to pretend otherwise.
           </Section>
 
           <Section title="No guarantees">
@@ -112,17 +122,21 @@ export default function TermsPage() {
           </Section>
 
           <Section title="Your data">
-            We collect only what you give us. If you enter your email to join the newsletter, we store that
-            email and nothing else attached to it — no profile, no tracking cookie, no behavioral history. Page
-            views on individual listings are counted in aggregate as a single running number, not tied to any
-            visitor's identity. We do not sell data, and we do not share your email with anyone outside
-            OppIDX.
+            We collect only what identifies your subscription or saved listings: your email, and — if you
+            subscribe — the plan and billing status Razorpay reports back to us. We never see or store your
+            card number, UPI ID, or any other payment credential; that stays with Razorpay. If you subscribe or
+            save a listing, we set a signed cookie on your browser to recognize you on return visits — it holds
+            no personal data itself, just a reference to your account. Page views on individual listings are
+            counted in aggregate as a single running number, not tied to any visitor's identity. We do not sell
+            data, and we do not share your email with anyone outside OppIDX and the payment processor needed to
+            bill you.
           </Section>
 
           <Section title="Who can use this">
-            Anyone can browse OppIDX — no account or login is required to see listings. The only login on
-            this site belongs to the site's own admin account, used to manage and verify listings; it is not a
-            general user-registration system.
+            Anyone can browse OppIDX — no account or login is required to see listings. Subscribing or saving a
+            listing creates a lightweight record tied to your email, not a traditional username/password
+            account — see "Your data" above for exactly what that involves. The only separate login on this
+            site belongs to the site's own admin account, used to manage and verify listings.
           </Section>
 
           <Section title="Governing law">
@@ -137,8 +151,7 @@ export default function TermsPage() {
 
           <div style={{ borderTop: '1px solid var(--line)', paddingTop: 20, marginTop: 30, textAlign: 'center' }}>
             <p style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
-              Last updated: July 2026 · A limited slice of OppIDX is free to browse. Full search and listing
-              submissions come at a cost.
+              Last updated: July 2026 · A limited slice of OppIDX is free to browse. Full search and listing submissions come at a cost.
             </p>
           </div>
         </div>

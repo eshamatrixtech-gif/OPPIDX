@@ -67,7 +67,28 @@ model Subscriber {
   subscriptionStatus     String?                     // provider's own status string, e.g. "active" | "halted" | "cancelled"
   currentPeriodEnd       DateTime?
 
+  // Referral loop: this subscriber's own shareable code, and whose code (if
+  // any) they arrived with. Both plain strings, no FK — same loose-coupling
+  // style as the rest of this schema (see OpportunitySubmission.opportunityId).
+  referralCode String? @unique
+  referredBy   String?
+
   @@index([plan])
+  @@index([referredBy])
+}
+
+// A visitor's bookmarked opportunity. Keyed to the same lightweight
+// Subscriber row + cookie session that already exists for free/paid
+// browsing — no new account system, per lib/subscriberSession.ts's existing
+// low-stakes tradeoff (this data is no more sensitive than early access).
+model SavedOpportunity {
+  id            String   @id @default(cuid())
+  subscriberId  String
+  opportunityId String
+  savedAt       DateTime @default(now())
+
+  @@unique([subscriberId, opportunityId])
+  @@index([subscriberId])
 }
 
 // A paid public submission ("enlist your opportunity"). Nothing here ever

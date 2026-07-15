@@ -179,6 +179,12 @@ export default function PricingPage() {
               Have an opportunity to list instead? <Link href="/submit" style={{ color: 'var(--pin)' }}>Submit it →</Link>
             </span>
           </div>
+
+          <div style={{ textAlign: 'center', marginTop: 10 }}>
+            <Link href="/account" style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', textDecoration: 'none' }}>
+              Manage or cancel your subscription →
+            </Link>
+          </div>
         </div>
       </div>
     </div>

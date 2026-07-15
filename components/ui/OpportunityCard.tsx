@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { SaveButton } from '@/components/ui/SaveButton'
 import type { Opportunity } from '@/types'
 
 const AUDIENCE_LABEL: Record<string, string> = {
@@ -87,6 +88,7 @@ export function OpportunityCard({ opp }: { opp: Opportunity }) {
         <div style={{
           borderTop: '1px solid var(--line)', padding: '10px 18px',
           fontFamily: 'var(--font-mono)', fontSize: 11,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
         }}>
           <a
             href={opp.url} target="_blank" rel="noopener noreferrer"
@@ -94,6 +96,7 @@ export function OpportunityCard({ opp }: { opp: Opportunity }) {
           >
             Apply → {hostOf(opp.url)}
           </a>
+          <SaveButton opportunityId={opp.id} />
         </div>
       </div>
     </motion.div>

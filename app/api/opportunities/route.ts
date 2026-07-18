@@ -96,9 +96,23 @@ export async function GET(req: NextRequest) {
     prisma.opportunity.count({ where }), // always the real count — never hide this number
   ])
 
+  // A real teaser, not a fabricated one — the actual next listing just past
+  // the free limit, title + a short genuine preview only. Proves there's
+  // something real behind the paywall instead of just a locked count.
+  let teaser: { title: string; org: string | null; descriptionPreview: string } | null = null
+  if (restricted && total > FREE_SEARCH_LIMIT) {
+    const teaserItem = await prisma.opportunity.findFirst({
+      where, orderBy: { addedAt: 'desc' }, skip: FREE_SEARCH_LIMIT,
+      select: { title: true, org: true, description: true },
+    })
+    if (teaserItem) {
+      teaser = { title: teaserItem.title, org: teaserItem.org, descriptionPreview: teaserItem.description.slice(0, 70) }
+    }
+  }
+
   return NextResponse.json({
     items, total, page, pageSize: PAGE_SIZE,
-    ...(restricted ? { restricted: true, visibleLimit: FREE_SEARCH_LIMIT } : {}),
+    ...(restricted ? { restricted: true, visibleLimit: FREE_SEARCH_LIMIT, teaser } : {}),
   })
 }
 

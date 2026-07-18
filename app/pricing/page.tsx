@@ -126,6 +126,34 @@ export default function PricingPage() {
             </div>
           </div>
 
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 26, fontFamily: 'var(--font-mono)', fontSize: 12.5 }}>
+            <thead>
+              <tr style={{ borderBottom: '1.5px solid var(--line)' }}>
+                <th style={{ textAlign: 'left', padding: '8px 4px', color: 'var(--ink-3)', fontWeight: 700, textTransform: 'uppercase', fontSize: 10.5, letterSpacing: '0.04em' }}>What you get</th>
+                <th style={{ textAlign: 'center', padding: '8px 4px', color: 'var(--ink-3)', fontWeight: 700, textTransform: 'uppercase', fontSize: 10.5, letterSpacing: '0.04em', width: 60 }}>Free</th>
+                <th style={{ textAlign: 'center', padding: '8px 4px', color: 'var(--pin)', fontWeight: 700, textTransform: 'uppercase', fontSize: 10.5, letterSpacing: '0.04em', width: 60 }}>Paid</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ['Hourly rotating picks', true, true],
+                ['First 10 results per search', true, true],
+                ['Full search — every opportunity', false, true],
+                ['Save & bookmark opportunities', true, true],
+                ['Similar-opportunity suggestions', true, true],
+                ['Prep resources on listings', true, true],
+                ['New-listing notifications', true, true],
+                ['Cancel anytime, no lock-in', true, true],
+              ].map(([label, free, paid]) => (
+                <tr key={label as string} style={{ borderBottom: '1px solid var(--line)' }}>
+                  <td style={{ padding: '9px 4px', color: 'var(--ink-2)' }}>{label as string}</td>
+                  <td style={{ padding: '9px 4px', textAlign: 'center', color: free ? 'var(--green)' : 'var(--ink-3)' }}>{free ? '✓' : '—'}</td>
+                  <td style={{ padding: '9px 4px', textAlign: 'center', color: paid ? 'var(--green)' : 'var(--ink-3)' }}>{paid ? '✓' : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
           <form onSubmit={subscribe}>
             <input
               type="email" required placeholder="you@email.com" value={email}

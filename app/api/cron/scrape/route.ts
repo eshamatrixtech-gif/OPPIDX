@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runScrapePass } from '@/lib/scraper/run'
+import { prisma } from '@/lib/db'
+import { notifyMatchingSubscribers } from '@/lib/push'
 
 /**
  * GET /api/cron/scrape — triggers one scraper pass. Meant to be called by an
@@ -27,5 +29,16 @@ export async function GET(req: NextRequest) {
   }
 
   const result = await runScrapePass()
+
+  if (result.added > 0) {
+    const newOpportunities = await prisma.opportunity.findMany({
+      where: { verified: true, deletedAt: null, addedAt: { gte: result.startedAt } },
+      select: { id: true, audience: true },
+    })
+    await notifyMatchingSubscribers(newOpportunities).catch(err =>
+      console.error('[scrape cron] push notification pass failed:', err)
+    )
+  }
+
   return NextResponse.json(result)
 }

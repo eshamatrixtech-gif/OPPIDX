@@ -91,6 +91,22 @@ model SavedOpportunity {
   @@index([subscriberId])
 }
 
+// A browser's Web Push subscription — tied to a Subscriber so "matching"
+// (lib/push.ts) can compare newly added opportunities against the
+// audiences of what that subscriber has saved. lastNotifiedAt throttles
+// sends to at most once per window rather than every hourly scrape pass.
+model PushSubscription {
+  id            String    @id @default(cuid())
+  subscriberId  String
+  endpoint      String    @unique
+  p256dh        String
+  auth          String
+  createdAt     DateTime  @default(now())
+  lastNotifiedAt DateTime?
+
+  @@index([subscriberId])
+}
+
 // A paid public submission ("enlist your opportunity"). Nothing here ever
 // becomes a live Opportunity on its own — the Razorpay webhook is the only
 // thing allowed to flip status to "paid" once payment is actually confirmed,

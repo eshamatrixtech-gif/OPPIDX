@@ -54,6 +54,7 @@ function BrowseInner() {
   const [items, setItems] = useState<Opportunity[]>([])
   const [total, setTotal] = useState(0)
   const [restricted, setRestricted] = useState(false)
+  const [teaser, setTeaser] = useState<{ title: string; org: string | null; descriptionPreview: string } | null>(null)
   const [page, setPage] = useState(1)
   const [audiences, setAudiences] = useState<string[]>(initialAudience ? [initialAudience] : [])
   const [difficulties, setDifficulties] = useState<string[]>([])
@@ -97,6 +98,7 @@ function BrowseInner() {
         setItems(data.items ?? [])
         setTotal(data.total ?? 0)
         setRestricted(!!data.restricted)
+        setTeaser(data.teaser ?? null)
         setPage(1)
       } finally {
         if (thisRequest === requestId.current) setLoading(false)
@@ -272,6 +274,25 @@ function BrowseInner() {
 
             {lockedCount > 0 && (
               <div className="card-box" style={{ textAlign: 'center', marginTop: 40, padding: '26px 24px' }}>
+                {teaser && (
+                  <div style={{ position: 'relative', marginBottom: 20, textAlign: 'left', maxWidth: 420, marginLeft: 'auto', marginRight: 'auto' }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 8, textAlign: 'center' }}>
+                      Up next, if you subscribed
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: 'var(--ink)', marginBottom: 4 }}>
+                      {teaser.title}
+                    </div>
+                    {teaser.org && <div style={{ fontSize: 12.5, color: 'var(--ink-2)', marginBottom: 8 }}>{teaser.org}</div>}
+                    <div style={{ position: 'relative' }}>
+                      <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.6 }}>{teaser.descriptionPreview}</div>
+                      <div style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'linear-gradient(to bottom, transparent, var(--card) 90%)',
+                        filter: 'blur(1px)', pointerEvents: 'none',
+                      }} />
+                    </div>
+                  </div>
+                )}
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13.5, color: 'var(--ink)', marginBottom: 12 }}>
                   {lockedCount.toLocaleString()} more matching opportunities are subscriber-only — free search shows the first {items.length}.
                 </div>

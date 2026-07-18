@@ -108,9 +108,12 @@ function SubscribeForm() {
   )
 }
 
+const LAST_VISIT_KEY = 'oppidx_last_visit'
+
 export default function Home() {
   const [stats, setStats] = useState<Stats>({ opportunities: 0, viewed: 0, subscribers: 0 })
   const [featured, setFeatured] = useState<Opportunity[]>([])
+  const [newSinceLastVisit, setNewSinceLastVisit] = useState<number | null>(null)
 
   useEffect(() => {
     async function poll() {
@@ -127,6 +130,17 @@ export default function Home() {
       .then(r => r.json())
       .then(data => setFeatured(pickHourly(data.items ?? [], 10)))
       .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const lastVisit = localStorage.getItem(LAST_VISIT_KEY)
+    if (lastVisit) {
+      fetch(`/api/opportunities/new-count?since=${encodeURIComponent(lastVisit)}`)
+        .then(r => r.json())
+        .then(data => { if (data.count > 0) setNewSinceLastVisit(data.count) })
+        .catch(() => {})
+    }
+    localStorage.setItem(LAST_VISIT_KEY, new Date().toISOString())
   }, [])
 
   return (
@@ -158,6 +172,16 @@ export default function Home() {
               <Sparkle />
             </div>
           </div>
+
+          {newSinceLastVisit !== null && (
+            <Link href="/browse" style={{
+              display: 'block', marginBottom: 20, padding: '10px 16px', borderRadius: 2,
+              background: 'var(--board)', border: '1px solid var(--line)', textDecoration: 'none',
+              fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, color: 'var(--pin)',
+            }}>
+              ✦ {newSinceLastVisit.toLocaleString()} new opportunit{newSinceLastVisit === 1 ? 'y' : 'ies'} since your last visit — see what's new →
+            </Link>
+          )}
 
           <h1 style={{
             fontFamily: 'var(--font-display)', fontSize: 'clamp(30px, 6vw, 52px)',

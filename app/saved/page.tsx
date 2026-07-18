@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
+import { NotifyButton } from '@/components/ui/NotifyButton'
 import type { Opportunity } from '@/types'
 
 export default function SavedPage() {
@@ -29,6 +30,9 @@ export default function SavedPage() {
           <p style={{ fontSize: 13.5, color: 'var(--ink-2)', fontFamily: 'var(--font-mono)', marginTop: 10 }}>
             Saved on this device — hit the ★ on any listing to add it here.
           </p>
+          <div style={{ marginTop: 16 }}>
+            <NotifyButton />
+          </div>
         </div>
       </header>
 

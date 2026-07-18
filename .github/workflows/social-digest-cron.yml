@@ -1,0 +1,19 @@
+name: Daily social digest
+
+# Posts today's random opportunity pick to every configured distribution
+# channel (Telegram, Discord, ...). Skips sending (not an error) if
+# there's nothing new or a given channel isn't configured yet. See
+# app/api/cron/social-digest/route.ts.
+on:
+  schedule:
+    - cron: '30 3 * * *' # 03:30 UTC = 09:00 IST daily
+  workflow_dispatch: {}
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger social digest
+        run: |
+          curl -sf -X GET "https://www.oppidx.com/api/cron/social-digest" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

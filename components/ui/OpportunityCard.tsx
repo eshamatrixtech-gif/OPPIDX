@@ -22,6 +22,16 @@ function hostOf(url: string): string {
   try { return new URL(url).hostname.replace(/^www\./, '') } catch { return url }
 }
 
+/** Clicking "Apply" straight from the card skips the internal detail page
+ * entirely (it's a direct external link) — which means ViewTracker (which
+ * only lives on /opportunities/[id]) never fires, and a real, genuine
+ * "someone chose to apply" moment goes uncounted. Fire the same view
+ * increment here too, fire-and-forget, so the count reflects real
+ * engagement either way someone reaches the application. */
+function trackView(id: string) {
+  fetch(`/api/opportunities/${id}/view`, { method: 'POST' }).catch(() => {})
+}
+
 export function OpportunityCard({ opp }: { opp: Opportunity }) {
   const tags = opp.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 3)
 
@@ -92,6 +102,7 @@ export function OpportunityCard({ opp }: { opp: Opportunity }) {
         }}>
           <a
             href={opp.url} target="_blank" rel="noopener noreferrer"
+            onClick={() => trackView(opp.id)}
             style={{ color: 'var(--pin)', textDecoration: 'none' }}
           >
             Apply → {hostOf(opp.url)}

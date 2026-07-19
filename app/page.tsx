@@ -7,19 +7,21 @@ import { Wordmark } from '@/components/ui/Wordmark'
 import { useCountUp } from '@/lib/hooks/useCountUp'
 import type { Opportunity, Stats } from '@/types'
 
-/** Hours since epoch (UTC) — the pick changes every hour, in step with the
- * scraper's own hourly cadence, and is identical for every visitor within
- * that hour. No server-side state needed. */
-function hourSeed(): number {
-  return Math.floor(Date.now() / (60 * 60 * 1000))
+/** Days since epoch (UTC) — the pick changes once a day and is identical
+ * for every visitor within that day. No server-side state needed. The
+ * scraper itself still runs hourly (real new listings show up all day
+ * long) — this only governs which items the homepage's featured rotation
+ * highlights. */
+function daySeed(): number {
+  return Math.floor(Date.now() / (24 * 60 * 60 * 1000))
 }
 
 /** Deterministic pick of `count` items from `pool`, stable for a given seed —
- * same picks for everyone this hour, different picks next hour. This is the
+ * same picks for everyone today, different picks tomorrow. This is the
  * free tier's "keep checking back" hook: a real, honest, ever-changing
  * sample — not the whole board (that's the paid /browse search). */
-function pickHourly<T>(pool: T[], count: number): T[] {
-  let seed = hourSeed()
+function pickDaily<T>(pool: T[], count: number): T[] {
+  let seed = daySeed()
   const rand = () => {
     seed = (seed * 9301 + 49297) % 233280
     return seed / 233280
@@ -128,7 +130,7 @@ export default function Home() {
   useEffect(() => {
     fetch('/api/opportunities?featured=true')
       .then(r => r.json())
-      .then(data => setFeatured(pickHourly(data.items ?? [], 10)))
+      .then(data => setFeatured(pickDaily(data.items ?? [], 10)))
       .catch(() => {})
   }, [])
 
@@ -225,6 +227,14 @@ export default function Home() {
             }}>
               ✈ Join us on Telegram
             </a>
+            <Link href="/submit" style={{
+              display: 'inline-block', padding: '13px 26px', borderRadius: 2,
+              background: 'var(--pin)', color: 'var(--btn-text)', textDecoration: 'none',
+              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13.5, letterSpacing: '0.02em',
+              boxShadow: '4px 4px 0 var(--shadow)',
+            }}>
+              Enlist your opportunity →
+            </Link>
           </div>
 
           <div style={{
@@ -251,7 +261,7 @@ export default function Home() {
       <main style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 24px 80px' }}>
         {/* ── Best of the week ── */}
         <div className="divider" style={{ marginBottom: 10 }}>
-          <span>◆ Best opportunities right now — refreshed hourly ◆</span>
+          <span>◆ Best opportunities right now — refreshed daily ◆</span>
         </div>
         <div style={{ textAlign: 'center', marginBottom: 26 }}>
           <span style={{ fontSize: 14, color: 'var(--pin)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.01em' }}>

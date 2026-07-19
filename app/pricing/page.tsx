@@ -77,7 +77,7 @@ export default function PricingPage() {
               Search everything. Miss nothing.
             </h1>
             <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6, maxWidth: 420, margin: '0 auto' }}>
-              This is a premium, hand-curated collection — free shows 10 fresh picks an hour and the first 10
+              This is a premium, hand-curated collection — free shows 10 fresh picks a day and the first 10
               results of any search, 20 total. Subscribers get full search across every opportunity on the
               board, the instant it's added.
             </p>
@@ -136,7 +136,7 @@ export default function PricingPage() {
             </thead>
             <tbody>
               {[
-                ['Hourly rotating picks', true, true],
+                ['Daily rotating picks', true, true],
                 ['First 10 results per search', true, true],
                 ['Full search — every opportunity', false, true],
                 ['Save & bookmark opportunities', true, true],

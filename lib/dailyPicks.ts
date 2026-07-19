@@ -35,6 +35,27 @@ export async function getDailyPicks() {
   return picks.filter((o): o is NonNullable<typeof o> => !!o)
 }
 
+function daySeed(): number {
+  return Math.floor(Date.now() / (24 * 60 * 60 * 1000))
+}
+
+/**
+ * A single deterministic pick for the day — same opportunity for every
+ * visitor and every request until midnight UTC, then it rolls over. Used by
+ * the embeddable "Opportunity of the Day" widget, where a picks-change-on-
+ * every-request feel would look broken to a third-party site embedding it.
+ */
+export async function getOpportunityOfTheDay() {
+  const total = await prisma.opportunity.count({ where: { verified: true, deletedAt: null } })
+  if (total === 0) return null
+
+  return prisma.opportunity.findFirst({
+    where: { verified: true, deletedAt: null },
+    orderBy: { id: 'asc' },
+    skip: daySeed() % total,
+  })
+}
+
 export const AUDIENCE_LABEL: Record<string, string> = {
   STUDENT: 'Student',
   EARLY_CAREER: 'Early Career',

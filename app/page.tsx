@@ -353,6 +353,7 @@ export default function Home() {
           <Link href="/submit" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Enlist your opportunity (from ₹1,000)</Link>
           <Link href="/account" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Manage subscription</Link>
           <a href="https://t.me/oppurtunityindex" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Telegram</a>
+          <Link href="/widget" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Embed our widget</Link>
           <Link href="/terms" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Terms &amp; privacy</Link>
         </div>
       </footer>

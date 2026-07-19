@@ -125,6 +125,25 @@ model OpportunitySubmission {
   @@index([status])
 }
 
+// A manually-booked sponsor line for the daily Telegram/Discord digest —
+// "Today's picks, brought to you by X." Deliberately has no payment
+// integration: there's no self-serve checkout for this, and none is
+// planned until the distribution channels have enough of an audience that
+// an advertiser would actually pay for a slot. Whoever runs OppIDX invoices
+// a sponsor directly and creates one row here; the digest cron picks up
+// whichever row (if any) covers today's date automatically.
+model SponsoredSlot {
+  id          String   @id @default(cuid())
+  sponsorName String
+  sponsorUrl  String
+  tagline     String   // short line shown alongside the sponsor name, e.g. "Hiring backend engineers"
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([startDate, endDate])
+}
+
 // One row per native scraper pass (see lib/scraper). `details` is a JSON
 // string keyed by source name: { fetched, added, error }.
 model ScrapeRun {

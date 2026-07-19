@@ -3,6 +3,7 @@ import { SITE_URL } from '@/lib/siteUrl'
 import { getDailyPicks, AUDIENCE_LABEL } from '@/lib/dailyPicks'
 import { sendTelegramMessage, escapeTelegramHtml } from '@/lib/telegram'
 import { sendDiscordMessage, escapeDiscordMarkdown } from '@/lib/discord'
+import { getActiveSponsorSlot } from '@/lib/sponsor'
 
 /**
  * GET /api/cron/social-digest — posts today's random pick (see
@@ -31,6 +32,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ sent: false, reason: 'nothing to pick from' })
   }
 
+  // A manually-booked sponsor line (see lib/sponsor.ts) — no self-serve
+  // purchase flow, just a row someone added from /admin after an off-platform
+  // deal. Silently absent (not an error) on every ordinary day.
+  const sponsor = await getActiveSponsorSlot()
+
   // ── Telegram (HTML) ──
   const telegramLines = items.map(o => {
     const audience = AUDIENCE_LABEL[o.audience] ?? o.audience
@@ -38,7 +44,10 @@ export async function GET(req: NextRequest) {
     const org = o.org ? `${escapeTelegramHtml(o.org)}\n` : ''
     return `<b>${escapeTelegramHtml(o.title)}</b>\n${org}${escapeTelegramHtml(meta)}\n<a href="${SITE_URL}/opportunities/${o.id}">View &amp; apply →</a>`
   })
-  let telegramMessage = `✦ <b>Today's picks from OppIDX</b>\n\n${telegramLines.join('\n\n')}\n\n<a href="${SITE_URL}/browse">See the full board →</a>`
+  const telegramSponsorLine = sponsor
+    ? `<i>Today's picks brought to you by <a href="${sponsor.sponsorUrl}">${escapeTelegramHtml(sponsor.sponsorName)}</a> — ${escapeTelegramHtml(sponsor.tagline)}</i>\n\n`
+    : ''
+  let telegramMessage = `✦ <b>Today's picks from OppIDX</b>\n\n${telegramSponsorLine}${telegramLines.join('\n\n')}\n\n<a href="${SITE_URL}/browse">See the full board →</a>`
   if (telegramMessage.length > 4000) {
     telegramMessage = `${telegramMessage.slice(0, 3980)}…\n\n<a href="${SITE_URL}/browse">See the full board →</a>`
   }
@@ -50,7 +59,10 @@ export async function GET(req: NextRequest) {
     const org = o.org ? `${escapeDiscordMarkdown(o.org)}\n` : ''
     return `**${escapeDiscordMarkdown(o.title)}**\n${org}${escapeDiscordMarkdown(meta)}\n[View & apply →](${SITE_URL}/opportunities/${o.id})`
   })
-  let discordMessage = `✦ **Today's picks from OppIDX**\n\n${discordLines.join('\n\n')}\n\n[See the full board →](${SITE_URL}/browse)`
+  const discordSponsorLine = sponsor
+    ? `*Today's picks brought to you by [${escapeDiscordMarkdown(sponsor.sponsorName)}](${sponsor.sponsorUrl}) — ${escapeDiscordMarkdown(sponsor.tagline)}*\n\n`
+    : ''
+  let discordMessage = `✦ **Today's picks from OppIDX**\n\n${discordSponsorLine}${discordLines.join('\n\n')}\n\n[See the full board →](${SITE_URL}/browse)`
   // Discord's webhook content field caps at 2000 chars, tighter than Telegram's.
   if (discordMessage.length > 1900) {
     discordMessage = `${discordMessage.slice(0, 1880)}…\n\n[See the full board →](${SITE_URL}/browse)`
@@ -61,5 +73,5 @@ export async function GET(req: NextRequest) {
     sendDiscordMessage(discordMessage),
   ])
 
-  return NextResponse.json({ count: items.length, telegramSent, discordSent })
+  return NextResponse.json({ count: items.length, telegramSent, discordSent, sponsored: !!sponsor })
 }

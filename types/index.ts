@@ -53,3 +53,13 @@ export interface Subscriber {
   subscriptionStatus: string | null
   currentPeriodEnd: string | null
 }
+
+export interface SponsoredSlot {
+  id: string
+  sponsorName: string
+  sponsorUrl: string
+  tagline: string
+  startDate: string
+  endDate: string
+  createdAt: string
+}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Wordmark } from '@/components/ui/Wordmark'
-import type { Opportunity, ScrapeRun, Subscriber } from '@/types'
+import type { Opportunity, ScrapeRun, Subscriber, SponsoredSlot } from '@/types'
 
 const AUDIENCES = ['STUDENT', 'EARLY_CAREER', 'FOUNDER', 'GENERAL']
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard']
@@ -311,6 +311,110 @@ function SubscribersPanel() {
   )
 }
 
+const EMPTY_SPONSOR_FORM = { sponsorName: '', sponsorUrl: '', tagline: '', startDate: '', endDate: '' }
+
+function SponsorPanel() {
+  const [slots, setSlots] = useState<SponsoredSlot[]>([])
+  const [loading, setLoading] = useState(true)
+  const [form, setForm] = useState(EMPTY_SPONSOR_FORM)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  function set<K extends keyof typeof EMPTY_SPONSOR_FORM>(key: K, value: string) {
+    setForm(f => ({ ...f, [key]: value }))
+  }
+
+  async function refresh() {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/admin/sponsor-slots')
+      const data = await res.json()
+      setSlots(data.slots ?? [])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { refresh() }, [])
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    try {
+      const res = await fetch('/api/admin/sponsor-slots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to book slot.')
+      setForm(EMPTY_SPONSOR_FORM)
+      await refresh()
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function remove(id: string) {
+    if (!confirm('Cancel this sponsor slot?')) return
+    await fetch(`/api/admin/sponsor-slots/${id}`, { method: 'DELETE' })
+    await refresh()
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: 12.5, color: 'var(--ink-2)', fontFamily: 'var(--font-mono)', marginBottom: 16, lineHeight: 1.6 }}>
+        No self-serve checkout here on purpose — book a slot after an off-platform deal (invoice/UPI), and the
+        daily Telegram + Discord digest picks it up automatically for the date range below.
+      </div>
+
+      <form onSubmit={submit} style={{ maxWidth: 480, marginBottom: 24 }}>
+        <input style={inputStyle()} placeholder="Sponsor name" required value={form.sponsorName} onChange={e => set('sponsorName', e.target.value)} />
+        <input style={inputStyle()} placeholder="Sponsor URL (https://…)" required value={form.sponsorUrl} onChange={e => set('sponsorUrl', e.target.value)} />
+        <input style={inputStyle()} placeholder="Tagline (e.g. Hiring backend engineers)" required value={form.tagline} onChange={e => set('tagline', e.target.value)} />
+        <div style={{ display: 'flex', gap: 10 }}>
+          <input style={inputStyle()} type="date" required value={form.startDate} onChange={e => set('startDate', e.target.value)} />
+          <input style={inputStyle()} type="date" required value={form.endDate} onChange={e => set('endDate', e.target.value)} />
+        </div>
+        {error && <div style={{ color: 'var(--danger)', fontSize: 12.5, marginBottom: 10 }}>{error}</div>}
+        <button type="submit" disabled={saving} style={{
+          padding: '10px 22px', borderRadius: 2, border: 'none', cursor: 'pointer',
+          background: 'var(--btn-bg)', color: 'var(--btn-text)', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, letterSpacing: '0.02em',
+          boxShadow: '3px 3px 0 var(--shadow)',
+        }}>
+          {saving ? 'Booking…' : 'Book slot'}
+        </button>
+      </form>
+
+      {loading ? (
+        <div style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Loading…</div>
+      ) : slots.length === 0 ? (
+        <div style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>No sponsor slots booked.</div>
+      ) : (
+        slots.map(slot => (
+          <div key={slot.id} className="card-box" style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12,
+            padding: '12px 16px', marginBottom: 12,
+          }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {slot.sponsorName} — {slot.tagline}
+              </div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
+                {new Date(slot.startDate).toLocaleDateString()} – {new Date(slot.endDate).toLocaleDateString()}
+              </div>
+            </div>
+            <button onClick={() => remove(slot.id)} style={btnStyle('var(--danger)')}>Cancel</button>
+          </div>
+        ))
+      )}
+    </div>
+  )
+}
+
 function btnStyle(bg: string): React.CSSProperties {
   return {
     padding: '6px 12px', borderRadius: 3, border: 'none', cursor: 'pointer',
@@ -321,10 +425,10 @@ function btnStyle(bg: string): React.CSSProperties {
 export function AdminPanel({ adminName }: { adminName: string }) {
   const router = useRouter()
   const [items, setItems] = useState<Opportunity[]>([])
-  const [tab, setTab] = useState<'add' | 'queue' | 'all' | 'scraper' | 'subscribers'>('queue')
+  const [tab, setTab] = useState<'add' | 'queue' | 'all' | 'scraper' | 'subscribers' | 'sponsor'>('queue')
 
   async function refresh() {
-    if (tab === 'add' || tab === 'scraper' || tab === 'subscribers') return
+    if (tab === 'add' || tab === 'scraper' || tab === 'subscribers' || tab === 'sponsor') return
     const status = tab === 'queue' ? 'unverified' : 'all'
     const res = await fetch(`/api/opportunities?status=${status}`)
     const data = await res.json()
@@ -351,14 +455,14 @@ export function AdminPanel({ adminName }: { adminName: string }) {
         </div>
 
         <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
-          {(['queue', 'add', 'all', 'scraper', 'subscribers'] as const).map(t => (
+          {(['queue', 'add', 'all', 'scraper', 'subscribers', 'sponsor'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               padding: '8px 16px', borderRadius: 2, border: '1.5px solid var(--line)', cursor: 'pointer',
               fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 600,
               background: tab === t ? 'var(--btn-bg)' : 'var(--card)',
               color: tab === t ? 'var(--btn-text)' : 'var(--ink)',
             }}>
-              {t === 'queue' ? 'Needs review' : t === 'add' ? 'Add new' : t === 'all' ? 'All opportunities' : t === 'scraper' ? 'Scraper' : 'Subscribers'}
+              {t === 'queue' ? 'Needs review' : t === 'add' ? 'Add new' : t === 'all' ? 'All opportunities' : t === 'scraper' ? 'Scraper' : t === 'subscribers' ? 'Subscribers' : 'Sponsor slots'}
             </button>
           ))}
         </div>
@@ -369,6 +473,8 @@ export function AdminPanel({ adminName }: { adminName: string }) {
           <ScraperPanel />
         ) : tab === 'subscribers' ? (
           <SubscribersPanel />
+        ) : tab === 'sponsor' ? (
+          <SponsorPanel />
         ) : items.length === 0 ? (
           <div style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Nothing here.</div>
         ) : (

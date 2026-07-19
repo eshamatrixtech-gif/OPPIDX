@@ -104,7 +104,11 @@ function applySecurityHeaders(res: NextResponse, req: NextRequest): NextResponse
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https:",
     "connect-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://lumberjack.razorpay.com https://va.vercel-scripts.com https://vitals.vercel-insights.com",
-    "frame-src https://api.razorpay.com https://checkout.razorpay.com",
+    // 'self' is required so /widget can preview the embeddable badge — with
+    // only the Razorpay origins listed, frame-src is a full override of
+    // default-src (no implicit 'self' fallback once it's specified), which
+    // silently blocked the site from framing even its own pages.
+    "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
     isEmbeddable ? "frame-ancestors *" : "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

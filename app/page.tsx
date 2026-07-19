@@ -217,6 +217,14 @@ export default function Home() {
             }}>
               Unlock full search — ₹299/yr
             </Link>
+            <a href="https://t.me/oppurtunityindex" target="_blank" rel="noopener noreferrer" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 26px', borderRadius: 2,
+              background: '#229ED9', color: '#fff', textDecoration: 'none',
+              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13.5, letterSpacing: '0.02em',
+              boxShadow: '4px 4px 0 var(--shadow)',
+            }}>
+              ✈ Join us on Telegram
+            </a>
           </div>
 
           <div style={{

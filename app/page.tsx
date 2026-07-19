@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { Wordmark } from '@/components/ui/Wordmark'
 import { useCountUp } from '@/lib/hooks/useCountUp'
+import { DISCORD_INVITE_URL } from '@/lib/discord'
 import type { Opportunity, Stats } from '@/types'
 
 /** Days since epoch (UTC) — the pick changes once a day and is identical
@@ -233,6 +234,14 @@ export default function Home() {
             }}>
               ✈ Join us on Telegram
             </a>
+            <a href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 26px', borderRadius: 2,
+              background: '#5865F2', color: '#fff', textDecoration: 'none',
+              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13.5, letterSpacing: '0.02em',
+              boxShadow: '4px 4px 0 var(--shadow)',
+            }}>
+              ◆ Join us on Discord
+            </a>
             <Link href="/submit" style={{
               display: 'inline-block', padding: '13px 26px', borderRadius: 2,
               background: 'var(--pin)', color: 'var(--btn-text)', textDecoration: 'none',
@@ -363,6 +372,7 @@ export default function Home() {
           <Link href="/submit" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Enlist your opportunity (from ₹1,000)</Link>
           <Link href="/account" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Manage subscription</Link>
           <a href="https://t.me/oppurtunityindex" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Telegram</a>
+          <a href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Discord</a>
           <Link href="/widget" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Embed our widget</Link>
           <Link href="/terms" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Terms &amp; privacy</Link>
         </div>

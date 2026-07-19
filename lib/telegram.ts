@@ -1,3 +1,7 @@
+/** The public channel itself — cross-linked into every Discord digest
+ * message so people move freely between the two communities. */
+export const TELEGRAM_CHANNEL_URL = 'https://t.me/oppurtunityindex'
+
 /** null when the bot isn't configured yet — callers must check and skip
  * sending, never throw, so a missing token doesn't break the cron run. */
 function getConfig(): { token: string; chatId: string } | null {

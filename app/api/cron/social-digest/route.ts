@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SITE_URL } from '@/lib/siteUrl'
 import { getDailyPicks, AUDIENCE_LABEL } from '@/lib/dailyPicks'
-import { sendTelegramMessage, escapeTelegramHtml } from '@/lib/telegram'
-import { sendDiscordMessage, escapeDiscordMarkdown } from '@/lib/discord'
+import { sendTelegramMessage, escapeTelegramHtml, TELEGRAM_CHANNEL_URL } from '@/lib/telegram'
+import { sendDiscordMessage, escapeDiscordMarkdown, DISCORD_INVITE_URL } from '@/lib/discord'
 import { getActiveSponsorSlot } from '@/lib/sponsor'
 
 /**
@@ -47,9 +47,10 @@ export async function GET(req: NextRequest) {
   const telegramSponsorLine = sponsor
     ? `<i>Today's picks brought to you by <a href="${sponsor.sponsorUrl}">${escapeTelegramHtml(sponsor.sponsorName)}</a> — ${escapeTelegramHtml(sponsor.tagline)}</i>\n\n`
     : ''
-  let telegramMessage = `✦ <b>Today's picks from OppIDX</b>\n\n${telegramSponsorLine}${telegramLines.join('\n\n')}\n\n<a href="${SITE_URL}/browse">See the full board →</a>`
+  const telegramFooter = `<a href="${SITE_URL}/browse">See the full board →</a> · <a href="${DISCORD_INVITE_URL}">Join us on Discord →</a>`
+  let telegramMessage = `✦ <b>Today's picks from OppIDX</b>\n\n${telegramSponsorLine}${telegramLines.join('\n\n')}\n\n${telegramFooter}`
   if (telegramMessage.length > 4000) {
-    telegramMessage = `${telegramMessage.slice(0, 3980)}…\n\n<a href="${SITE_URL}/browse">See the full board →</a>`
+    telegramMessage = `${telegramMessage.slice(0, 3980 - telegramFooter.length)}…\n\n${telegramFooter}`
   }
 
   // ── Discord (Markdown) ──
@@ -62,10 +63,11 @@ export async function GET(req: NextRequest) {
   const discordSponsorLine = sponsor
     ? `*Today's picks brought to you by [${escapeDiscordMarkdown(sponsor.sponsorName)}](${sponsor.sponsorUrl}) — ${escapeDiscordMarkdown(sponsor.tagline)}*\n\n`
     : ''
-  let discordMessage = `✦ **Today's picks from OppIDX**\n\n${discordSponsorLine}${discordLines.join('\n\n')}\n\n[See the full board →](${SITE_URL}/browse)`
+  const discordFooter = `[See the full board →](${SITE_URL}/browse) · [Join us on Telegram →](${TELEGRAM_CHANNEL_URL})`
+  let discordMessage = `✦ **Today's picks from OppIDX**\n\n${discordSponsorLine}${discordLines.join('\n\n')}\n\n${discordFooter}`
   // Discord's webhook content field caps at 2000 chars, tighter than Telegram's.
   if (discordMessage.length > 1900) {
-    discordMessage = `${discordMessage.slice(0, 1880)}…\n\n[See the full board →](${SITE_URL}/browse)`
+    discordMessage = `${discordMessage.slice(0, 1880 - discordFooter.length)}…\n\n${discordFooter}`
   }
 
   const [telegramSent, discordSent] = await Promise.all([

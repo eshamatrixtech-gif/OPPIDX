@@ -1,3 +1,8 @@
+/** Permanent (non-expiring) invite to the OppIDX Discord — cross-linked
+ * into every Telegram digest message so people move freely between the
+ * two communities. */
+export const DISCORD_INVITE_URL = 'https://discord.gg/Yde2AnypJ'
+
 /** Escapes Discord markdown control characters that show up in scraped
  * opportunity titles/org names and would otherwise break formatting. */
 export function escapeDiscordMarkdown(input: string): string {

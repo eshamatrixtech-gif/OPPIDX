@@ -1,4 +1,7 @@
 import Razorpay from 'razorpay'
+import { getSubmissionFeeInr } from './submissionFees'
+
+export { SUBMISSION_FEES_INR, FEATURED_ADDON_INR, FEATURED_DURATION_DAYS, getSubmissionFeeInr } from './submissionFees'
 
 /**
  * Number of billing cycles requested per subscription. Razorpay has no
@@ -29,8 +32,6 @@ export const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_
     })
   : null
 
-/** Flat fee to submit an opportunity for review — this is a premium,
- * hand-curated board, not a free-for-all bulletin. Paying gets a listing a
- * human review; it never buys approval. */
-export const SUBMISSION_FEE_INR = 1000
-export const SUBMISSION_FEE_PAISE = SUBMISSION_FEE_INR * 100
+export function getSubmissionFeePaise(listingType: string, wantsFeatured: boolean): number {
+  return getSubmissionFeeInr(listingType, wantsFeatured) * 100
+}

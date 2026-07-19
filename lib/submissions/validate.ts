@@ -24,10 +24,19 @@ export interface SubmissionInput {
   location: string
   compType: string
   submitterEmail: string
+  // Drives the tiered review fee (see lib/billing/razorpay.ts) — a company
+  // hiring for a paid role is charged differently than a free scholarship
+  // or competition listing.
+  listingType: string
+  // Optional paid upsell: guaranteed inclusion in the homepage's featured
+  // rotation pool for a fixed window after approval, not forever.
+  wantsFeatured: boolean
 }
 
 const VALID_AUDIENCES = ['STUDENT', 'EARLY_CAREER', 'FOUNDER', 'GENERAL']
 const VALID_DIFFICULTIES = ['Easy', 'Medium', 'Hard']
+export const VALID_LISTING_TYPES = ['job_internship', 'scholarship_grant', 'competition'] as const
+export type ListingType = typeof VALID_LISTING_TYPES[number]
 
 // Free-text fields — everything except the dedicated `url` field. None of
 // these may contain a link, an email, a handle, or a phone number: the
@@ -78,6 +87,7 @@ export function validateSubmission(input: Partial<SubmissionInput>): ValidationR
   const eligibility = (input.eligibility ?? '').trim()
   const difficulty = (input.difficulty ?? 'Medium').trim()
   const submitterEmail = (input.submitterEmail ?? '').trim().toLowerCase()
+  const listingType = (input.listingType ?? '').trim()
 
   if (!title) errors.push('Title is required.')
   if (!description || description.length < 40) errors.push('Description must be at least 40 characters — give this a real explanation, not a one-liner.')
@@ -85,6 +95,7 @@ export function validateSubmission(input: Partial<SubmissionInput>): ValidationR
   if (!eligibility) errors.push('Eligibility is required — who can actually apply.')
   if (difficulty && !VALID_DIFFICULTIES.includes(difficulty)) errors.push('Invalid difficulty.')
   if (!isPlausibleEmail(submitterEmail)) errors.push('A valid contact email is required (used only for payment/status — never published).')
+  if (!VALID_LISTING_TYPES.includes(listingType as ListingType)) errors.push('Select what kind of opportunity this is.')
 
   if (!url) {
     errors.push('An application URL is required.')

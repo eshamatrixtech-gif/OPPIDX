@@ -2,18 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { rateLimit } from '@/lib/rateLimit'
 import { getClientIp } from '@/lib/ip'
-import { razorpay, SUBMISSION_FEE_PAISE } from '@/lib/billing/razorpay'
+import { razorpay, getSubmissionFeePaise } from '@/lib/billing/razorpay'
 import { validateSubmission, type SubmissionInput } from '@/lib/submissions/validate'
 
 /**
  * POST /api/opportunities/submit — public. "Enlist your opportunity."
  *
  * Takes a listing + payment together, but never creates an Opportunity here.
- * It validates content, opens a Razorpay order for the flat submission fee,
- * and stores the payload against that order. Only the webhook — once
- * Razorpay confirms the payment actually happened — creates the (unverified)
- * Opportunity, and even then it still has to clear the human review queue
- * like every other hand-submitted listing. Paying buys a review, not a spot.
+ * It validates content, opens a Razorpay order for the tiered submission fee
+ * (computed server-side from listingType + wantsFeatured — never trust a
+ * client-supplied amount), and stores the payload against that order. Only
+ * the webhook — once Razorpay confirms the payment actually happened —
+ * creates the (unverified) Opportunity, and even then it still has to clear
+ * the human review queue like every other hand-submitted listing. Paying
+ * buys a review, not a spot.
  */
 export async function POST(req: NextRequest) {
   if (!razorpay) {
@@ -43,6 +45,8 @@ export async function POST(req: NextRequest) {
     location: typeof body.location === 'string' ? body.location.trim() : '',
     compType: typeof body.compType === 'string' ? body.compType.trim() : '',
     submitterEmail: typeof body.submitterEmail === 'string' ? body.submitterEmail.trim().toLowerCase() : '',
+    listingType: typeof body.listingType === 'string' ? body.listingType.trim() : '',
+    wantsFeatured: body.wantsFeatured === true,
   }
 
   const { ok, errors } = validateSubmission(input)
@@ -52,7 +56,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const order = await razorpay.orders.create({
-      amount: SUBMISSION_FEE_PAISE,
+      amount: getSubmissionFeePaise(input.listingType!, input.wantsFeatured === true),
       currency: 'INR',
       receipt: `submission_${Date.now()}`,
       notes: { title: input.title!, submitterEmail: input.submitterEmail! },

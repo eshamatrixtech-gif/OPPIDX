@@ -58,13 +58,28 @@ export default function TermsPage() {
           </Section>
 
           <Section title="Submitting a listing">
-            Anyone may submit a listing for review at /submit for a flat, non-refundable review fee (currently
-            ₹1,000). Paying the fee gets a submission read by a person and checked against the content
-            standards above — it does not guarantee the listing is approved or published, and the fee is not
-            returned either way. We do not review submissions on any guaranteed timeline. Submitted listings
-            that are approved are published unverified-by-source (we have not independently confirmed every
-            detail with the organization) and may be removed later if they turn out to be false, stale, or in
-            violation of these terms.
+            Anyone may submit a listing for review at /submit. The review fee is tiered by what's being
+            listed: ₹1,000 for scholarships, fellowships, grants, and competitions/hackathons, and ₹3,000 for
+            company-posted jobs or internships, since the latter is commercial hiring activity rather than
+            the kind of opportunity this board exists to surface for free for students. An optional
+            "Featured" add-on (+₹750) guarantees the listing's inclusion in the homepage's daily
+            featured-picks pool for 7 days after it's approved — the window is fixed and does not extend if
+            approval is delayed.
+            <br /><br />
+            Paying the fee gets a submission read by a real person and checked against the content standards
+            above — it does not guarantee the listing is approved or published. We aim to review every
+            submission within 3 business days of payment. The fee is non-refundable once a review has
+            happened, whatever the outcome — approval is never purchased, only the review itself. The one
+            exception: if we fail to review a submission within 14 days of payment, we will refund it in full
+            on request. A rejected listing may be corrected and submitted again; a new submission means a new
+            review fee.
+            <br /><br />
+            Submitted listings that are approved are published unverified-by-source (we have not
+            independently confirmed every detail with the organization) and may be removed later if they turn
+            out to be false, stale, or in violation of these terms. By submitting a listing, you confirm the
+            information you've provided is genuine and accurate to your knowledge, and you agree to indemnify
+            OppIDX against any claim, loss, or dispute arising from a listing you submitted turning out to be
+            false, misleading, or in violation of a third party's rights.
           </Section>
 
           <Section title="Subscriptions, billing, and cancellation">

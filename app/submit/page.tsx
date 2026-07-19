@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { validateSubmission, type SubmissionInput } from '@/lib/submissions/validate'
+import { getSubmissionFeeInr, FEATURED_ADDON_INR, FEATURED_DURATION_DAYS } from '@/lib/billing/submissionFees'
 
 declare global {
   interface Window {
@@ -12,11 +13,17 @@ declare global {
 
 const AUDIENCES = ['STUDENT', 'EARLY_CAREER', 'FOUNDER', 'GENERAL']
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard']
+const LISTING_TYPES: { value: string; label: string }[] = [
+  { value: 'scholarship_grant', label: 'Scholarship / Fellowship / Grant' },
+  { value: 'competition', label: 'Competition / Hackathon' },
+  { value: 'job_internship', label: 'Job / Internship (company hiring)' },
+]
 
 const EMPTY_FORM: SubmissionInput = {
   title: '', description: '', url: '', org: '', audience: 'STUDENT',
   eligibility: '', prepResources: '', difficulty: 'Medium',
   tags: '', location: '', compType: '', submitterEmail: '',
+  listingType: 'scholarship_grant', wantsFeatured: false,
 }
 
 function inputStyle(): React.CSSProperties {
@@ -48,6 +55,8 @@ export default function SubmitPage() {
     setForm(f => ({ ...f, [key]: value }))
   }
 
+  const fee = getSubmissionFeeInr(form.listingType, form.wantsFeatured)
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -78,7 +87,7 @@ export default function SubmitPage() {
         amount: data.amount,
         currency: data.currency,
         name: 'OppIDX',
-        description: `Listing review fee — ${form.title}`,
+        description: `Listing review fee (₹${fee}) — ${form.title}`,
         prefill: { email: form.submitterEmail },
         theme: { color: '#c2410c' },
         handler: () => setStage('done'),
@@ -109,9 +118,12 @@ export default function SubmitPage() {
               Payment received.
             </h1>
             <p style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.7 }}>
-              Your listing is now in front of a real person, not a queue of algorithms. We hold every submission
-              to the same bar — genuine, verifiable, nothing gated behind a DM. If it clears review, it goes
-              live on the board. The fee covers the review itself, whatever the outcome, and isn't refundable.
+              Your listing is now in front of a real person, not a queue of algorithms — we review every
+              submission within 3 business days. We hold every submission to the same bar — genuine,
+              verifiable, nothing gated behind a DM. If it clears review, it goes live on the board. The fee
+              covers the review itself, whatever the outcome, and isn't refundable — except if we fail to
+              review it at all (see /terms). A rejected listing can be fixed and resubmitted; the review fee
+              applies again since it's a new review.
             </p>
           </div>
         </div>
@@ -133,9 +145,10 @@ export default function SubmitPage() {
               Enlist your opportunity
             </h1>
             <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.65, maxWidth: 460, margin: '0 auto' }}>
-              This is a premium, hand-reviewed board — not a bulletin anyone can post to for free. A ₹1,000
-              review fee gets your listing in front of a real person. It doesn't buy approval, and it isn't
-              refundable either way.
+              This is a premium, hand-reviewed board — not a bulletin anyone can post to for free. A review
+              fee (₹1,000 for scholarships, grants, and competitions; ₹3,000 for company job/internship
+              postings) gets your listing in front of a real person within 3 business days. It doesn't buy
+              approval — see /terms for the full policy.
             </p>
           </div>
 
@@ -162,6 +175,9 @@ export default function SubmitPage() {
             <select style={inputStyle()} value={form.audience} onChange={e => set('audience', e.target.value)}>
               {AUDIENCES.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
+            <select style={inputStyle()} value={form.listingType} onChange={e => set('listingType', e.target.value)}>
+              {LISTING_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
             <textarea style={{ ...inputStyle(), minHeight: 60, resize: 'vertical' }} placeholder="Eligibility — who can actually apply" required value={form.eligibility} onChange={e => set('eligibility', e.target.value)} />
             <textarea style={{ ...inputStyle(), minHeight: 60, resize: 'vertical' }} placeholder="Suggested prep resources (optional)" value={form.prepResources} onChange={e => set('prepResources', e.target.value)} />
             <select style={inputStyle()} value={form.difficulty} onChange={e => set('difficulty', e.target.value)}>
@@ -171,6 +187,22 @@ export default function SubmitPage() {
             <input style={inputStyle()} placeholder="Location" value={form.location} onChange={e => set('location', e.target.value)} />
             <input style={inputStyle()} placeholder="Compensation (Paid / Unpaid / Stipend)" value={form.compType} onChange={e => set('compType', e.target.value)} />
             <input style={inputStyle()} type="email" placeholder="Your email (for payment + status only — never published)" required value={form.submitterEmail} onChange={e => set('submitterEmail', e.target.value)} />
+
+            <label style={{
+              display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 18, padding: '12px 14px',
+              border: '1.5px solid var(--line)', borderRadius: 2, cursor: 'pointer', fontSize: 12.5,
+              color: 'var(--ink-2)', lineHeight: 1.6,
+            }}>
+              <input
+                type="checkbox" checked={form.wantsFeatured}
+                onChange={e => set('wantsFeatured', e.target.checked)}
+                style={{ marginTop: 2 }}
+              />
+              <span>
+                <strong style={{ color: 'var(--ink)' }}>Feature this listing (+₹{FEATURED_ADDON_INR})</strong> — once
+                approved, guaranteed inclusion in the homepage's daily featured-picks pool for {FEATURED_DURATION_DAYS} days.
+              </span>
+            </label>
 
             {errors.length > 0 && (
               <div style={{ marginBottom: 16, padding: '12px 14px', border: '1.5px solid var(--danger)', borderRadius: 2 }}>
@@ -188,7 +220,7 @@ export default function SubmitPage() {
               background: 'var(--btn-bg)', color: 'var(--btn-text)', fontFamily: 'var(--font-mono)',
               fontWeight: 700, fontSize: 13.5, letterSpacing: '0.02em', boxShadow: '4px 4px 0 var(--shadow)',
             }}>
-              {stage === 'paying' ? 'Opening checkout…' : 'Continue to payment — ₹1,000'}
+              {stage === 'paying' ? 'Opening checkout…' : `Continue to payment — ₹${fee}`}
             </button>
           </form>
         </div>

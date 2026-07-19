@@ -28,6 +28,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Paid "Featured" upserts are only good for a fixed window (see
+  // lib/billing/razorpay.ts's FEATURED_DURATION_DAYS) — unset featured once
+  // it passes so the homepage's featured pool doesn't keep a stale paid
+  // listing forever. Piggybacks on this already-hourly cron rather than
+  // adding a new schedule.
+  await prisma.opportunity.updateMany({
+    where: { featured: true, featuredUntil: { lt: new Date() } },
+    data: { featured: false },
+  })
+
   const result = await runScrapePass()
 
   if (result.added > 0) {

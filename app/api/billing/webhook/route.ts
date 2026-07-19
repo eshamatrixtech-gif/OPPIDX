@@ -3,6 +3,7 @@ import Razorpay from 'razorpay'
 import { prisma } from '@/lib/db'
 import { inferGeo } from '@/lib/scraper/geo'
 import type { SubmissionInput } from '@/lib/submissions/validate'
+import { FEATURED_DURATION_DAYS } from '@/lib/billing/razorpay'
 
 const ACTIVATING_EVENTS = new Set(['subscription.activated', 'subscription.charged'])
 const DEACTIVATING_EVENTS = new Set(['subscription.cancelled', 'subscription.halted', 'subscription.completed'])
@@ -102,6 +103,7 @@ async function handleSubmissionPayment(razorpayOrderId: string) {
   }
 
   const geo = inferGeo(input.location)
+  const wantsFeatured = input.wantsFeatured === true
 
   const created = await prisma.opportunity.create({
     data: {
@@ -119,7 +121,12 @@ async function handleSubmissionPayment(razorpayOrderId: string) {
       country: geo.country,
       compType: input.compType?.trim() || null,
       verified: false, // paying buys a human review, not a spot on the board
+      // Featured only takes effect once the listing clears review below (see
+      // note in ScrapeRun cron); the window starts at creation, not approval,
+      // since it's simplest to reason about and the review turnaround is
+      // expected to be fast relative to the 7-day window.
       featured: false,
+      featuredUntil: wantsFeatured ? new Date(Date.now() + FEATURED_DURATION_DAYS * 24 * 60 * 60 * 1000) : null,
       source: 'user-provided',
       sourceUrl: null,
     },

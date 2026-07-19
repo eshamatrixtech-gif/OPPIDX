@@ -43,6 +43,7 @@ model Opportunity {
   viewCount     Int       @default(0)
   verified      Boolean   @default(false)
   featured      Boolean   @default(false)
+  featuredUntil DateTime? // set only for paid "Featured" upsells — the hourly scrape cron unsets `featured` once this passes
   source        String    @default("user-provided")
   sourceUrl     String?
   addedAt       DateTime  @default(now())

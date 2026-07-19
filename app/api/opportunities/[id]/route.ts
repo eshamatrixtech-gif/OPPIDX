@@ -40,17 +40,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
   if (typeof b.compType === 'string' || b.compType === null) data.compType = b.compType
   if (typeof b.verified === 'boolean') data.verified = b.verified
-  if (typeof b.featured === 'boolean') {
-    data.featured = b.featured
-  } else if (b.verified === true) {
-    // Auto-activate a paid "Featured" upsell the moment a submission clears
-    // review, instead of relying on whoever's reviewing it to separately
-    // remember to also flip the featured checkbox.
-    const existing = await prisma.opportunity.findUnique({ where: { id }, select: { featuredUntil: true } })
-    if (existing?.featuredUntil && existing.featuredUntil > new Date()) {
-      data.featured = true
-    }
-  }
+  if (typeof b.featured === 'boolean') data.featured = b.featured
   if (b.delete === true) data.deletedAt = new Date()
   if (b.delete === false) data.deletedAt = null
 

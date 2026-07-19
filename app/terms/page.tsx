@@ -58,28 +58,17 @@ export default function TermsPage() {
           </Section>
 
           <Section title="Submitting a listing">
-            Anyone may submit a listing for review at /submit. The review fee is tiered by what's being
-            listed: ₹1,000 for scholarships, fellowships, grants, and competitions/hackathons, and ₹3,000 for
-            company-posted jobs or internships, since the latter is commercial hiring activity rather than
-            the kind of opportunity this board exists to surface for free for students. An optional
-            "Featured" add-on (+₹750) guarantees the listing's inclusion in the homepage's daily
-            featured-picks pool for 7 days after it's approved — the window is fixed and does not extend if
-            approval is delayed.
+            Anyone can submit a listing at /submit. The moment you submit, an automated check runs against the
+            content standards above — fail it and you're denied on the spot, before you're charged anything.
+            Pass it, pay the review fee, and your listing is live on the board immediately: no queue, no
+            waiting. The fee is ₹1,000 for scholarships, fellowships, grants, and competitions/hackathons, and
+            ₹3,000 for company-posted jobs or internships, since the latter is commercial hiring activity
+            rather than the kind of opportunity this board exists to surface for free for students. An
+            optional "Featured" add-on (+₹750) puts the listing in the homepage's daily featured-picks pool
+            for 7 days from the moment it goes live.
             <br /><br />
-            Paying the fee gets a submission read by a real person and checked against the content standards
-            above — it does not guarantee the listing is approved or published. We aim to review every
-            submission within 3 business days of payment. The fee is non-refundable once a review has
-            happened, whatever the outcome — approval is never purchased, only the review itself. The one
-            exception: if we fail to review a submission within 14 days of payment, we will refund it in full
-            on request. A rejected listing may be corrected and submitted again; a new submission means a new
-            review fee.
-            <br /><br />
-            Submitted listings that are approved are published unverified-by-source (we have not
-            independently confirmed every detail with the organization) and may be removed later if they turn
-            out to be false, stale, or in violation of these terms. By submitting a listing, you confirm the
-            information you've provided is genuine and accurate to your knowledge, and you agree to indemnify
-            OppIDX against any claim, loss, or dispute arising from a listing you submitted turning out to be
-            false, misleading, or in violation of a third party's rights.
+            A listing that's live can still be removed later if it turns out to be false, stale, or in
+            violation of these terms — automated screening catches obvious problems, not everything.
           </Section>
 
           <Section title="Subscriptions, billing, and cancellation">
@@ -114,10 +103,10 @@ export default function TermsPage() {
             writes, invents, or selects any part of a listing, and no person reviews these one by one before
             they go live; the vetting happened at the source level, once. Second, listings are occasionally
             added by hand by us after being checked directly against the organization's own page. Third,
-            anyone can submit a listing for a fee at /submit — unlike the first two paths, every one of these
-            is read and checked by a real person before it's allowed anywhere near the board, since it didn't
-            come from a source we'd already vetted. Where a source or submitter doesn't state something (like
-            eligibility), we leave that field blank rather than guess.
+            anyone can submit a listing for a fee at /submit — these go through the same kind of automated
+            content-standards check described above (see "Submitting a listing") rather than a person reading
+            each one, and go live immediately once that check and payment both clear. Where a source or
+            submitter doesn't state something (like eligibility), we leave that field blank rather than guess.
           </Section>
 
           <Section title="Where the home page's people-count numbers come from">

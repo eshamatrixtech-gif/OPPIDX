@@ -86,8 +86,13 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * Turns a paid submission fee into an unverified Opportunity row. Idempotent
- * against Razorpay's webhook retries: only acts if the submission is still
+ * Turns a paid submission fee into a live Opportunity row. The review is
+ * validateSubmission() running synchronously in the submit route, before
+ * payment is even accepted — if it fails, the submitter is denied and never
+ * gets to the payment step. So by the time a payment is captured here, the
+ * listing already cleared its one and only review and goes straight onto
+ * the board — no separate manual approval queue. Idempotent against
+ * Razorpay's webhook retries: only acts if the submission is still
  * "pending" — a second `payment.captured` for the same order is a no-op.
  */
 async function handleSubmissionPayment(razorpayOrderId: string) {
@@ -120,12 +125,8 @@ async function handleSubmissionPayment(razorpayOrderId: string) {
       region: geo.region,
       country: geo.country,
       compType: input.compType?.trim() || null,
-      verified: false, // paying buys a human review, not a spot on the board
-      // Featured only takes effect once the listing clears review below (see
-      // note in ScrapeRun cron); the window starts at creation, not approval,
-      // since it's simplest to reason about and the review turnaround is
-      // expected to be fast relative to the 7-day window.
-      featured: false,
+      verified: true, // cleared the automated content-standards check pre-payment — straight onto the board
+      featured: wantsFeatured,
       featuredUntil: wantsFeatured ? new Date(Date.now() + FEATURED_DURATION_DAYS * 24 * 60 * 60 * 1000) : null,
       source: 'user-provided',
       sourceUrl: null,

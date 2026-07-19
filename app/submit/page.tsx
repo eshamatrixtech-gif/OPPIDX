@@ -115,15 +115,12 @@ export default function SubmitPage() {
           <div className="card-box" style={{ marginTop: 20, padding: '36px 32px', textAlign: 'center' }}>
             <div style={{ color: 'var(--pin)', marginBottom: 14 }}>◆</div>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--ink)', textTransform: 'uppercase', marginBottom: 12 }}>
-              Payment received.
+              You're live.
             </h1>
             <p style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.7 }}>
-              Your listing is now in front of a real person, not a queue of algorithms — we review every
-              submission within 3 business days. We hold every submission to the same bar — genuine,
-              verifiable, nothing gated behind a DM. If it clears review, it goes live on the board. The fee
-              covers the review itself, whatever the outcome, and isn't refundable — except if we fail to
-              review it at all (see /terms). A rejected listing can be fixed and resubmitted; the review fee
-              applies again since it's a new review.
+              Your listing passed our content-standards check and is on the board right now — no queue, no
+              waiting. If you added Featured, it's already in the homepage's daily rotation for the next{' '}
+              {FEATURED_DURATION_DAYS} days.
             </p>
           </div>
         </div>
@@ -145,10 +142,10 @@ export default function SubmitPage() {
               Enlist your opportunity
             </h1>
             <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.65, maxWidth: 460, margin: '0 auto' }}>
-              This is a premium, hand-reviewed board — not a bulletin anyone can post to for free. A review
-              fee (₹1,000 for scholarships, grants, and competitions; ₹3,000 for company job/internship
-              postings) gets your listing in front of a real person within 3 business days. It doesn't buy
-              approval — see /terms for the full policy.
+              This is a premium board, not a free-for-all bulletin. Submitting runs an automated
+              content-standards check right away — fail it and you're denied before you pay anything. Pass it,
+              pay the review fee (₹1,000 for scholarships, grants, and competitions; ₹3,000 for company
+              job/internship postings), and it's live on the board immediately.
             </p>
           </div>
 
@@ -199,8 +196,8 @@ export default function SubmitPage() {
                 style={{ marginTop: 2 }}
               />
               <span>
-                <strong style={{ color: 'var(--ink)' }}>Feature this listing (+₹{FEATURED_ADDON_INR})</strong> — once
-                approved, guaranteed inclusion in the homepage's daily featured-picks pool for {FEATURED_DURATION_DAYS} days.
+                <strong style={{ color: 'var(--ink)' }}>Feature this listing (+₹{FEATURED_ADDON_INR})</strong> — guaranteed
+                inclusion in the homepage's daily featured-picks pool for {FEATURED_DURATION_DAYS} days from the moment it goes live.
               </span>
             </label>
 

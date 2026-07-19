@@ -53,11 +53,20 @@ async function isValidSession(token: string | undefined): Promise<boolean> {
 function applySecurityHeaders(res: NextResponse, req: NextRequest): NextResponse {
   const isProd = process.env.NODE_ENV === 'production'
 
+  // /embed/* pages exist specifically to be framed by third-party sites
+  // (see app/embed/opportunity-of-the-day) — the clickjacking protections
+  // below apply to the rest of the site, but blocking framing here would
+  // make the embeddable widget feature literally unusable everywhere,
+  // including its own live preview on /widget.
+  const isEmbeddable = req.nextUrl.pathname.startsWith('/embed/')
+
   // Prevent MIME-type sniffing
   res.headers.set('X-Content-Type-Options', 'nosniff')
 
-  // Prevent clickjacking
-  res.headers.set('X-Frame-Options', 'DENY')
+  // Prevent clickjacking (except the pages meant to be embedded — see above)
+  if (!isEmbeddable) {
+    res.headers.set('X-Frame-Options', 'DENY')
+  }
 
   // Stop browsers from sending Referer to external sites
   res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
@@ -96,7 +105,7 @@ function applySecurityHeaders(res: NextResponse, req: NextRequest): NextResponse
     "img-src 'self' data: blob: https:",
     "connect-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://lumberjack.razorpay.com https://va.vercel-scripts.com https://vitals.vercel-insights.com",
     "frame-src https://api.razorpay.com https://checkout.razorpay.com",
-    "frame-ancestors 'none'",
+    isEmbeddable ? "frame-ancestors *" : "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
   ].join('; ')

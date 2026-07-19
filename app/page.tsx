@@ -113,8 +113,14 @@ function SubscribeForm() {
 const LAST_VISIT_KEY = 'oppidx_last_visit'
 
 export default function Home() {
-  const [stats, setStats] = useState<Stats>({ opportunities: 0, viewed: 0, subscribers: 0 })
-  const [featured, setFeatured] = useState<Opportunity[]>([])
+  // null distinguishes "hasn't loaded yet" from "loaded, genuinely empty" —
+  // collapsing those into a single [] / 0 initial state made every visitor
+  // see a flash of "the editor's picks land here as soon as the first ones
+  // are curated" and "See all 0 opportunities" on every load, before the
+  // client fetch below even resolves, which reads as the site having no
+  // content at all.
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [featured, setFeatured] = useState<Opportunity[] | null>(null)
   const [newSinceLastVisit, setNewSinceLastVisit] = useState<number | null>(null)
 
   useEffect(() => {
@@ -131,7 +137,7 @@ export default function Home() {
     fetch('/api/opportunities?featured=true')
       .then(r => r.json())
       .then(data => setFeatured(pickDaily(data.items ?? [], 10)))
-      .catch(() => {})
+      .catch(() => setFeatured([]))
   }, [])
 
   useEffect(() => {
@@ -248,9 +254,9 @@ export default function Home() {
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, borderTop: '1px solid var(--line)', paddingTop: 22 }}>
-            <Counter value={stats.opportunities} label="Opportunities" />
-            <Counter value={stats.viewed} label="Opportunity Viewers" />
-            <Counter value={stats.subscribers} label="Subscribers" />
+            <Counter value={stats?.opportunities ?? 0} label="Opportunities" />
+            <Counter value={stats?.viewed ?? 0} label="Opportunity Viewers" />
+            <Counter value={stats?.subscribers ?? 0} label="Subscribers" />
           </div>
           <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 12 }}>
             The board is constantly updated with new opportunities — this isn't a static list.
@@ -270,7 +276,11 @@ export default function Home() {
           </span>
         </div>
 
-        {featured.length === 0 ? (
+        {featured === null ? (
+          <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13, marginBottom: 20 }}>
+            Loading today's picks…
+          </div>
+        ) : featured.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13, marginBottom: 20 }}>
             The editor's picks land here as soon as the first ones are curated.
           </div>
@@ -287,7 +297,7 @@ export default function Home() {
           <Link href="/browse" style={{
             fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none',
           }}>
-            See all {stats.opportunities.toLocaleString()} opportunities →
+            See all {stats ? stats.opportunities.toLocaleString() : '…'} opportunities →
           </Link>
         </div>
 

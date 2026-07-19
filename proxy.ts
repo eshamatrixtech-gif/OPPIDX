@@ -107,8 +107,12 @@ function applySecurityHeaders(res: NextResponse, req: NextRequest): NextResponse
     // 'self' is required so /widget can preview the embeddable badge — with
     // only the Razorpay origins listed, frame-src is a full override of
     // default-src (no implicit 'self' fallback once it's specified), which
-    // silently blocked the site from framing even its own pages.
-    "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
+    // silently blocked the site from framing even its own pages. The apex
+    // host is listed explicitly too: 'self' resolves to the exact enforcing
+    // origin (www.oppidx.com), but SITE_URL (used to build the embed's src)
+    // is the bare apex, which 301s to www — a different origin as far as
+    // CSP's frame-src matching is concerned, checked before the redirect.
+    "frame-src 'self' https://oppidx.com https://api.razorpay.com https://checkout.razorpay.com",
     isEmbeddable ? "frame-ancestors *" : "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

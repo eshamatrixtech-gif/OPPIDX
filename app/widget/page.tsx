@@ -42,7 +42,6 @@ export default function WidgetPage() {
               height={190}
               style={{ border: 'none' }}
               title="Opportunity of the Day — OppIDX preview"
-              loading="lazy"
             />
           </div>
 

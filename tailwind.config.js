@@ -7,20 +7,6 @@ module.exports = {
   ],
   theme: {
     extend: {
-      colors: {
-        indigo: {
-          deep: '#1a0a2e',
-          darker: '#0a0512',
-        },
-        saffron: '#ff9933',
-        magenta: '#ff1493',
-        turquoise: '#40e0d0',
-        earth: '#c41e3a',
-        warm: '#fff8f0',
-      },
-      fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-      },
       animation: {
         'breathe': 'breathe 4s ease-in-out infinite',
         'float': 'float 6s ease-in-out infinite',

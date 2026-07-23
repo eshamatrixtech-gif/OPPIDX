@@ -1,0 +1,211 @@
+/*
+ * Scoped styles for the Mayatara service. Imported only by app/mayatara/layout.tsx —
+ * never by the root app/globals.css — so nothing here can bleed into oppidx's own
+ * pages, and oppidx's own CSS variables (--card, --ink, --green, etc., different
+ * values) can't bleed into Mayatara's pages either. Every page under app/mayatara/**
+ * carries a `.mayatara-scope` class on its outermost element.
+ *
+ * Tailwind itself is already loaded once, globally, via the root app/globals.css —
+ * not re-imported here.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=IM+Fell+English:ital@0;1&display=swap');
+
+.mayatara-scope {
+  --bg:        #F2E4C4;
+  --bg-dark:   #E8D5A8;
+  --card:      #FAF0D7;
+  --border:    #C4A45A;
+  --saffron:   #D4600A;
+  --saffron-l: #F0892A;
+  --maroon:    #8B1A1A;
+  --ink:       #2C1810;
+  --ink-muted: #6B4C35;
+  --green:     #2D5016;
+
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: 'Courier Prime', 'Courier New', monospace;
+  position: relative;
+  min-height: 100%;
+}
+
+.mayatara-scope .font-typewriter  { font-family: 'Special Elite', 'Courier New', monospace; }
+.mayatara-scope .font-serif-india { font-family: 'IM Fell English', Georgia, serif; }
+
+/* Lined paper overlay — scoped to the Mayatara subtree, not the whole viewport/body */
+.mayatara-scope::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 28px,
+    rgba(196,164,90,0.08) 28px,
+    rgba(196,164,90,0.08) 29px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.mayatara-scope .stamp-border {
+  border: 3px solid var(--border);
+  box-shadow: 4px 4px 0 var(--border), inset 0 0 0 2px var(--bg);
+}
+.mayatara-scope .stamp-border-saffron {
+  border: 3px solid var(--saffron);
+  box-shadow: 4px 4px 0 var(--saffron);
+}
+
+.mayatara-scope .btn-primary {
+  background: var(--saffron);
+  color: #FAF0D7;
+  border: 2px solid var(--maroon);
+  box-shadow: 3px 3px 0 var(--maroon);
+  font-family: 'Special Elite', monospace;
+  letter-spacing: 0.05em;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  text-transform: uppercase;
+  display: inline-block;
+  text-decoration: none;
+}
+.mayatara-scope .btn-primary:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--maroon);
+}
+.mayatara-scope .btn-primary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--maroon);
+}
+
+.mayatara-scope .btn-secondary {
+  background: var(--card);
+  color: var(--ink);
+  border: 2px solid var(--border);
+  box-shadow: 3px 3px 0 var(--border);
+  font-family: 'Special Elite', monospace;
+  letter-spacing: 0.05em;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  text-transform: uppercase;
+  display: inline-block;
+  text-decoration: none;
+}
+.mayatara-scope .btn-secondary:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--border);
+}
+
+.mayatara-scope .card {
+  background: var(--card);
+  border: 2px solid var(--border);
+  box-shadow: 5px 5px 0 var(--border);
+}
+
+.mayatara-scope .input-maytara {
+  background: #FFFDF5;
+  border: 2px solid var(--border);
+  color: var(--ink);
+  font-family: 'Courier Prime', monospace;
+  padding: 10px 14px;
+  width: 100%;
+  outline: none;
+  box-shadow: inset 2px 2px 0 rgba(0,0,0,0.06);
+}
+.mayatara-scope .input-maytara:focus {
+  border-color: var(--saffron);
+  box-shadow: inset 2px 2px 0 rgba(0,0,0,0.06), 0 0 0 2px rgba(212,96,10,0.15);
+}
+
+.mayatara-scope .select-maytara {
+  background: #FFFDF5;
+  border: 2px solid var(--border);
+  color: var(--ink);
+  font-family: 'Special Elite', monospace;
+  padding: 10px 36px 10px 14px;
+  width: 100%;
+  outline: none;
+  box-shadow: inset 2px 2px 0 rgba(0,0,0,0.06);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C4A45A' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+}
+.mayatara-scope .select-maytara:focus {
+  border-color: var(--saffron);
+}
+
+.mayatara-scope .gem-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--saffron);
+  font-size: 1rem;
+}
+.mayatara-scope .gem-divider::before,
+.mayatara-scope .gem-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+@keyframes mayatara-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.mayatara-scope .cursor-blink::after {
+  content: '█';
+  animation: mayatara-blink 1s step-end infinite;
+  color: var(--saffron);
+  font-size: 0.9em;
+}
+
+.mayatara-scope .step-active  { background: var(--saffron); color: #FAF0D7; border: 2px solid var(--maroon); }
+.mayatara-scope .step-done    { background: var(--green);   color: #FAF0D7; border: 2px solid var(--green); }
+.mayatara-scope .step-pending { background: var(--bg-dark); color: var(--ink-muted); border: 2px solid var(--border); }
+
+.mayatara-scope::-webkit-scrollbar { width: 8px; }
+.mayatara-scope::-webkit-scrollbar-track { background: var(--bg-dark); }
+.mayatara-scope::-webkit-scrollbar-thumb { background: var(--border); border: 1px solid var(--bg); }
+
+/* ── Sculpture animations ─────────────────────────────── */
+@keyframes apsara-sway {
+  0%   { transform: rotate(-2deg) translateY(0px); }
+  25%  { transform: rotate(1deg)  translateY(-6px); }
+  50%  { transform: rotate(2.5deg) translateY(-3px); }
+  75%  { transform: rotate(0deg)  translateY(-8px); }
+  100% { transform: rotate(-2deg) translateY(0px); }
+}
+
+@keyframes couple-float {
+  0%   { transform: translateY(0px) scale(1); }
+  40%  { transform: translateY(-10px) scale(1.02); }
+  100% { transform: translateY(0px) scale(1); }
+}
+
+@keyframes lotus-bloom {
+  0%   { transform: rotate(0deg) scale(1); opacity: 0.6; }
+  50%  { transform: rotate(8deg) scale(1.08); opacity: 1; }
+  100% { transform: rotate(0deg) scale(1); opacity: 0.6; }
+}
+
+@keyframes stroke-draw {
+  from { stroke-dashoffset: 1000; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes gentle-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+
+.mayatara-scope .sculpt-draw {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: stroke-draw 3s ease forwards, gentle-float 5s ease-in-out 3s infinite;
+}

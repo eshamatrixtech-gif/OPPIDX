@@ -4,7 +4,19 @@ const COOKIE  = 'oppidx_session'
 const SECRET  = process.env.SESSION_SECRET ?? 'dev_fallback_secret'
 const MAX_AGE = 60 * 60 * 24 * 30 * 1000  // 30 days
 
-/* ── In-edge rate limiter (auth endpoints only) ─────────────────
+/* ── Bot/scanner path block — from Mayatara, applies site-wide ──
+   Blocks obviously malicious probe paths before anything else runs.
+   Note: bare "admin" is deliberately NOT in this list — oppidx has a real
+   /admin route (session-gated below); only WordPress/PHP-scanner-style
+   admin paths are blocked. */
+const BLOCKED_PATH_PATTERNS = [
+  /\.(php|asp|aspx|jsp|cgi|env|git|sql|bak|config|xml|yaml|yml|ini|log|sh|bash)$/i,
+  /\/(wp-admin|wp-login|phpmyadmin|manager|console|shell|cmd|eval)/i,
+  /\/(\.env|\.git|\.htaccess|\.well-known\/acme-challenge)/i,
+  /\/(etc\/passwd|proc\/self|windows\/win\.ini)/i,
+]
+
+/* ── In-edge rate limiter (oppidx's own auth endpoints only) ─────────────────
    Keyed by IP + route.  Max 10 attempts per 15 min window; locks 30 min.
    Uses globalThis so the Map survives hot-reloads in dev.
    In production with multiple instances, replace with Redis / KV.        */
@@ -24,6 +36,35 @@ function edgeRateLimit(key: string): { ok: boolean; retryAfter?: number } {
   e.hits++
   if (e.hits > MAX) { e.lockUntil = now + LOCK; return { ok: false, retryAfter: Math.ceil(LOCK / 1000) } }
   return { ok: true }
+}
+
+/* ── In-edge rate limiter (Mayatara's own /api/mayatara/* endpoints) ─────────
+   Separate Map/semantics from oppidx's limiter above — kept distinct rather
+   than unified, since the two services' rate-limit shapes differ (this one
+   is a simple fixed-window counter, not a lock-then-cooldown scheme) and
+   conflating them risks behavior drift on either service. */
+declare global { var __mtRl: Map<string, { count: number; resetAt: number }> | undefined }
+globalThis.__mtRl ??= new Map()
+const mtRl = globalThis.__mtRl
+
+function mayataraRateLimit(id: string, max: number, windowMs: number): boolean {
+  const now = Date.now()
+  const entry = mtRl.get(id)
+  if (!entry || now > entry.resetAt) {
+    mtRl.set(id, { count: 1, resetAt: now + windowMs })
+    return true
+  }
+  if (entry.count >= max) return false
+  entry.count++
+  return true
+}
+
+function getIP(req: NextRequest): string {
+  return (
+    req.headers.get('x-real-ip') ||
+    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    'anonymous'
+  )
 }
 
 /* ── Session verification (Web Crypto — Edge safe) ──────────── */
@@ -96,6 +137,9 @@ function applySecurityHeaders(res: NextResponse, req: NextRequest): NextResponse
   //   in production on Vercel it loads via a same-origin proxied path ('self'
   //   covers it), but `next dev` falls back to this direct host, so it's needed
   //   for a clean local console too.
+  // • connect-src also includes Supabase/Anthropic/OpenAI origins for the
+  //   Mayatara service (client-side Supabase calls, AI-assisted matching/
+  //   interview features under /mayatara and /api/mayatara).
   // • Tighten further once you move to a CDN / nonces
   const csp = [
     "default-src 'self'",
@@ -103,7 +147,7 @@ function applySecurityHeaders(res: NextResponse, req: NextRequest): NextResponse
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https:",
-    "connect-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://lumberjack.razorpay.com https://va.vercel-scripts.com https://vitals.vercel-insights.com",
+    "connect-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://lumberjack.razorpay.com https://va.vercel-scripts.com https://vitals.vercel-insights.com https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://api.openai.com",
     // 'self' is required so /widget can preview the embeddable badge — with
     // only the Razorpay origins listed, frame-src is a full override of
     // default-src (no implicit 'self' fallback once it's specified), which
@@ -128,11 +172,17 @@ function applySecurityHeaders(res: NextResponse, req: NextRequest): NextResponse
 
 /* ── Proxy (formerly "Middleware" — renamed in Next.js 16) ───── */
 const AUTH_ROUTES = ['/api/auth/login', '/api/auth/register']
+const MAYATARA_CRON_ROUTES = ['/api/mayatara/match/find', '/api/mayatara/pulse/refresh']
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  /* ── Rate-limit auth POST endpoints ── */
+  /* ── Bot/scanner path block — before anything else ── */
+  if (BLOCKED_PATH_PATTERNS.some(r => r.test(pathname))) {
+    return new NextResponse(null, { status: 404 })
+  }
+
+  /* ── Rate-limit oppidx's own auth POST endpoints ── */
   if (AUTH_ROUTES.some(r => pathname.startsWith(r)) && req.method === 'POST') {
     const ip  = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
             ?? req.headers.get('x-real-ip')
@@ -153,6 +203,43 @@ export async function proxy(req: NextRequest) {
     }
   }
 
+  /* ── Rate-limit Mayatara's /api/mayatara/* endpoints ──
+     Auth routes: strict (10/15min). Everything else under /api/mayatara/*:
+     general limit (60/60s). Scoped so oppidx's own /api/* is unaffected. */
+  if (pathname.startsWith('/api/mayatara/')) {
+    const ip = getIP(req)
+
+    if (pathname.startsWith('/api/mayatara/auth/') && req.method === 'POST') {
+      if (!mayataraRateLimit(`mt-auth:${ip}`, 10, 15 * 60_000)) {
+        return new NextResponse(
+          JSON.stringify({ error: 'Too many attempts. Try again in 15 minutes.' }),
+          { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '900' } },
+        )
+      }
+    }
+
+    if (!mayataraRateLimit(`mt-api:${ip}`, 60, 60_000)) {
+      return new NextResponse(
+        JSON.stringify({ error: 'Too many requests.' }),
+        { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '60' } },
+      )
+    }
+
+    /* Cron endpoints: server-to-server only, shared-secret gated */
+    if (MAYATARA_CRON_ROUTES.includes(pathname)) {
+      const secret = req.headers.get('x-cron-secret')
+      const expected = process.env.CRON_SECRET
+      if (!secret || !expected || secret !== expected) {
+        return new NextResponse(null, { status: 401 })
+      }
+    }
+
+    /* Block requests with no User-Agent (raw bots/scanners) */
+    if (!req.headers.get('user-agent')) {
+      return new NextResponse(null, { status: 400 })
+    }
+  }
+
   /* ── Protected paths — session required ──
      OppIDX is a public opportunities board: everything is open by default,
      including nonexistent/mistyped URLs (which should fall through to
@@ -160,7 +247,9 @@ export async function proxy(req: NextRequest) {
      needs a session — this used to be an ever-growing allowlist of "public"
      prefixes that defaulted to *protected* for anything not listed, which
      silently 302'd every unknown path (typos, bad links, new routes we
-     forgot to add here) to the admin login screen instead of 404ing. ── */
+     forgot to add here) to the admin login screen instead of 404ing.
+     Mayatara's own auth (/mayatara/login etc.) is entirely client-side via
+     Supabase and isn't gated here — it never matched this check anyway. ── */
   const isProtected = pathname === '/admin' || pathname.startsWith('/admin/')
 
   const session = req.cookies.get(COOKIE)?.value

@@ -35,9 +35,12 @@ export default function EventsPage() {
   return (
     <div className="mayatara-scope min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
       <header className="border-b-2 z-10 relative" style={{ borderColor: "var(--border)", background: "var(--card)" }}>
-        <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between flex-wrap gap-y-2">
           <Link href="/mayatara" className="font-typewriter text-xl tracking-wider" style={{ color: "var(--saffron)" }}>MAYATARA · EVENTS</Link>
-          <Link href="/mayatara/events/new" className="btn-primary text-sm">◆ Host an Event</Link>
+          <div className="flex items-center gap-4 flex-wrap">
+            <Link href="/" className="text-xs font-typewriter" style={{ color: "var(--ink-muted)" }}>← OppIDX</Link>
+            <Link href="/mayatara/events/new" className="btn-primary text-sm">◆ Host an Event</Link>
+          </div>
         </div>
       </header>
 

@@ -166,12 +166,12 @@ export default function Home() {
       {/* ── Header / hero ── */}
       <header style={{ padding: '40px 24px 34px', borderBottom: '1px solid var(--line)' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 34 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', rowGap: 12, marginBottom: 34 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <img src="/logo.png" alt="" width={46} height={46} style={{ display: 'block' }} />
               <Wordmark size={26} />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
               <Link href="/mayatara" style={{
                 fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, color: '#D4600A',
                 textDecoration: 'none', letterSpacing: '0.02em',

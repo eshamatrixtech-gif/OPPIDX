@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
   const audience = searchParams.get('audience')
   const search   = searchParams.get('search')?.trim()
   const status   = searchParams.get('status')
+  const source   = searchParams.get('source')
   const page     = Math.max(1, parseInt(searchParams.get('page') ?? '1') || 1)
 
   const where: Record<string, unknown> = { deletedAt: null }
@@ -33,6 +34,10 @@ export async function GET(req: NextRequest) {
   }
 
   if (category) where.category = category
+  // "native" is the only value used publicly (see the Resources page's
+  // Learn section, which needs the written-on-OppIDX articles specifically —
+  // not whatever the last 24 scraped items in that category happen to be).
+  if (source === 'native') where.source = 'native'
   if (audience) {
     const list = audience.split(',').map(a => a.trim()).filter(a => VALID_AUDIENCES.includes(a))
     if (list.length) where.audience = { in: list }

@@ -30,6 +30,75 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
   )
 }
 
+function LearnCard({ item }: { item: Resource }) {
+  return (
+    <Link href={`/resources/${item.id}`} className="card-box" style={{
+      padding: 18, textDecoration: 'none', display: 'block', background: 'var(--card)',
+      borderColor: 'var(--pin)',
+    }}>
+      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: 'var(--ink)', marginBottom: 6, lineHeight: 1.3 }}>
+        {item.title}
+      </h3>
+      <p style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+        {item.description}
+      </p>
+    </Link>
+  )
+}
+
+/** The two literacy categories are the only ones with original, written-for-
+ * this-site content (see scripts/seed-resources.ts) rather than outbound
+ * links — this band puts them front and center above the generic filter
+ * grid instead of letting them get lost among 170+ scraped GitHub repos. */
+function LearnSection() {
+  const [financial, setFinancial] = useState<Resource[] | null>(null)
+  const [spiritual, setSpiritual] = useState<Resource[] | null>(null)
+
+  useEffect(() => {
+    // source=native, not just category — the category alone returns
+    // whatever the most recent page of (mostly scraped) items is, which
+    // isn't guaranteed to include the written-on-OppIDX articles at all
+    // once enough scraped items land in the same category.
+    fetch(`/api/resources?category=${encodeURIComponent('Financial Literacy')}&source=native`)
+      .then(r => r.json())
+      .then(data => setFinancial(data.items ?? []))
+      .catch(() => setFinancial([]))
+    fetch(`/api/resources?category=${encodeURIComponent('Spiritual Literacy')}&source=native`)
+      .then(r => r.json())
+      .then(data => setSpiritual(data.items ?? []))
+      .catch(() => setSpiritual([]))
+  }, [])
+
+  if (financial?.length === 0 && spiritual?.length === 0) return null
+
+  return (
+    <div style={{ background: 'var(--board)', borderBottom: '1px solid var(--line)', padding: '32px 24px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <div className="divider" style={{ marginBottom: 6 }}>
+          <span>◆ Learn ◆</span>
+        </div>
+        <p style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginBottom: 20 }}>
+          Financial and spiritual literacy, written plainly — read straight through, not just linked out.
+        </p>
+
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 10 }}>
+          Financial Literacy
+        </div>
+        <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginBottom: 24 }}>
+          {(financial ?? []).map(item => <LearnCard key={item.id} item={item} />)}
+        </div>
+
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 10 }}>
+          Spiritual Literacy — Advaita Vedanta
+        </div>
+        <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+          {(spiritual ?? []).map(item => <LearnCard key={item.id} item={item} />)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ResourceRow({ item }: { item: Resource }) {
   return (
     <div className="card-box" style={{ marginBottom: 14 }}>
@@ -150,6 +219,8 @@ function ResourcesInner() {
           </div>
         </div>
       </header>
+
+      <LearnSection />
 
       <main style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px 80px' }}>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', marginBottom: 16 }}>

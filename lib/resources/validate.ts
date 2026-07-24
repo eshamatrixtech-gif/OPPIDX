@@ -20,10 +20,14 @@ export interface ResourceSubmissionInput {
 }
 
 export const VALID_AUDIENCES = ['STUDENT', 'EARLY_CAREER', 'FOUNDER', 'GENERAL']
+// Financial/Spiritual Literacy lead the list on purpose — they're the two
+// categories with original, accurate, written-for-this-site content, not
+// just outbound links, and the browse page gives them their own featured
+// band above the generic filter grid for the same reason.
 export const VALID_CATEGORIES = [
+  'Financial Literacy', 'Spiritual Literacy',
   'Test Prep', 'Financial Aid', 'Mentorship', 'Templates & Guides',
-  'Courses', 'Communities', 'Tools', 'Scholarship Search',
-  'Financial Literacy', 'Spiritual Literacy', 'Other',
+  'Courses', 'Communities', 'Tools', 'Scholarship Search', 'Other',
 ]
 
 const FREE_TEXT_FIELDS: (keyof ResourceSubmissionInput)[] = ['title', 'description']

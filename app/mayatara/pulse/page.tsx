@@ -32,6 +32,31 @@ function timeAgo(iso: string) {
   return `${days}d ago`;
 }
 
+function CategoryFilters({ active, onToggle }: { active: string[]; onToggle: (c: string) => void }) {
+  return (
+    <div className="flex flex-wrap justify-center gap-2 mb-10">
+      {PULSE_CATEGORIES.map((c) => {
+        const isActive = active.includes(c.category);
+        return (
+          <button
+            key={c.category}
+            onClick={() => onToggle(c.category)}
+            className="font-typewriter text-xs tracking-wide px-3 py-1.5"
+            style={{
+              border: `1px solid ${isActive ? "var(--saffron)" : "var(--border)"}`,
+              background: isActive ? "var(--saffron)" : "var(--card)",
+              color: isActive ? "var(--bg)" : "var(--ink-muted)",
+              cursor: "pointer",
+            }}
+          >
+            {c.sym} {c.category}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function HeadlineGroups({ headlines }: { headlines: Headline[] }) {
   const grouped = PULSE_CATEGORIES
     .map((c) => ({ ...c, items: headlines.filter((h) => h.category === c.category) }))
@@ -69,6 +94,11 @@ export default function PulsePage() {
   const [datapoints, setDatapoints] = useState<Datapoint[]>([]);
   const [lastFetched, setLastFetched] = useState<string | null>(null);
   const [loadError, setLoadError] = useState("");
+  const [activeCategories, setActiveCategories] = useState<string[]>([]);
+
+  function toggleCategory(category: string) {
+    setActiveCategories((list) => (list.includes(category) ? list.filter((c) => c !== category) : [...list, category]));
+  }
 
   useEffect(() => {
     fetch("/api/mayatara/pulse/data")
@@ -82,8 +112,11 @@ export default function PulsePage() {
       .catch(() => setLoadError("Couldn't load today's feed."));
   }, []);
 
-  const government = (headlines || []).filter((h) => h.source_type === "government");
-  const newspapers = (headlines || []).filter((h) => h.source_type === "newspaper");
+  const filteredHeadlines = activeCategories.length
+    ? (headlines || []).filter((h) => activeCategories.includes(h.category))
+    : (headlines || []);
+  const government = filteredHeadlines.filter((h) => h.source_type === "government");
+  const newspapers = filteredHeadlines.filter((h) => h.source_type === "newspaper");
 
   return (
     <div className="mayatara-scope min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
@@ -107,6 +140,10 @@ export default function PulsePage() {
             {lastFetched ? `Refreshed ${timeAgo(lastFetched)}` : "Refreshing..."}
           </p>
         </div>
+
+        {headlines && headlines.length > 0 && (
+          <CategoryFilters active={activeCategories} onToggle={toggleCategory} />
+        )}
 
         {loadError && (
           <div className="card p-8 text-center mb-10">
@@ -167,6 +204,14 @@ export default function PulsePage() {
           <div className="card p-8 text-center">
             <p className="text-sm" style={{ color: "var(--ink-muted)" }}>
               First refresh hasn&apos;t run yet. Check back shortly — this updates daily.
+            </p>
+          </div>
+        )}
+
+        {headlines && headlines.length > 0 && filteredHeadlines.length === 0 && (
+          <div className="card p-8 text-center">
+            <p className="text-sm" style={{ color: "var(--ink-muted)" }}>
+              Nothing in the selected categories today — try clearing a filter.
             </p>
           </div>
         )}

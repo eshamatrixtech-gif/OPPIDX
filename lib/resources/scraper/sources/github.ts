@@ -4,10 +4,13 @@ import type { RawResource } from '../types'
 // community-applied tags, so searching by topic + a stars floor surfaces
 // real, community-validated resources at real volume without us hand-typing
 // every repo name. Each topic maps to one category; minStars is the quality
-// bar (higher for broad/crowded topics like "awesome-list", lower for
-// narrower ones with fewer good entries).
+// bar (higher for broad/crowded topics, lower for narrower ones with fewer
+// good entries). No "awesome-list" topic on purpose — it's a meta-topic (a
+// list of other lists), which is exactly the "just goes to github.com, not
+// the actual source" complaint; "developer-tools" below is a more direct
+// substitute for the same Tools category.
 const TOPICS: { topic: string; category: string; minStars: number }[] = [
-  { topic: 'awesome-list', category: 'Tools', minStars: 3000 },
+  { topic: 'developer-tools', category: 'Tools', minStars: 500 },
   { topic: 'interview-prep', category: 'Test Prep', minStars: 150 },
   { topic: 'coding-interview', category: 'Test Prep', minStars: 300 },
   { topic: 'computer-science', category: 'Courses', minStars: 300 },
@@ -33,6 +36,18 @@ function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+// GitHub topic search surfaces plenty of real, well-starred repos with
+// non-English descriptions (Russian, Chinese, etc.) — legitimate projects,
+// just not usable for a site whose audience reads English. A handful of
+// stray non-Latin characters (an accented name, an emoji) is fine; a
+// description mostly made of another script isn't.
+const NON_LATIN_SCRIPT = /[Ѐ-ӿ؀-ۿ぀-ヿ一-鿿가-힯ऀ-ॿ]/g
+
+function isEnglishEnough(text: string): boolean {
+  const matches = text.match(NON_LATIN_SCRIPT)
+  return (matches?.length ?? 0) <= 5
+}
+
 async function fetchTopic({ topic, category, minStars }: (typeof TOPICS)[number]): Promise<RawResource[]> {
   const q = encodeURIComponent(`topic:${topic} stars:>${minStars}`)
   const res = await fetch(`https://api.github.com/search/repositories?q=${q}&sort=stars&order=desc&per_page=${PER_TOPIC}`, {
@@ -46,18 +61,23 @@ async function fetchTopic({ topic, category, minStars }: (typeof TOPICS)[number]
   const data = (await res.json()) as { items?: GithubSearchItem[] }
   const items = data.items ?? []
 
-  return items.map((repo): RawResource => ({
-    title: repo.full_name,
-    url: repo.html_url,
-    description: (repo.description ? `${repo.description} ` : '') + `${repo.stargazers_count.toLocaleString()} stars on GitHub.`,
-    category,
-    audienceHint: 'GENERAL',
-    sourceLabel: 'GitHub',
-    // Existence and liveness already proven by this API call returning it —
-    // skip the redundant reachability re-check the runner does for other
-    // sources (see lib/resources/scraper/run.ts).
-    preVerified: true,
-  }))
+  return items
+    // A repo with no description at all, or a description too short to say
+    // anything real, isn't usable as a standalone resource listing.
+    .filter(repo => (repo.description?.trim().length ?? 0) >= 15)
+    .filter(repo => isEnglishEnough(repo.description ?? ''))
+    .map((repo): RawResource => ({
+      title: repo.full_name,
+      url: repo.html_url,
+      description: `${repo.description} ${repo.stargazers_count.toLocaleString()} stars on GitHub.`,
+      category,
+      audienceHint: 'GENERAL',
+      sourceLabel: 'GitHub',
+      // Existence and liveness already proven by this API call returning it —
+      // skip the redundant reachability re-check the runner does for other
+      // sources (see lib/resources/scraper/run.ts).
+      preVerified: true,
+    }))
 }
 
 export async function fetchGithubAwesomeLists(): Promise<RawResource[]> {

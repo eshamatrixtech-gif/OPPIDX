@@ -160,7 +160,7 @@ export default function Home() {
         padding: '7px 12px', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.12em',
         fontFamily: 'var(--font-mono)', textTransform: 'uppercase',
       }}>
-        ◆ A premium, hand-curated collection of genuine opportunities. ◆ Free to browse, right now ◆
+        ◆ Four honest tools for a generation building its own way. ◆ Free to explore, right now ◆
       </div>
 
       {/* ── Header / hero ── */}
@@ -182,58 +182,45 @@ export default function Home() {
             </div>
           </div>
 
-          {newSinceLastVisit !== null && (
-            <Link href="/browse" style={{
-              display: 'block', marginBottom: 20, padding: '10px 16px', borderRadius: 2,
-              background: 'var(--board)', border: '1px solid var(--line)', textDecoration: 'none',
-              fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, color: 'var(--pin)',
-            }}>
-              ✦ {newSinceLastVisit.toLocaleString()} new opportunit{newSinceLastVisit === 1 ? 'y' : 'ies'} since your last visit — see what's new →
-            </Link>
-          )}
-
           <h1 style={{
             fontFamily: 'var(--font-display)', fontSize: 'clamp(30px, 6vw, 52px)',
-            lineHeight: 1.15, marginBottom: 18, maxWidth: 700, textTransform: 'uppercase',
+            lineHeight: 1.15, marginBottom: 18, maxWidth: 720, textTransform: 'uppercase',
           }}>
-            <span style={{ color: 'var(--ink)' }}>Every real opportunity.</span><br />
-            <span style={{ color: 'var(--pin)' }}>One honest board.</span>
+            <span style={{ color: 'var(--ink)' }}>Building the infrastructure</span><br />
+            <span style={{ color: 'var(--pin)' }}>for a generation finding its own way.</span>
           </h1>
           <p style={{
             fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700, letterSpacing: '0.02em',
             color: 'var(--pin)', maxWidth: 560, marginBottom: 16, textTransform: 'uppercase',
           }}>
-            Building the largest database of authentic opportunities.
+            Four honest tools. One account. Pick where you start.
           </p>
-          <p style={{ color: 'var(--ink-2)', fontSize: 14.5, maxWidth: 560, marginBottom: 30, lineHeight: 1.7 }}>
-            Internships, scholarships, fellowships, grants, and competitions — for students, early-career job seekers, founders, and anyone chasing a real shot. A premium, hand-curated collection, built for the ambitious ones — free to browse right now.
+          <p style={{ color: 'var(--ink-2)', fontSize: 14.5, maxWidth: 560, marginBottom: 34, lineHeight: 1.7 }}>
+            Real opportunities, real people, real gatherings, real numbers — every one of them verified, none of them inflated.
           </p>
 
-          {/* ── What this platform actually is — one account, four rooms ── */}
-          <div style={{ marginBottom: 36 }}>
-            <div className="divider" style={{ marginBottom: 20 }}>
-              <span>◆ One platform, four rooms ◆</span>
-            </div>
-            <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-              <Link href="/browse" className="card-box" style={{ padding: 18, textDecoration: 'none', display: 'block' }}>
-                <div style={{ fontSize: 20, marginBottom: 6, color: 'var(--pin)' }}>✦</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, color: 'var(--ink)', marginBottom: 4, textTransform: 'uppercase' }}>Opportunities</div>
-                <div style={{ fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.5 }}>Find real work — internships, scholarships, grants. This board, right here.</div>
+          {/* ── The four rooms — the primary choice on this page, not a footnote ── */}
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+              <Link href="/browse" className="card-box" style={{ padding: 24, textDecoration: 'none', display: 'block' }}>
+                <div style={{ fontSize: 26, marginBottom: 10, color: 'var(--pin)' }}>✦</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14, color: 'var(--ink)', marginBottom: 6, textTransform: 'uppercase' }}>Opportunities</div>
+                <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>Every real internship, scholarship and grant. One honest, verified board.</div>
               </Link>
-              <Link href="/mayatara" className="card-box" style={{ padding: 18, textDecoration: 'none', display: 'block' }}>
-                <div style={{ fontSize: 20, marginBottom: 6, color: '#D4600A' }}>◆</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, color: 'var(--ink)', marginBottom: 4, textTransform: 'uppercase' }}>The Mayatara</div>
-                <div style={{ fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.5 }}>Find your person. One honest AI match, every Friday.</div>
+              <Link href="/mayatara" className="card-box" style={{ padding: 24, textDecoration: 'none', display: 'block' }}>
+                <div style={{ fontSize: 26, marginBottom: 10, color: '#D4600A' }}>◆</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14, color: 'var(--ink)', marginBottom: 6, textTransform: 'uppercase' }}>The Mayatara</div>
+                <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>Find your person. One honest AI match, every Friday.</div>
               </Link>
-              <Link href="/mayatara/events" className="card-box" style={{ padding: 18, textDecoration: 'none', display: 'block' }}>
-                <div style={{ fontSize: 20, marginBottom: 6, color: '#D4600A' }}>❋</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, color: 'var(--ink)', marginBottom: 4, textTransform: 'uppercase' }}>Events</div>
-                <div style={{ fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.5 }}>Show up somewhere. Real gatherings, hosted by real people.</div>
+              <Link href="/mayatara/events" className="card-box" style={{ padding: 24, textDecoration: 'none', display: 'block' }}>
+                <div style={{ fontSize: 26, marginBottom: 10, color: '#D4600A' }}>❋</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14, color: 'var(--ink)', marginBottom: 6, textTransform: 'uppercase' }}>Events</div>
+                <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>Show up somewhere. Real gatherings, hosted by real people.</div>
               </Link>
-              <Link href="/mayatara/pulse" className="card-box" style={{ padding: 18, textDecoration: 'none', display: 'block' }}>
-                <div style={{ fontSize: 20, marginBottom: 6, color: '#D4600A' }}>◈</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, color: 'var(--ink)', marginBottom: 4, textTransform: 'uppercase' }}>The Pulse</div>
-                <div style={{ fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.5 }}>Know the numbers. A daily, apolitical read on the country.</div>
+              <Link href="/mayatara/pulse" className="card-box" style={{ padding: 24, textDecoration: 'none', display: 'block' }}>
+                <div style={{ fontSize: 26, marginBottom: 10, color: '#D4600A' }}>◈</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14, color: 'var(--ink)', marginBottom: 6, textTransform: 'uppercase' }}>The Pulse</div>
+                <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>Know the numbers. A daily, apolitical read on the country.</div>
               </Link>
             </div>
             <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 16 }}>
@@ -241,62 +228,52 @@ export default function Home() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
-            <Link href="/mayatara" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 26px', borderRadius: 2,
-              background: '#D4600A', color: '#FAF0D7', textDecoration: 'none',
-              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13.5, letterSpacing: '0.02em',
-              boxShadow: '4px 4px 0 var(--shadow)',
-            }}>
-              ◆ Find Your Person — The Mayatara
-            </Link>
-            <Link href="/browse" style={{
-              display: 'inline-block', padding: '13px 26px', borderRadius: 2,
-              background: 'var(--btn-bg)', color: 'var(--btn-text)', textDecoration: 'none',
-              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13.5, letterSpacing: '0.02em',
-              boxShadow: '4px 4px 0 var(--shadow)',
-            }}>
-              Browse the database →
-            </Link>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
             <a href="https://t.me/oppurtunityindex" target="_blank" rel="noopener noreferrer" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 26px', borderRadius: 2,
+              display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 2,
               background: '#229ED9', color: '#fff', textDecoration: 'none',
-              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13.5, letterSpacing: '0.02em',
-              boxShadow: '4px 4px 0 var(--shadow)',
+              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, letterSpacing: '0.02em',
+              boxShadow: '3px 3px 0 var(--shadow)',
             }}>
               ✈ Join us on Telegram
             </a>
             <a href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 26px', borderRadius: 2,
+              display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 2,
               background: '#5865F2', color: '#fff', textDecoration: 'none',
-              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13.5, letterSpacing: '0.02em',
-              boxShadow: '4px 4px 0 var(--shadow)',
+              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, letterSpacing: '0.02em',
+              boxShadow: '3px 3px 0 var(--shadow)',
             }}>
               ◆ Join us on Discord
             </a>
-            <Link href="/submit" style={{
-              display: 'inline-block', padding: '13px 26px', borderRadius: 2,
-              background: 'var(--pin)', color: 'var(--btn-text)', textDecoration: 'none',
-              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13.5, letterSpacing: '0.02em',
-              boxShadow: '4px 4px 0 var(--shadow)',
-            }}>
-              Enlist your opportunity →
-            </Link>
-          </div>
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, borderTop: '1px solid var(--line)', paddingTop: 22, marginTop: 22 }}>
-            <Counter value={stats?.opportunities ?? 0} label="Opportunities" />
-            <Counter value={stats?.viewed ?? 0} label="Opportunity Viewers" />
-            <Counter value={stats?.subscribers ?? 0} label="Subscribers" />
-          </div>
-          <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 12 }}>
-            The board is constantly updated with new opportunities — this isn't a static list.
           </div>
         </div>
       </header>
 
       <main style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 24px 80px' }}>
-        {/* ── Best of the week ── */}
+        {/* ── Opportunities room — stats, new-since-last-visit, and featured picks live here now, not in the platform-wide hero ── */}
+        <div className="divider" style={{ marginBottom: 20 }}>
+          <span>◆ Inside the Opportunities room ◆</span>
+        </div>
+
+        {newSinceLastVisit !== null && (
+          <Link href="/browse" style={{
+            display: 'block', marginBottom: 20, padding: '10px 16px', borderRadius: 2,
+            background: 'var(--board)', border: '1px solid var(--line)', textDecoration: 'none',
+            fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, color: 'var(--pin)',
+          }}>
+            ✦ {newSinceLastVisit.toLocaleString()} new opportunit{newSinceLastVisit === 1 ? 'y' : 'ies'} since your last visit — see what's new →
+          </Link>
+        )}
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
+          <Counter value={stats?.opportunities ?? 0} label="Opportunities" />
+          <Counter value={stats?.viewed ?? 0} label="Opportunity Viewers" />
+          <Counter value={stats?.subscribers ?? 0} label="Subscribers" />
+        </div>
+        <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginBottom: 30 }}>
+          The board is constantly updated with new opportunities — this isn't a static list.
+        </div>
+
         <div className="divider" style={{ marginBottom: 10 }}>
           <span>◆ Best opportunities right now — refreshed daily ◆</span>
         </div>

@@ -9,7 +9,7 @@
  * "for now": these catch dead/duplicate links, not low-value ones.
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 
 export interface CheckResult {
   ok: boolean
@@ -74,7 +74,11 @@ export async function checkUrlReachable(url: string): Promise<CheckResult> {
         method,
         redirect: 'follow',
         signal: controller.signal,
-        headers: { 'User-Agent': 'OppIDX-ResourceCheck/1.0' },
+        // A generic bot UA gets flat-out 403'd by some legitimate, high-traffic
+        // sites (seen live: Investopedia) that block anything not looking like
+        // a browser — a real false-negative risk for a "is this link dead"
+        // check, since we're only checking reachability, not scraping content.
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
       })
       res.body?.cancel().catch(() => {})
       if (res.ok || (res.status >= 300 && res.status < 400)) {
@@ -96,13 +100,22 @@ export async function checkUrlReachable(url: string): Promise<CheckResult> {
   return { ok: false, reason: 'Could not reach that URL — check the link works and try again.' }
 }
 
-function normalizeUrl(url: string): string {
+export function normalizeUrl(url: string): string {
   try {
     const u = new URL(url)
     return `${u.hostname.replace(/^www\./, '').toLowerCase()}${u.pathname.replace(/\/$/, '')}`
   } catch {
     return url.trim().toLowerCase()
   }
+}
+
+/** One-shot load of every live resource's normalized URL — for a scraper
+ * pass checking many candidate URLs in a loop, this is one query instead of
+ * one per candidate (see checkDuplicate, which stays single-query for the
+ * one-off public submission path). */
+export async function getExistingNormalizedUrls(): Promise<Set<string>> {
+  const existing = await prisma.resource.findMany({ where: { deletedAt: null }, select: { url: true } })
+  return new Set(existing.map(r => normalizeUrl(r.url)))
 }
 
 export async function checkDuplicate(url: string): Promise<CheckResult> {

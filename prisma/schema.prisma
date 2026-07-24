@@ -179,6 +179,19 @@ model Resource {
   @@index([category])
 }
 
+// One row per resource scraper pass (see lib/resources/scraper) — kept
+// separate from ScrapeRun (opportunities) so admin can see each scraper's
+// history independently. Same shape on purpose.
+model ResourceScrapeRun {
+  id         String   @id @default(cuid())
+  startedAt  DateTime
+  finishedAt DateTime
+  added      Int      @default(0)
+  details    String   @default("{}")
+
+  @@index([startedAt])
+}
+
 // One row per native scraper pass (see lib/scraper). `details` is a JSON
 // string keyed by source name: { fetched, added, error }.
 model ScrapeRun {

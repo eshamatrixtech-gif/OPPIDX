@@ -56,6 +56,10 @@ export interface ScrapeRun {
   details: string
 }
 
+// Same shape as ScrapeRun, kept as a distinct type since it's a separate
+// Prisma model (ResourceScrapeRun) with its own history.
+export type ResourceScrapeRun = ScrapeRun
+
 export interface Subscriber {
   id: string
   email: string

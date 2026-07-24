@@ -22,7 +22,8 @@ export interface ResourceSubmissionInput {
 export const VALID_AUDIENCES = ['STUDENT', 'EARLY_CAREER', 'FOUNDER', 'GENERAL']
 export const VALID_CATEGORIES = [
   'Test Prep', 'Financial Aid', 'Mentorship', 'Templates & Guides',
-  'Courses', 'Communities', 'Tools', 'Scholarship Search', 'Other',
+  'Courses', 'Communities', 'Tools', 'Scholarship Search',
+  'Financial Literacy', 'Spiritual Literacy', 'Other',
 ]
 
 const FREE_TEXT_FIELDS: (keyof ResourceSubmissionInput)[] = ['title', 'description']

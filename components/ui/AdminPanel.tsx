@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Wordmark } from '@/components/ui/Wordmark'
 import { VALID_CATEGORIES } from '@/lib/resources/validate'
-import type { Opportunity, Resource, ScrapeRun, Subscriber, SponsoredSlot } from '@/types'
+import type { Opportunity, Resource, ResourceScrapeRun, ScrapeRun, Subscriber, SponsoredSlot } from '@/types'
 
 const AUDIENCES = ['STUDENT', 'EARLY_CAREER', 'FOUNDER', 'GENERAL']
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard']
@@ -224,12 +224,81 @@ function ResourceRow({ item, onChanged }: { item: Resource; onChanged: () => voi
   )
 }
 
-function ResourcesPanel() {
-  const [items, setItems] = useState<Resource[]>([])
-  const [subTab, setSubTab] = useState<'queue' | 'all' | 'add'>('queue')
+function ResourceScraperPanel() {
+  const [runs, setRuns] = useState<ResourceScrapeRun[]>([])
+  const [running, setRunning] = useState(false)
+  const [error, setError] = useState('')
 
   async function refresh() {
-    if (subTab === 'add') return
+    const res = await fetch('/api/resources/scrape')
+    const data = await res.json()
+    setRuns(data.runs ?? [])
+  }
+
+  useEffect(() => { refresh() }, [])
+
+  async function runNow() {
+    setRunning(true)
+    setError('')
+    try {
+      const res = await fetch('/api/resources/scrape', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Run failed.')
+      await refresh()
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setRunning(false)
+    }
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div style={{ fontSize: 12.5, color: 'var(--ink-2)', fontFamily: 'var(--font-mono)' }}>
+          Runs every 6 hours via GitHub Actions — GitHub awesome-lists + curated subreddits, each candidate gated by the same live-link + duplicate check as a public submission.
+        </div>
+        <button onClick={runNow} disabled={running} style={{
+          padding: '8px 16px', borderRadius: 2, border: 'none', cursor: 'pointer',
+          background: 'var(--btn-bg)', color: 'var(--btn-text)', fontFamily: 'var(--font-mono)',
+          fontWeight: 700, fontSize: 12.5, flexShrink: 0,
+        }}>
+          {running ? 'Running…' : 'Run now'}
+        </button>
+      </div>
+      {error && <div style={{ color: 'var(--danger)', fontSize: 12.5, marginBottom: 10 }}>{error}</div>}
+      {runs.length === 0 ? (
+        <div style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>No runs yet.</div>
+      ) : (
+        runs.map(run => {
+          let details: Record<string, { fetched: number; added: number; error: string | null }> = {}
+          try { details = JSON.parse(run.details) } catch { /* ignore malformed row */ }
+          return (
+            <div key={run.id} className="card-box" style={{ padding: '12px 16px', marginBottom: 12 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>
+                {new Date(run.startedAt).toLocaleString()} — added {run.added}
+              </div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 4 }}>
+                {Object.entries(details).map(([name, s]) => (
+                  <div key={name}>
+                    {name}: {s.fetched} fetched, {s.added} added{s.error ? ` — error: ${s.error}` : ''}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })
+      )}
+    </div>
+  )
+}
+
+function ResourcesPanel() {
+  const [items, setItems] = useState<Resource[]>([])
+  const [subTab, setSubTab] = useState<'queue' | 'all' | 'add' | 'scraper'>('queue')
+
+  async function refresh() {
+    if (subTab === 'add' || subTab === 'scraper') return
     const status = subTab === 'queue' ? 'unverified' : 'all'
     const res = await fetch(`/api/resources?status=${status}`)
     const data = await res.json()
@@ -241,19 +310,21 @@ function ResourcesPanel() {
   return (
     <div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
-        {(['queue', 'add', 'all'] as const).map(t => (
+        {(['queue', 'add', 'all', 'scraper'] as const).map(t => (
           <button key={t} onClick={() => setSubTab(t)} style={{
             padding: '7px 14px', borderRadius: 2, border: '1.5px solid var(--line)', cursor: 'pointer',
             fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600,
             background: subTab === t ? 'var(--btn-bg)' : 'var(--card)',
             color: subTab === t ? 'var(--btn-text)' : 'var(--ink)',
           }}>
-            {t === 'queue' ? 'Needs review' : t === 'add' ? 'Add new' : 'All resources'}
+            {t === 'queue' ? 'Needs review' : t === 'add' ? 'Add new' : t === 'all' ? 'All resources' : 'Scraper'}
           </button>
         ))}
       </div>
       {subTab === 'add' ? (
         <ResourceAddForm onAdded={refresh} />
+      ) : subTab === 'scraper' ? (
+        <ResourceScraperPanel />
       ) : items.length === 0 ? (
         <div style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Nothing here.</div>
       ) : (

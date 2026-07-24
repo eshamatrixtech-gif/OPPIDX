@@ -405,8 +405,6 @@ export default function Home() {
           <Link href="/mayatara/terms" style={{ color: "var(--ink-muted)", textDecoration: "none" }}>Terms & Privacy</Link>
           &nbsp;·&nbsp;
           <Link href="/mayatara/philosophy" style={{ color: "var(--ink-muted)", textDecoration: "none" }}>Our Philosophy</Link>
-          &nbsp;·&nbsp;
-          <Link href="/" style={{ color: "var(--saffron)", textDecoration: "none" }}>Find Real Work — OppIDX</Link>
         </span>
       </footer>
     </div>

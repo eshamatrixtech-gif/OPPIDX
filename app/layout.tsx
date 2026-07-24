@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Special_Elite, IBM_Plex_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SITE_URL } from '@/lib/siteUrl'
+import { CrossPromoNav } from '@/components/ui/CrossPromoNav'
 import './globals.css'
 
 const typewriter = Special_Elite({
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${typewriter.variable} ${mono.variable}`} style={{ height: '100%' }}>
       <body style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+        <CrossPromoNav />
         {children}
         <Analytics />
       </body>

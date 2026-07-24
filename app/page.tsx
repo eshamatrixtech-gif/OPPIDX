@@ -264,6 +264,38 @@ export default function Home() {
       </header>
 
       <main style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 24px 80px' }}>
+        {/* ── What this platform actually is — one account, four rooms ── */}
+        <div style={{ marginBottom: 60 }}>
+          <div className="divider" style={{ marginBottom: 24 }}>
+            <span>◆ One platform, four rooms ◆</span>
+          </div>
+          <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+            <Link href="/browse" className="card-box" style={{ padding: 22, textDecoration: 'none', display: 'block' }}>
+              <div style={{ fontSize: 22, marginBottom: 8, color: 'var(--pin)' }}>✦</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, color: 'var(--ink)', marginBottom: 4, textTransform: 'uppercase' }}>Opportunities</div>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5 }}>Find real work — internships, scholarships, grants. This board, right here.</div>
+            </Link>
+            <Link href="/mayatara" className="card-box" style={{ padding: 22, textDecoration: 'none', display: 'block' }}>
+              <div style={{ fontSize: 22, marginBottom: 8, color: '#D4600A' }}>◆</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, color: 'var(--ink)', marginBottom: 4, textTransform: 'uppercase' }}>The Mayatara</div>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5 }}>Find your person. One honest AI match, every Friday.</div>
+            </Link>
+            <Link href="/mayatara/events" className="card-box" style={{ padding: 22, textDecoration: 'none', display: 'block' }}>
+              <div style={{ fontSize: 22, marginBottom: 8, color: '#D4600A' }}>❋</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, color: 'var(--ink)', marginBottom: 4, textTransform: 'uppercase' }}>Events</div>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5 }}>Show up somewhere. Real gatherings, hosted by real people.</div>
+            </Link>
+            <Link href="/mayatara/pulse" className="card-box" style={{ padding: 22, textDecoration: 'none', display: 'block' }}>
+              <div style={{ fontSize: 22, marginBottom: 8, color: '#D4600A' }}>◈</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, color: 'var(--ink)', marginBottom: 4, textTransform: 'uppercase' }}>The Pulse</div>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5 }}>Know the numbers. A daily, apolitical read on the country.</div>
+            </Link>
+          </div>
+          <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 20 }}>
+            One account works everywhere — <Link href="/account" style={{ color: 'var(--pin)', textDecoration: 'underline' }}>log in or create one →</Link>
+          </p>
+        </div>
+
         {/* ── Best of the week ── */}
         <div className="divider" style={{ marginBottom: 10 }}>
           <span>◆ Best opportunities right now — refreshed daily ◆</span>

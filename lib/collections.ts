@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db'
 import { getCurrentPaidSubscriber } from '@/lib/subscriberSession'
-import { FREE_SEARCH_LIMIT } from '@/lib/limits'
+import { FREE_SEARCH_LIMIT, PAYWALL_ENABLED } from '@/lib/limits'
 import type { Opportunity } from '@/types'
 
 /**
@@ -9,7 +9,7 @@ import type { Opportunity } from '@/types'
  * unauthenticated back door around the paywall.
  */
 export async function getCollectionOpportunities(audience: string) {
-  const paidSubscriber = await getCurrentPaidSubscriber()
+  const paidSubscriber = PAYWALL_ENABLED ? await getCurrentPaidSubscriber() : true
   const total = await prisma.opportunity.count({ where: { verified: true, deletedAt: null, audience } })
 
   const rows = await prisma.opportunity.findMany({

@@ -5,7 +5,7 @@ import { rateLimit }                 from '@/lib/rateLimit'
 import { getClientIp }               from '@/lib/ip'
 import { inferGeo }                  from '@/lib/scraper/geo'
 import { getCurrentPaidSubscriber }  from '@/lib/subscriberSession'
-import { FREE_SEARCH_LIMIT }         from '@/lib/limits'
+import { FREE_SEARCH_LIMIT, PAYWALL_ENABLED } from '@/lib/limits'
 
 const PAGE_SIZE = 24
 const VALID_AUDIENCES = ['STUDENT', 'EARLY_CAREER', 'FOUNDER', 'GENERAL']
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
 
   // Gate the full-catalog search (not the hourly homepage picks, not admin).
   let restricted = false
-  if (!isAdminQuery && !isFeaturedQuery) {
+  if (PAYWALL_ENABLED && !isAdminQuery && !isFeaturedQuery) {
     const paidSubscriber = await getCurrentPaidSubscriber()
     restricted = !paidSubscriber
   }

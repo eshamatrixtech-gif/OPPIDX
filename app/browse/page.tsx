@@ -144,7 +144,7 @@ function BrowseInner() {
             Browse the database
           </h1>
           <p style={{ fontSize: 13.5, color: 'var(--pin)', fontFamily: 'var(--font-mono)', fontWeight: 700, marginTop: 10, letterSpacing: '0.01em' }}>
-            An elite, hand-curated collection — not a free-for-all. Full search is a paid subscription.
+            An elite, hand-curated collection — free to search in full right now.
           </p>
         </div>
       </header>

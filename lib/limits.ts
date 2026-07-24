@@ -1,4 +1,13 @@
 /**
+ * Master paywall switch. Off until there's enough real user flow to justify
+ * gating search — an early visitor hitting a paywall on visit one is a lost
+ * user, not a conversion. Flip back to true once there's traffic worth
+ * protecting; nothing else needs to change, every restriction check below
+ * reads from this one flag.
+ */
+export const PAYWALL_ENABLED = false
+
+/**
  * Free tier's cap across every public surface that lists opportunities in
  * bulk — /browse search, and the RSS feed. The homepage's hourly-rotating
  * "best opportunities" picks are a separate, exempt allowance (see

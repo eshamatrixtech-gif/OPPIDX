@@ -160,7 +160,7 @@ export default function Home() {
         padding: '7px 12px', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.12em',
         fontFamily: 'var(--font-mono)', textTransform: 'uppercase',
       }}>
-        ◆ A premium, hand-curated collection of genuine opportunities. ◆ It comes at a cost — that's the point ◆
+        ◆ A premium, hand-curated collection of genuine opportunities. ◆ Free to browse, right now ◆
       </div>
 
       {/* ── Header / hero ── */}
@@ -206,7 +206,7 @@ export default function Home() {
             Building the largest database of authentic opportunities.
           </p>
           <p style={{ color: 'var(--ink-2)', fontSize: 14.5, maxWidth: 560, marginBottom: 30, lineHeight: 1.7 }}>
-            Internships, scholarships, fellowships, grants, and competitions — for students, early-career job seekers, founders, and anyone chasing a real shot. A premium, hand-curated collection, built for the ambitious ones — and it comes at a cost.
+            Internships, scholarships, fellowships, grants, and competitions — for students, early-career job seekers, founders, and anyone chasing a real shot. A premium, hand-curated collection, built for the ambitious ones — free to browse right now.
           </p>
 
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
@@ -225,14 +225,6 @@ export default function Home() {
               boxShadow: '4px 4px 0 var(--shadow)',
             }}>
               Browse the database →
-            </Link>
-            <Link href="/pricing" style={{
-              display: 'inline-block', padding: '13px 26px', borderRadius: 2,
-              background: 'var(--card)', color: 'var(--ink)', textDecoration: 'none',
-              border: '1.5px solid var(--line)',
-              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13.5, letterSpacing: '0.02em',
-            }}>
-              Unlock full search — ₹299/yr
             </Link>
             <a href="https://t.me/oppurtunityindex" target="_blank" rel="noopener noreferrer" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 26px', borderRadius: 2,
@@ -260,17 +252,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <div style={{
-            fontSize: 12.5, fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--pin)',
-            letterSpacing: '0.02em', marginBottom: 6,
-          }}>
-            Less than ₹1/day — cancel anytime. Prefer to pay monthly? <Link href="/pricing" style={{ color: 'var(--pin)', textDecoration: 'underline' }}>₹29/month</Link> works too.
-          </div>
-          <div style={{ fontSize: 12.5, color: 'var(--ink-2)', fontFamily: 'var(--font-mono)', marginBottom: 34 }}>
-            Less than your OTT subscription. Less than the data you'll burn doomscrolling this week. This one buys an authentic shot.
-          </div>
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, borderTop: '1px solid var(--line)', paddingTop: 22 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, borderTop: '1px solid var(--line)', paddingTop: 22, marginTop: 22 }}>
             <Counter value={stats?.opportunities ?? 0} label="Opportunities" />
             <Counter value={stats?.viewed ?? 0} label="Opportunity Viewers" />
             <Counter value={stats?.subscribers ?? 0} label="Subscribers" />
@@ -286,13 +268,6 @@ export default function Home() {
         <div className="divider" style={{ marginBottom: 10 }}>
           <span>◆ Best opportunities right now — refreshed daily ◆</span>
         </div>
-        <div style={{ textAlign: 'center', marginBottom: 26 }}>
-          <span style={{ fontSize: 14, color: 'var(--pin)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.01em' }}>
-            This is an elite, hand-curated collection, and full access needs{' '}
-            <Link href="/pricing" style={{ color: 'var(--pin)', textDecoration: 'underline' }}>a paid subscription</Link>.
-          </span>
-        </div>
-
         {featured === null ? (
           <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13, marginBottom: 20 }}>
             Loading today's picks…
@@ -358,7 +333,7 @@ export default function Home() {
               What it costs
             </div>
             <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.65 }}>
-              We're not running this as a charity, and we're not chasing volume for its own sake. A slice is free to browse. Full search is a paid subscription, and listing something here costs the submitter a review fee. Keeping this collection genuinely elite costs something — that's by design.
+              Free to search and browse in full right now, while we're growing. Listing an opportunity here costs the submitter a review fee, which is what keeps this collection genuinely curated instead of a free-for-all.
             </p>
           </div>
           <div className="card-box" style={{ padding: '20px 20px' }}>
@@ -376,7 +351,6 @@ export default function Home() {
         <div style={{ display: 'flex', justifyContent: 'center', gap: 20, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)' }}>
           <Link href="/philosophy" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Our philosophy</Link>
           <Link href="/saved" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Saved</Link>
-          <Link href="/pricing" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Full search (₹299/yr)</Link>
           <Link href="/submit" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Enlist your opportunity (from ₹1,000)</Link>
           <Link href="/account" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Manage subscription</Link>
           <a href="https://t.me/oppurtunityindex" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Telegram</a>

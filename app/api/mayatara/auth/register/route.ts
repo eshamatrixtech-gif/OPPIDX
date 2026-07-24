@@ -29,8 +29,26 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     // ── Sanitise every string input ─────────────────────────────────────────
+    // Already authenticated via the shared login flow (see app/account/page.tsx
+    // and lib/subscriberAuth.ts)? Then this is someone filling in a Mayatara
+    // profile for an identity that already exists — skip account creation
+    // entirely and use their existing auth uid. Absent for every request from
+    // the traditional /mayatara/register form, which never sends this header
+    // — that path is completely unchanged below.
+    const authHeader = req.headers.get("authorization") || "";
+    const bearerToken = authHeader.replace("Bearer ", "");
+    let existingUserId: string | null = null;
+    let existingUserEmail: string | null = null;
+    if (bearerToken) {
+      if (!supabaseAdmin) return Response.json({ error: "Server error." }, { status: 500 });
+      const { data: { user: existingUser }, error: tokenErr } = await supabaseAdmin.auth.getUser(bearerToken);
+      if (tokenErr || !existingUser) return Response.json({ error: "Invalid session." }, { status: 401 });
+      existingUserId = existingUser.id;
+      existingUserEmail = existingUser.email?.toLowerCase() ?? null;
+    }
+
     const name         = sanitise(body.name);
-    const email        = sanitise(body.email).toLowerCase();
+    const email        = existingUserEmail ?? sanitise(body.email).toLowerCase();
     const password     = typeof body.password === "string" ? body.password.slice(0, 128) : "";
     const lookingFor   = sanitise(body.lookingFor);
     const dob          = sanitise(body.dob);
@@ -44,7 +62,9 @@ export async function POST(req: Request) {
     const quirky_fact  = sanitise(body.quirky_fact);
 
     // ── Validate required fields ────────────────────────────────────────────
-    if (!name || !email || !password || !lookingFor) {
+    // Password is only required when creating a brand-new account — a
+    // shared-login user filling this in already has one.
+    if (!name || !email || (!existingUserId && !password) || !lookingFor) {
       return Response.json({ error: "Name, email, password and what you're looking for are required." }, { status: 400 });
     }
     if (name.length < 2 || name.length > 100) {
@@ -53,9 +73,11 @@ export async function POST(req: Request) {
     if (!isValidEmail(email)) {
       return Response.json({ error: "Invalid email address." }, { status: 400 });
     }
-    const pwCheck = isStrongPassword(password);
-    if (!pwCheck.ok) {
-      return Response.json({ error: pwCheck.reason }, { status: 400 });
+    if (!existingUserId) {
+      const pwCheck = isStrongPassword(password);
+      if (!pwCheck.ok) {
+        return Response.json({ error: pwCheck.reason }, { status: 400 });
+      }
     }
     if (!ALLOWED_TYPES.includes(lookingFor)) {
       return Response.json({ error: "Invalid relationship type." }, { status: 400 });
@@ -82,43 +104,78 @@ export async function POST(req: Request) {
       return Response.json({ error: "Server error." }, { status: 500 });
     }
 
-    // ── Create auth user ────────────────────────────────────────────────────
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    });
-    if (authError) {
-      if (authError.message.toLowerCase().includes("already")) {
-        return Response.json({ error: "An account with this email already exists." }, { status: 409 });
+    // ── Create auth user (skipped when already authenticated via shared login) ──
+    let userId: string;
+    if (existingUserId) {
+      userId = existingUserId;
+    } else {
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
+      if (authError) {
+        if (authError.message.toLowerCase().includes("already")) {
+          return Response.json({ error: "An account with this email already exists." }, { status: 409 });
+        }
+        throw authError;
       }
-      throw authError;
+      userId = authData.user.id;
     }
 
-    const userId = authData.user.id;
-
     // ── Store user record ────────────────────────────────────────────────────
-    const { error: userError } = await supabaseAdmin
-      .from("users")
-      .insert({
-        id: userId, name, looking_for: lookingFor,
-        dob: dob || null, gender: gender || null, height: height || null,
-        city: city || null, religion: religion || null, profession: profession || null,
-        mother_tongue: mother_tongue || null, institution: institution || null,
-        quirky_fact: quirky_fact || null,
-        phone_encrypted: encrypt(""),
-      });
+    // Two independent failure modes to handle, either of which can occur on
+    // either the full or minimal shape below: (a) PostgREST's schema cache
+    // not yet recognising a demographic column (pre-existing condition of
+    // this project, unrelated to auth — the original "minimal insert"
+    // fallback already existed for this), and (b) a row already existing
+    // for this id — only possible for a shared-login user re-submitting
+    // this form, since a brand-new admin.createUser() above always yields a
+    // fresh id. On (b), update instead of erroring rather than treating a
+    // double-submit as a hard failure.
+    const fullRow = {
+      id: userId, name, looking_for: lookingFor,
+      dob: dob || null, gender: gender || null, height: height || null,
+      city: city || null, religion: religion || null, profession: profession || null,
+      mother_tongue: mother_tongue || null, institution: institution || null,
+      quirky_fact: quirky_fact || null,
+      phone_encrypted: encrypt(""),
+    };
+    const minimalRow = { id: userId, name, looking_for: lookingFor, phone_encrypted: encrypt("") };
 
-    if (userError) {
-      // Fallback: minimal insert if new columns don't exist yet in schema
-      const { error: fallbackError } = await supabaseAdmin.from("users").insert({
-        id: userId, name, looking_for: lookingFor, phone_encrypted: encrypt(""),
-      });
-      if (fallbackError) {
-        // Users row failed — clean up the auth user so state stays consistent
-        await supabaseAdmin.auth.admin.deleteUser(userId).catch(console.error);
-        throw new Error("Failed to create user record.");
+    async function storeUserRecord(): Promise<{ ok: boolean }> {
+      const { error: fullErr } = await supabaseAdmin!.from("users").insert(fullRow);
+      if (!fullErr) return { ok: true };
+
+      if (existingUserId && fullErr.code === "23505") {
+        const { id: _omit, ...fullUpdate } = fullRow;
+        const { error } = await supabaseAdmin!.from("users").update(fullUpdate).eq("id", userId);
+        return { ok: !error };
       }
+
+      // Full insert failed for some other reason (e.g. schema-cache miss on
+      // a demographic column) — fall back to the minimal shape.
+      const { error: minimalErr } = await supabaseAdmin!.from("users").insert(minimalRow);
+      if (!minimalErr) return { ok: true };
+
+      if (existingUserId && minimalErr.code === "23505") {
+        const { id: _omit, ...minimalUpdate } = minimalRow;
+        const { error } = await supabaseAdmin!.from("users").update(minimalUpdate).eq("id", userId);
+        return { ok: !error };
+      }
+
+      return { ok: false };
+    }
+
+    const { ok } = await storeUserRecord();
+    if (!ok) {
+      // Users row failed — clean up the auth user so state stays consistent,
+      // but only if we created it in this request. A pre-existing
+      // shared-login identity must never be deleted here.
+      if (!existingUserId) {
+        await supabaseAdmin.auth.admin.deleteUser(userId).catch(console.error);
+      }
+      throw new Error("Failed to create user record.");
     }
 
     return Response.json({ success: true, userId });

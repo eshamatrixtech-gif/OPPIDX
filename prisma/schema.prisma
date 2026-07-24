@@ -60,6 +60,10 @@ model Opportunity {
 model Subscriber {
   id           String   @id @default(cuid())
   email        String   @unique
+  // Supabase auth.users.id — set once this subscriber has logged in via the
+  // shared identity flow (see lib/subscriberAuth.ts). Null for email-only
+  // subscribers who've never logged in (anonymous save/checkout provisioning).
+  authUserId   String?  @unique
   subscribedAt DateTime @default(now())
 
   plan                   String    @default("free") // "free" | "paid"

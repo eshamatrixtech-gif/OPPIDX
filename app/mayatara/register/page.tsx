@@ -32,12 +32,25 @@ export default function RegisterPage() {
   const router = useRouter();
   const [outsideIndia, setOutsideIndia] = useState(false);
 
+  // Already logged in via the shared oppidx/Mayatara login (see
+  // app/account/page.tsx)? Then this is someone filling in a Mayatara
+  // profile for an identity that already exists — skip asking for a new
+  // email/password entirely and use the existing session instead.
+  const [sharedSession, setSharedSession] = useState<{ accessToken: string; email: string } | null>(null);
+
   useEffect(() => {
     // Lightweight country check — we use ipapi.co (free, no key needed, 1000 req/day)
     fetch("https://ipapi.co/country/")
       .then(r => r.text())
       .then(country => { if (country.trim() !== "IN") setOutsideIndia(true); })
       .catch(() => { /* fail open — let the server block if needed */ });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.access_token && session.user.email) {
+        setSharedSession({ accessToken: session.access_token, email: session.user.email });
+        setForm(f => ({ ...f, email: session.user.email! }));
+      }
+    });
   }, []);
 
   const [form, setForm] = useState({
@@ -76,11 +89,15 @@ export default function RegisterPage() {
     if (!form.lookingFor) { setError("Tell us what you're looking for."); return; }
     if (!form.contact)    { setError("We need a contact for your match."); return; }
     if (!form.dob)        { setError("We need your date of birth."); return; }
+    if (!sharedSession && !form.password) { setError("Please choose a password."); return; }
     setLoading(true);
     try {
       const res = await fetch("/api/mayatara/auth/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(sharedSession ? { Authorization: `Bearer ${sharedSession.accessToken}` } : {}),
+        },
         body: JSON.stringify({
           name: form.name, email: form.email, password: form.password,
           dob: form.dob, gender: form.gender, height: form.height,
@@ -92,13 +109,17 @@ export default function RegisterPage() {
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Registration failed."); return; }
 
-      // Account is created server-side (admin API) but that doesn't sign the
-      // browser in — do that explicitly so the interview save + dashboard
-      // both see an authenticated session right away.
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: form.email, password: form.password,
-      });
-      if (signInError) { setError("Account created, but we couldn't log you in automatically. Please log in."); router.push("/mayatara/login"); return; }
+      // Already signed in via the shared session — skip the sign-in step
+      // below entirely.
+      if (!sharedSession) {
+        // Account is created server-side (admin API) but that doesn't sign
+        // the browser in — do that explicitly so the interview save +
+        // dashboard both see an authenticated session right away.
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: form.email, password: form.password,
+        });
+        if (signInError) { setError("Account created, but we couldn't log you in automatically. Please log in."); router.push("/mayatara/login"); return; }
+      }
 
       // Hand off userId/contact/prefs via sessionStorage rather than the URL —
       // this data (phone numbers, addresses) has no business sitting in browser
@@ -183,13 +204,19 @@ export default function RegisterPage() {
             <div>
               <label className="text-xs font-typewriter tracking-widest block mb-1" style={{ color: "var(--ink-muted)" }}>EMAIL</label>
               <input type="email" className="input-maytara" placeholder="your@email.com" required
-                value={form.email} onChange={e => update("email", e.target.value)} />
+                value={form.email} onChange={e => update("email", e.target.value)}
+                disabled={!!sharedSession} style={sharedSession ? { opacity: 0.7 } : undefined} />
+              {sharedSession && (
+                <p className="text-xs mt-1" style={{ color: "var(--ink-muted)" }}>Already signed in as {sharedSession.email}</p>
+              )}
             </div>
-            <div>
-              <label className="text-xs font-typewriter tracking-widest block mb-1" style={{ color: "var(--ink-muted)" }}>PASSWORD</label>
-              <input type="password" className="input-maytara" placeholder="At least 8 characters" required minLength={8}
-                value={form.password} onChange={e => update("password", e.target.value)} />
-            </div>
+            {!sharedSession && (
+              <div>
+                <label className="text-xs font-typewriter tracking-widest block mb-1" style={{ color: "var(--ink-muted)" }}>PASSWORD</label>
+                <input type="password" className="input-maytara" placeholder="At least 8 characters" required minLength={8}
+                  value={form.password} onChange={e => update("password", e.target.value)} />
+              </div>
+            )}
 
             {/* ── ABOUT YOU ── */}
             <div className="gem-divider my-1 text-xs">◆ ABOUT YOU ◆</div>

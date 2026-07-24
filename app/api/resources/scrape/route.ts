@@ -6,6 +6,10 @@ import { getClientIp }  from '@/lib/ip'
 import { runResourceScrapePass } from '@/lib/resources/scraper/run'
 import type { NextRequest } from 'next/server'
 
+// See app/api/cron/scrape-resources/route.ts — the GitHub topic-search
+// source needs headroom beyond the platform default timeout.
+export const maxDuration = 60
+
 /** GET /api/resources/scrape — admin-only: recent resource scraper run history. */
 export async function GET() {
   const admin = await requireAuth()

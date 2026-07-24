@@ -32,29 +32,39 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
 
 function ResourceRow({ item }: { item: Resource }) {
   return (
-    <div className="card-box" style={{ padding: '18px 20px', marginBottom: 14 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
-        <span style={{
-          fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700,
-          letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)',
-        }}>
-          {item.category}
-        </span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>
-          {item.audience.replace('_', ' ')}
-        </span>
+    <div className="card-box" style={{ marginBottom: 14 }}>
+      <Link href={`/resources/${item.id}`} style={{ display: 'block', padding: '18px 20px 12px', textDecoration: 'none' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
+          <span style={{
+            fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700,
+            letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)',
+          }}>
+            {item.category}
+          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>
+            {item.audience.replace('_', ' ')}
+          </span>
+        </div>
+        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, color: 'var(--ink)', marginBottom: 6 }}>
+          {item.title}
+        </h3>
+        <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6 }}>
+          {item.description}
+        </p>
+      </Link>
+      <div style={{ borderTop: '1px solid var(--line)', padding: '10px 20px' }}>
+        {item.body ? (
+          <Link href={`/resources/${item.id}`} style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--pin)', textDecoration: 'none' }}>
+            Read on OppIDX →
+          </Link>
+        ) : (
+          <a href={item.url} target="_blank" rel="noopener noreferrer" style={{
+            fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--pin)', textDecoration: 'none',
+          }}>
+            Open → {hostOf(item.url)}
+          </a>
+        )}
       </div>
-      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, color: 'var(--ink)', marginBottom: 6 }}>
-        {item.title}
-      </h3>
-      <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 12 }}>
-        {item.description}
-      </p>
-      <a href={item.url} target="_blank" rel="noopener noreferrer" style={{
-        fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--pin)', textDecoration: 'none',
-      }}>
-        Open → {hostOf(item.url)}
-      </a>
     </div>
   )
 }

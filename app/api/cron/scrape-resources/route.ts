@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runResourceScrapePass }     from '@/lib/resources/scraper/run'
 
+// The GitHub topic-search source paces its ~8 requests to stay under
+// GitHub's unauthenticated search rate limit, which alone takes ~50s —
+// the platform default function timeout isn't enough headroom.
+export const maxDuration = 60
+
 /**
  * GET /api/cron/scrape-resources — triggers one resource scraper pass.
  * Meant to be called by an external scheduler (see

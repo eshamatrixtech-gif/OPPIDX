@@ -19,6 +19,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (typeof b.title === 'string') data.title = b.title.trim()
   if (typeof b.description === 'string') data.description = b.description.trim()
+  if (typeof b.body === 'string') data.body = b.body.trim()
   if (typeof b.url === 'string') {
     const url = b.url.trim()
     if (!/^https?:\/\//.test(url)) {

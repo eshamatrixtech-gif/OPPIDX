@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
   }
 
-  const { title, description, url, category, audience, verified, source } = body as Record<string, unknown>
+  const { title, description, url, category, audience, verified, source, body: articleBody } = body as Record<string, unknown>
 
   if (typeof title !== 'string' || !title.trim()) {
     return NextResponse.json({ error: 'Title is required.' }, { status: 400 })
@@ -93,6 +93,7 @@ export async function POST(req: NextRequest) {
       audience,
       verified: typeof verified === 'boolean' ? verified : true,
       source: typeof source === 'string' && source ? source : 'admin',
+      body: typeof articleBody === 'string' ? articleBody.trim() : '',
     },
   })
 

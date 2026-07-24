@@ -38,6 +38,7 @@ export interface Resource {
   category: string
   audience: Audience
   verified: boolean
+  body: string
   source: string
   submitterEmail: string | null
   addedAt: string

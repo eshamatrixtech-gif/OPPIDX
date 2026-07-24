@@ -8,6 +8,10 @@ export interface RawResource {
   category: string
   audienceHint: Audience
   sourceLabel: string
+  // Set when the source's own API call already proves the URL is live
+  // (e.g. GitHub's search API returning a repo) — skips the runner's
+  // redundant reachability re-check for that candidate.
+  preVerified?: boolean
 }
 
 export interface ResourceScraperSource {

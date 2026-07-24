@@ -166,6 +166,11 @@ model Resource {
   category    String    @default("General")
   audience    String    @default("GENERAL")
   verified    Boolean   @default(false)
+  // Original long-form writing hosted directly on the resource's own detail
+  // page (app/resources/[id]) — set only for source: "native" entries. `url`
+  // stays required even then, pointed at a further-reading/primary source,
+  // since it's the one field every other Resource already relies on.
+  body        String    @default("")
   source      String    @default("submitted")
   // Only set for source: "submitted" — the submitter's contact email, kept
   // for admin accountability/abuse-tracking if a listed resource needs to

@@ -40,8 +40,10 @@ export async function runResourceScrapePass(): Promise<RunResult> {
         const key = normalizeUrl(raw.url)
         if (seen.has(key)) continue
 
-        const reachable = await checkUrlReachable(raw.url)
-        if (!reachable.ok) continue
+        if (!raw.preVerified) {
+          const reachable = await checkUrlReachable(raw.url)
+          if (!reachable.ok) continue
+        }
 
         await prisma.resource.create({
           data: {

@@ -267,8 +267,6 @@ export default function Home() {
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
           <Counter value={stats?.opportunities ?? 0} label="Opportunities" />
-          <Counter value={stats?.viewed ?? 0} label="Opportunity Viewers" />
-          <Counter value={stats?.subscribers ?? 0} label="Subscribers" />
         </div>
         <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginBottom: 30 }}>
           The board is constantly updated with new opportunities — this isn't a static list.

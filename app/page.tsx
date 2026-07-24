@@ -190,6 +190,12 @@ export default function Home() {
             <span style={{ color: 'var(--pin)' }}>for a generation finding its own way.</span>
           </h1>
           <p style={{
+            fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, letterSpacing: '0.08em',
+            color: 'var(--ink)', maxWidth: 560, marginBottom: 10, textTransform: 'uppercase',
+          }}>
+            For the young. By the young. For a genuine generation.
+          </p>
+          <p style={{
             fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700, letterSpacing: '0.02em',
             color: 'var(--pin)', maxWidth: 560, marginBottom: 16, textTransform: 'uppercase',
           }}>

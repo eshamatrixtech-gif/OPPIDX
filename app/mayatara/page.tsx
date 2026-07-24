@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ApsaraDancer, LoveCouple, LotusBlossom } from "./components/SculptureAnim";
 import { supabase } from "@/lib/mayatara/supabase";
+import { useNextFriday } from "@/lib/mayatara/useNextFriday";
 
 const TYPES = [
   { label: "Dating",              desc: "Meet someone real." },
@@ -14,31 +15,6 @@ const TYPES = [
   { label: "Still Figuring Out",  desc: "Start honest." },
 ];
 const DECO = ["◆", "✦", "❋", "◈", "✧", "❋", "◆", "✦"];
-
-function useNextFriday() {
-  const [countdown, setCountdown] = useState("");
-  useEffect(() => {
-    function calc() {
-      const now = new Date();
-      // Next Friday 8pm IST = UTC+5:30 → 14:30 UTC
-      const day = now.getUTCDay(); // 0=Sun…5=Fri
-      const daysUntilFri = day <= 5 ? 5 - day : 6;
-      const next = new Date(now);
-      next.setUTCDate(now.getUTCDate() + (daysUntilFri === 0 && now.getUTCHours() >= 14 && now.getUTCMinutes() >= 30 ? 7 : daysUntilFri));
-      next.setUTCHours(14, 30, 0, 0);
-      const diff = next.getTime() - now.getTime();
-      const d = Math.floor(diff / 86400000);
-      const h = Math.floor((diff % 86400000) / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setCountdown(`${d}d ${h}h ${m}m ${s}s`);
-    }
-    calc();
-    const id = setInterval(calc, 1000);
-    return () => clearInterval(id);
-  }, []);
-  return countdown;
-}
 
 export default function Home() {
   const [userName, setUserName] = useState<string | null>(null);

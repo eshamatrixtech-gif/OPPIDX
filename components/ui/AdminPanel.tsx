@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Wordmark } from '@/components/ui/Wordmark'
-import type { Opportunity, ScrapeRun, Subscriber, SponsoredSlot } from '@/types'
+import { VALID_CATEGORIES } from '@/lib/resources/validate'
+import type { Opportunity, Resource, ScrapeRun, Subscriber, SponsoredSlot } from '@/types'
 
 const AUDIENCES = ['STUDENT', 'EARLY_CAREER', 'FOUNDER', 'GENERAL']
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard']
@@ -125,6 +126,139 @@ function Row({ opp, onChanged }: { opp: Opportunity; onChanged: () => void }) {
         )}
         <button onClick={() => patch({ delete: true })} style={btnStyle('var(--danger)')}>Delete</button>
       </div>
+    </div>
+  )
+}
+
+const EMPTY_RESOURCE_FORM = {
+  title: '', description: '', url: '', category: VALID_CATEGORIES[0], audience: 'GENERAL', verified: true,
+}
+
+function ResourceAddForm({ onAdded }: { onAdded: () => void }) {
+  const [form, setForm] = useState(EMPTY_RESOURCE_FORM)
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  function set<K extends keyof typeof EMPTY_RESOURCE_FORM>(key: K, value: typeof EMPTY_RESOURCE_FORM[K]) {
+    setForm(f => ({ ...f, [key]: value }))
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    try {
+      const res = await fetch('/api/resources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, source: 'admin' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to add.')
+      setForm(EMPTY_RESOURCE_FORM)
+      onAdded()
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form onSubmit={submit} style={{ maxWidth: 480 }}>
+      <input style={inputStyle()} placeholder="Title" required value={form.title} onChange={e => set('title', e.target.value)} />
+      <textarea style={{ ...inputStyle(), minHeight: 90, resize: 'vertical' }} placeholder="Description" value={form.description} onChange={e => set('description', e.target.value)} />
+      <input style={inputStyle()} placeholder="URL (https://…)" required value={form.url} onChange={e => set('url', e.target.value)} />
+      <select style={inputStyle()} value={form.category} onChange={e => set('category', e.target.value)}>
+        {VALID_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+      </select>
+      <select style={inputStyle()} value={form.audience} onChange={e => set('audience', e.target.value)}>
+        {AUDIENCES.map(a => <option key={a} value={a}>{a}</option>)}
+      </select>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, fontSize: 13, fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>
+        <input type="checkbox" checked={form.verified} onChange={e => set('verified', e.target.checked)} />
+        Mark verified immediately
+      </label>
+      {error && <div style={{ color: 'var(--danger)', fontSize: 12.5, marginBottom: 10 }}>{error}</div>}
+      <button type="submit" disabled={saving} style={{
+        padding: '10px 22px', borderRadius: 2, border: 'none', cursor: 'pointer',
+        background: 'var(--btn-bg)', color: 'var(--btn-text)', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, letterSpacing: '0.02em',
+        boxShadow: '3px 3px 0 var(--shadow)',
+      }}>
+        {saving ? 'Adding…' : 'Add resource'}
+      </button>
+    </form>
+  )
+}
+
+function ResourceRow({ item, onChanged }: { item: Resource; onChanged: () => void }) {
+  async function patch(data: Record<string, unknown>) {
+    await fetch(`/api/resources/${item.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    onChanged()
+  }
+
+  return (
+    <div className="card-box" style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12,
+      padding: '12px 16px', marginBottom: 12,
+    }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {item.title}
+        </div>
+        <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
+          {item.category} · {item.audience} · {item.verified ? 'verified' : 'needs review'} · {item.source}{item.submitterEmail ? ` · ${item.submitterEmail}` : ''}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+        {!item.verified && (
+          <button onClick={() => patch({ verified: true })} style={btnStyle('var(--green)')}>Verify</button>
+        )}
+        <button onClick={() => patch({ delete: true })} style={btnStyle('var(--danger)')}>Delete</button>
+      </div>
+    </div>
+  )
+}
+
+function ResourcesPanel() {
+  const [items, setItems] = useState<Resource[]>([])
+  const [subTab, setSubTab] = useState<'queue' | 'all' | 'add'>('queue')
+
+  async function refresh() {
+    if (subTab === 'add') return
+    const status = subTab === 'queue' ? 'unverified' : 'all'
+    const res = await fetch(`/api/resources?status=${status}`)
+    const data = await res.json()
+    setItems(data.items ?? [])
+  }
+
+  useEffect(() => { refresh() }, [subTab])
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+        {(['queue', 'add', 'all'] as const).map(t => (
+          <button key={t} onClick={() => setSubTab(t)} style={{
+            padding: '7px 14px', borderRadius: 2, border: '1.5px solid var(--line)', cursor: 'pointer',
+            fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600,
+            background: subTab === t ? 'var(--btn-bg)' : 'var(--card)',
+            color: subTab === t ? 'var(--btn-text)' : 'var(--ink)',
+          }}>
+            {t === 'queue' ? 'Needs review' : t === 'add' ? 'Add new' : 'All resources'}
+          </button>
+        ))}
+      </div>
+      {subTab === 'add' ? (
+        <ResourceAddForm onAdded={refresh} />
+      ) : items.length === 0 ? (
+        <div style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Nothing here.</div>
+      ) : (
+        items.map(item => <ResourceRow key={item.id} item={item} onChanged={refresh} />)
+      )}
     </div>
   )
 }
@@ -425,10 +559,10 @@ function btnStyle(bg: string): React.CSSProperties {
 export function AdminPanel({ adminName }: { adminName: string }) {
   const router = useRouter()
   const [items, setItems] = useState<Opportunity[]>([])
-  const [tab, setTab] = useState<'add' | 'queue' | 'all' | 'scraper' | 'subscribers' | 'sponsor'>('queue')
+  const [tab, setTab] = useState<'add' | 'queue' | 'all' | 'resources' | 'scraper' | 'subscribers' | 'sponsor'>('queue')
 
   async function refresh() {
-    if (tab === 'add' || tab === 'scraper' || tab === 'subscribers' || tab === 'sponsor') return
+    if (tab === 'add' || tab === 'resources' || tab === 'scraper' || tab === 'subscribers' || tab === 'sponsor') return
     const status = tab === 'queue' ? 'unverified' : 'all'
     const res = await fetch(`/api/opportunities?status=${status}`)
     const data = await res.json()
@@ -455,20 +589,22 @@ export function AdminPanel({ adminName }: { adminName: string }) {
         </div>
 
         <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
-          {(['queue', 'add', 'all', 'scraper', 'subscribers', 'sponsor'] as const).map(t => (
+          {(['queue', 'add', 'all', 'resources', 'scraper', 'subscribers', 'sponsor'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               padding: '8px 16px', borderRadius: 2, border: '1.5px solid var(--line)', cursor: 'pointer',
               fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 600,
               background: tab === t ? 'var(--btn-bg)' : 'var(--card)',
               color: tab === t ? 'var(--btn-text)' : 'var(--ink)',
             }}>
-              {t === 'queue' ? 'Needs review' : t === 'add' ? 'Add new' : t === 'all' ? 'All opportunities' : t === 'scraper' ? 'Scraper' : t === 'subscribers' ? 'Subscribers' : 'Sponsor slots'}
+              {t === 'queue' ? 'Needs review' : t === 'add' ? 'Add new' : t === 'all' ? 'All opportunities' : t === 'resources' ? 'Resources' : t === 'scraper' ? 'Scraper' : t === 'subscribers' ? 'Subscribers' : 'Sponsor slots'}
             </button>
           ))}
         </div>
 
         {tab === 'add' ? (
           <AddForm onAdded={refresh} />
+        ) : tab === 'resources' ? (
+          <ResourcesPanel />
         ) : tab === 'scraper' ? (
           <ScraperPanel />
         ) : tab === 'subscribers' ? (

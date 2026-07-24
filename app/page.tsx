@@ -160,7 +160,7 @@ export default function Home() {
         padding: '7px 12px', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.12em',
         fontFamily: 'var(--font-mono)', textTransform: 'uppercase',
       }}>
-        ◆ Four honest tools for a generation building its own way. ◆ Free to explore, right now ◆
+        ◆ Five honest tools for a generation building its own way. ◆ Free to explore, right now ◆
       </div>
 
       {/* ── Header / hero ── */}
@@ -193,13 +193,13 @@ export default function Home() {
             fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700, letterSpacing: '0.02em',
             color: 'var(--pin)', maxWidth: 560, marginBottom: 16, textTransform: 'uppercase',
           }}>
-            Four honest tools. One account. Pick where you start.
+            Five honest tools. One account. Pick where you start.
           </p>
           <p style={{ color: 'var(--ink-2)', fontSize: 14.5, maxWidth: 560, marginBottom: 34, lineHeight: 1.7 }}>
-            Real opportunities, real people, real gatherings, real numbers — every one of them verified, none of them inflated.
+            Real opportunities, real people, real gatherings, real numbers, real prep — every one of them verified, none of them inflated.
           </p>
 
-          {/* ── The four rooms — the primary choice on this page, not a footnote ── */}
+          {/* ── The five rooms — the primary choice on this page, not a footnote ── */}
           <div style={{ marginBottom: 22 }}>
             <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
               <Link href="/browse" className="card-box" style={{ padding: 24, textDecoration: 'none', display: 'block' }}>
@@ -221,6 +221,11 @@ export default function Home() {
                 <div style={{ fontSize: 26, marginBottom: 10, color: '#D4600A' }}>◈</div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14, color: 'var(--ink)', marginBottom: 6, textTransform: 'uppercase' }}>The Pulse</div>
                 <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>Know the numbers. A daily, apolitical read on the country.</div>
+              </Link>
+              <Link href="/resources" className="card-box" style={{ padding: 24, textDecoration: 'none', display: 'block' }}>
+                <div style={{ fontSize: 26, marginBottom: 10, color: 'var(--pin)' }}>❖</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14, color: 'var(--ink)', marginBottom: 6, textTransform: 'uppercase' }}>Resources</div>
+                <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>Prep guides, tools and communities. Verified, growing every day.</div>
               </Link>
             </div>
             <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 16 }}>

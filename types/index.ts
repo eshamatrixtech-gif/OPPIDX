@@ -30,6 +30,19 @@ export interface Stats {
   subscribers: number
 }
 
+export interface Resource {
+  id: string
+  title: string
+  description: string
+  url: string
+  category: string
+  audience: Audience
+  verified: boolean
+  source: string
+  submitterEmail: string | null
+  addedAt: string
+}
+
 export interface Facet {
   value: string
   count: number

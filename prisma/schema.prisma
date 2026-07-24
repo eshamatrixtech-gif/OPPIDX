@@ -148,6 +148,37 @@ model SponsoredSlot {
   @@index([startDate, endDate])
 }
 
+// audience values: STUDENT | EARLY_CAREER | FOUNDER | GENERAL (stored as String for SQLite)
+// category: free text, e.g. "Test Prep" | "Financial Aid" | "Mentorship" | "Templates" | "Courses" | "Communities" | "Tools"
+// source values: submitted (passed automated verification, see lib/resources/verify.ts) | admin | scraped
+//
+// No submission-queue model on purpose — unlike OpportunitySubmission, a
+// public resource submission never sits in a human review queue. It either
+// passes the automated checks in lib/resources/verify.ts and becomes a live
+// (verified) row immediately, or it's rejected outright with a reason and
+// nothing is stored. Admin's own recourse is removal after the fact
+// (deletedAt), not pre-approval.
+model Resource {
+  id          String    @id @default(cuid())
+  title       String
+  description String    @default("")
+  url         String
+  category    String    @default("General")
+  audience    String    @default("GENERAL")
+  verified    Boolean   @default(false)
+  source      String    @default("submitted")
+  // Only set for source: "submitted" — the submitter's contact email, kept
+  // for admin accountability/abuse-tracking if a listed resource needs to
+  // be removed. Never rendered on any public page.
+  submitterEmail String?
+  addedAt     DateTime  @default(now())
+  deletedAt   DateTime?
+
+  @@index([audience, addedAt])
+  @@index([verified])
+  @@index([category])
+}
+
 // One row per native scraper pass (see lib/scraper). `details` is a JSON
 // string keyed by source name: { fetched, added, error }.
 model ScrapeRun {

@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const TABS = [
-  { label: "OppIDX", href: "/", match: (p: string) => p === "/" || (!p.startsWith("/mayatara") && p !== "/") },
+  { label: "OppIDX", href: "/", match: (p: string) => p === "/" || (!p.startsWith("/mayatara") && !p.startsWith("/resources") && p !== "/") },
   { label: "Mayatara", href: "/mayatara", match: (p: string) => p === "/mayatara" },
   { label: "Events", href: "/mayatara/events", match: (p: string) => p.startsWith("/mayatara/events") },
   { label: "Pulse", href: "/mayatara/pulse", match: (p: string) => p.startsWith("/mayatara/pulse") },
+  { label: "Resources", href: "/resources", match: (p: string) => p.startsWith("/resources") },
 ];
 
 /**

@@ -197,6 +197,27 @@ model ResourceScrapeRun {
   @@index([startedAt])
 }
 
+// A generated, shareable snapshot of Mayatara Pulse content for one day or
+// week — see lib/policyDigest/generate.ts. Snapshotted at generation time on
+// purpose: pulse_headlines (Supabase) is a rolling 14-day window that
+// upserts on url conflict, so a still-current headline's fetched_at keeps
+// getting bumped forward — it can't reconstruct "what this looked like on
+// a specific past day." A PolicyDigest row is the durable, unchanging
+// record a shared link actually points to.
+// periodType: "daily" | "weekly". period: "2026-07-24" (daily) or
+// "2026-W30" (ISO week, weekly) — unique, doubles as the shareable URL slug.
+// items: JSON array of { title, url, category, source, sourceType }.
+model PolicyDigest {
+  id         String   @id @default(cuid())
+  period     String   @unique
+  periodType String
+  summary    String
+  items      String
+  createdAt  DateTime @default(now())
+
+  @@index([periodType, createdAt])
+}
+
 // One row per native scraper pass (see lib/scraper). `details` is a JSON
 // string keyed by source name: { fetched, added, error }.
 model ScrapeRun {

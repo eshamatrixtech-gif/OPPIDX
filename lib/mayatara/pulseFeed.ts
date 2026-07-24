@@ -1,12 +1,14 @@
 /**
- * Real, no-AI content pipeline for /pulse. Two independent sources, both
+ * Real, no-AI content pipeline for /pulse. Three independent sources, all
  * plain fetch + regex extraction + keyword classification — zero LLM calls,
  * zero token cost, fully deterministic, safe to run on a cron every day.
  *
  * 1. Government — the Press Information Bureau's own official press-release
  *    feed (Government of India). Official announcements, so by construction
  *    policy/scheme content, not opinion.
- * 2. Newspaper — business/economy section feeds from The Hindu, Indian
+ * 2. Regulatory — RBI and SEBI's own official feeds, same official standing
+ *    as PIB (the regulator's own announcements, not press coverage of them).
+ * 3. Newspaper — business/economy section feeds from The Hindu, Indian
  *    Express, and LiveMint. Section-scoped on purpose: their general
  *    firehoses are full of politics, protests, and celebrity news, which is
  *    exactly what this product explicitly does not want. The exclusion
@@ -77,7 +79,13 @@ async function fetchFeed(url: string): Promise<string> {
 }
 
 const DEVANAGARI = /[ऀ-ॿ]/;
-function isEnglish(title: string): boolean {
+// Exported for lib/policyDigest/generate.ts — the digest reads whatever is
+// currently sitting in Supabase's pulse_headlines table rather than a fresh
+// getAllHeadlines() pass, and that table can hold rows fetched before this
+// filter existed (or from a request PIB happened to answer in Hindi despite
+// the requested language param) until the 14-day cleanup sweep removes them.
+// Re-checking here is a second gate, not a redundant one.
+export function isEnglish(title: string): boolean {
   return !DEVANAGARI.test(title);
 }
 
@@ -101,6 +109,27 @@ async function fetchPibHeadlines(): Promise<RawHeadline[]> {
       out.push({ ...item, source: "Press Information Bureau, Govt. of India" });
     }
   }
+  return out;
+}
+
+// ── Regulatory sources — RBI and SEBI's own official feeds, same
+// government-official standing as PIB (not opinion/press coverage, the
+// regulator's own announcements). Both verified live before being added:
+// https://www.rbi.org.in/pressreleases_rss.xml and https://www.sebi.gov.in/sebirss.xml
+const REGULATORY_FEEDS: { source: string; url: string }[] = [
+  { source: "Reserve Bank of India", url: "https://www.rbi.org.in/pressreleases_rss.xml" },
+  { source: "SEBI", url: "https://www.sebi.gov.in/sebirss.xml" },
+];
+
+async function fetchRegulatoryHeadlines(): Promise<RawHeadline[]> {
+  const results = await Promise.allSettled(REGULATORY_FEEDS.map((f) => fetchFeed(f.url)));
+  const out: RawHeadline[] = [];
+  results.forEach((r, i) => {
+    if (r.status !== "fulfilled") return;
+    for (const item of extractItems(r.value)) {
+      out.push({ ...item, source: REGULATORY_FEEDS[i].source });
+    }
+  });
   return out;
 }
 
@@ -170,13 +199,15 @@ async function classify(raw: RawHeadline[], sourceType: PulseSourceType): Promis
 }
 
 export async function getAllHeadlines(): Promise<ClassifiedHeadline[]> {
-  const [gov, papers] = await Promise.all([
+  const [gov, regulatory, papers] = await Promise.all([
     fetchPibHeadlines().catch((e) => { console.error("[pulseFeed] PIB fetch failed:", e); return []; }),
+    fetchRegulatoryHeadlines().catch((e) => { console.error("[pulseFeed] regulatory fetch failed:", e); return []; }),
     fetchNewspaperHeadlines().catch((e) => { console.error("[pulseFeed] newspaper fetch failed:", e); return []; }),
   ]);
-  const [govClassified, papersClassified] = await Promise.all([
+  const [govClassified, regulatoryClassified, papersClassified] = await Promise.all([
     classify(gov, "government"),
+    classify(regulatory, "government"),
     classify(papers, "newspaper"),
   ]);
-  return [...govClassified, ...papersClassified];
+  return [...govClassified, ...regulatoryClassified, ...papersClassified];
 }

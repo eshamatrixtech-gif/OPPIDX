@@ -139,6 +139,11 @@ export default function PulsePage() {
           <p className="text-xs mt-2" style={{ color: "var(--saffron)" }}>
             {lastFetched ? `Refreshed ${timeAgo(lastFetched)}` : "Refreshing..."}
           </p>
+          <p className="text-xs mt-3">
+            <Link href={`/mayatara/pulse/digest/${new Date().toISOString().slice(0, 10)}`} style={{ color: "var(--ink-muted)", textDecoration: "underline" }}>
+              Read today&apos;s policy digest — one link, easy to share →
+            </Link>
+          </p>
         </div>
 
         {headlines && headlines.length > 0 && (

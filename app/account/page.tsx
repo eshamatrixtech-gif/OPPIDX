@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/authSupabase'
+import { PAYWALL_ENABLED } from '@/lib/limits'
 
 type Status = {
   found: boolean
@@ -236,24 +237,35 @@ export default function AccountPage() {
                 </button>
               </div>
 
-              <div style={{ padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)', marginBottom: 20 }}>
-                <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 6 }}>
-                  Status
-                </div>
-                <div style={{ fontSize: 14, color: info ? toneColor(info.tone) : 'var(--ink)', fontWeight: 600, marginBottom: 4 }}>
-                  {status.isPaid ? 'Paid subscriber' : 'Free tier'}
-                </div>
-                {info && (
-                  <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6 }}>{info.label}</div>
-                )}
-                {status.isPaid && status.currentPeriodEnd && (
-                  <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginTop: 8, fontFamily: 'var(--font-mono)' }}>
-                    Renews {new Date(status.currentPeriodEnd).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
+              {!status.isPaid && !PAYWALL_ENABLED ? (
+                <div style={{ padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)', marginBottom: 20 }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 6 }}>
+                    Status
                   </div>
-                )}
-              </div>
+                  <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6 }}>
+                    Full search is free for everyone right now — no subscription needed.
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)', marginBottom: 20 }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 6 }}>
+                    Status
+                  </div>
+                  <div style={{ fontSize: 14, color: info ? toneColor(info.tone) : 'var(--ink)', fontWeight: 600, marginBottom: 4 }}>
+                    {status.isPaid ? 'Paid subscriber' : 'Free tier'}
+                  </div>
+                  {info && (
+                    <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6 }}>{info.label}</div>
+                  )}
+                  {status.isPaid && status.currentPeriodEnd && (
+                    <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginTop: 8, fontFamily: 'var(--font-mono)' }}>
+                      Renews {new Date(status.currentPeriodEnd).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </div>
+                  )}
+                </div>
+              )}
 
-              {!status.isPaid && (
+              {!status.isPaid && PAYWALL_ENABLED && (
                 <Link href="/pricing" style={{
                   display: 'inline-block', padding: '11px 22px', borderRadius: 2,
                   background: 'var(--btn-bg)', color: 'var(--btn-text)', textDecoration: 'none',

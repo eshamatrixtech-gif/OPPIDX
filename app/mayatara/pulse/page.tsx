@@ -6,6 +6,7 @@ import { PULSE_CATEGORIES } from "@/lib/mayatara/pulseStats";
 import { PulseCard, PulseCardGrid } from "@/app/mayatara/components/PulseCard";
 
 interface Headline {
+  id: string;
   title: string;
   url: string;
   category: string;
@@ -81,6 +82,7 @@ function HeadlineGroups({ headlines }: { headlines: Headline[] }) {
                 source={h.source}
                 timeLabel={timeAgo(h.fetched_at)}
                 url={h.url}
+                headlineId={h.id}
               />
             ))}
           </PulseCardGrid>

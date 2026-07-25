@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const { data: headlines, error: hErr } = await supabaseAdmin
       .from("pulse_headlines")
-      .select("title, url, category, source, source_type, fetched_at")
+      .select("id, title, url, category, source, source_type, fetched_at")
       .order("fetched_at", { ascending: false })
       .limit(60);
     if (hErr) throw hErr;

@@ -334,6 +334,161 @@ function ResourcesPanel() {
   )
 }
 
+interface Breakdown { label: string; count: number }
+interface DayCount { date: string; count: number }
+interface StatsData {
+  opportunities: { total: number; verified: number; unverified: number; byAudience: Breakdown[]; bySource: Breakdown[]; last30Days: DayCount[] }
+  resources: { total: number; verified: number; unverified: number; byCategory: Breakdown[]; bySource: Breakdown[]; last30Days: DayCount[] }
+  subscribers: { total: number; paid: number; free: number; last30Days: DayCount[] }
+  submissions: { byStatus: Breakdown[] }
+  scraperRuns: { opportunities: { startedAt: string; added: number }[]; resources: { startedAt: string; added: number }[] }
+  digests: { period: string; periodType: string; itemCount: number; createdAt: string }[]
+}
+
+function MetricCard({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div style={{ background: 'var(--board)', border: '1px solid var(--line)', borderRadius: 2, padding: '14px 16px' }}>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: 'var(--ink)' }}>
+        {typeof value === 'number' ? value.toLocaleString() : value}
+      </div>
+      <div style={{ fontSize: 10.5, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
+        {label}
+      </div>
+    </div>
+  )
+}
+
+function BreakdownBars({ title, data }: { title: string; data: Breakdown[] }) {
+  const max = Math.max(1, ...data.map(d => d.count))
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8 }}>
+        {title}
+      </div>
+      {data.length === 0 ? (
+        <div style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>No data.</div>
+      ) : (
+        [...data].sort((a, b) => b.count - a.count).map(d => (
+          <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+            <div style={{ width: 130, fontSize: 11.5, color: 'var(--ink-2)', fontFamily: 'var(--font-mono)', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {d.label || '(none)'}
+            </div>
+            <div style={{ flex: 1, background: 'var(--card)', border: '1px solid var(--line)', height: 14, position: 'relative' }}>
+              <div style={{ width: `${(d.count / max) * 100}%`, background: 'var(--pin)', height: '100%' }} />
+            </div>
+            <div style={{ width: 42, fontSize: 11.5, color: 'var(--ink)', fontFamily: 'var(--font-mono)', textAlign: 'right', flexShrink: 0 }}>
+              {d.count}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  )
+}
+
+function GrowthSparkline({ title, data }: { title: string; data: DayCount[] }) {
+  const max = Math.max(1, ...data.map(d => d.count))
+  const total = data.reduce((sum, d) => sum + d.count, 0)
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8 }}>
+        {title} — {total} in last 30 days
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 40 }}>
+        {data.map(d => (
+          <div key={d.date} title={`${d.date}: ${d.count}`} style={{
+            flex: 1, height: `${Math.max(2, (d.count / max) * 100)}%`,
+            background: d.count > 0 ? 'var(--pin)' : 'var(--line)',
+          }} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function StatsPanel() {
+  const [stats, setStats] = useState<StatsData | null>(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    fetch('/api/admin/stats')
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) { setError(data.error); return }
+        setStats(data)
+      })
+      .catch(() => setError('Failed to load stats.'))
+  }, [])
+
+  if (error) return <div style={{ color: 'var(--danger)', fontSize: 13, fontFamily: 'var(--font-mono)' }}>{error}</div>
+  if (!stats) return <div style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Loading…</div>
+
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 26 }}>
+        <MetricCard label="Opportunities" value={stats.opportunities.total} />
+        <MetricCard label="Opp. verified" value={stats.opportunities.verified} />
+        <MetricCard label="Resources" value={stats.resources.total} />
+        <MetricCard label="Res. verified" value={stats.resources.verified} />
+        <MetricCard label="Subscribers" value={stats.subscribers.total} />
+        <MetricCard label="Paid subs" value={stats.subscribers.paid} />
+      </div>
+
+      <GrowthSparkline title="Opportunities added" data={stats.opportunities.last30Days} />
+      <GrowthSparkline title="Resources added" data={stats.resources.last30Days} />
+      <GrowthSparkline title="Subscribers joined" data={stats.subscribers.last30Days} />
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24, marginTop: 8 }}>
+        <div>
+          <BreakdownBars title="Opportunities by audience" data={stats.opportunities.byAudience} />
+          <BreakdownBars title="Opportunities by source" data={stats.opportunities.bySource} />
+        </div>
+        <div>
+          <BreakdownBars title="Resources by category" data={stats.resources.byCategory} />
+          <BreakdownBars title="Resources by source" data={stats.resources.bySource} />
+        </div>
+      </div>
+
+      <BreakdownBars title="Opportunity submissions by status" data={stats.submissions.byStatus} />
+
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8 }}>
+        Recent scraper runs
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 18 }}>
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>Opportunities</div>
+          {stats.scraperRuns.opportunities.slice(0, 5).map((r, i) => (
+            <div key={i} style={{ fontSize: 11.5, fontFamily: 'var(--font-mono)', color: 'var(--ink-2)', marginBottom: 3 }}>
+              {new Date(r.startedAt).toLocaleDateString()} — +{r.added}
+            </div>
+          ))}
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>Resources</div>
+          {stats.scraperRuns.resources.slice(0, 5).map((r, i) => (
+            <div key={i} style={{ fontSize: 11.5, fontFamily: 'var(--font-mono)', color: 'var(--ink-2)', marginBottom: 3 }}>
+              {new Date(r.startedAt).toLocaleDateString()} — +{r.added}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8 }}>
+        Recent policy digests
+      </div>
+      {stats.digests.length === 0 ? (
+        <div style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>None generated yet.</div>
+      ) : (
+        stats.digests.map(d => (
+          <div key={d.period} style={{ fontSize: 11.5, fontFamily: 'var(--font-mono)', color: 'var(--ink-2)', marginBottom: 3 }}>
+            {d.period} ({d.periodType}) — {d.itemCount} items
+          </div>
+        ))
+      )}
+    </div>
+  )
+}
+
 function ScraperPanel() {
   const [runs, setRuns] = useState<ScrapeRun[]>([])
   const [running, setRunning] = useState(false)
@@ -630,10 +785,10 @@ function btnStyle(bg: string): React.CSSProperties {
 export function AdminPanel({ adminName }: { adminName: string }) {
   const router = useRouter()
   const [items, setItems] = useState<Opportunity[]>([])
-  const [tab, setTab] = useState<'add' | 'queue' | 'all' | 'resources' | 'scraper' | 'subscribers' | 'sponsor'>('queue')
+  const [tab, setTab] = useState<'stats' | 'add' | 'queue' | 'all' | 'resources' | 'scraper' | 'subscribers' | 'sponsor'>('stats')
 
   async function refresh() {
-    if (tab === 'add' || tab === 'resources' || tab === 'scraper' || tab === 'subscribers' || tab === 'sponsor') return
+    if (tab === 'stats' || tab === 'add' || tab === 'resources' || tab === 'scraper' || tab === 'subscribers' || tab === 'sponsor') return
     const status = tab === 'queue' ? 'unverified' : 'all'
     const res = await fetch(`/api/opportunities?status=${status}`)
     const data = await res.json()
@@ -659,20 +814,22 @@ export function AdminPanel({ adminName }: { adminName: string }) {
           </button>
         </div>
 
-        <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
-          {(['queue', 'add', 'all', 'resources', 'scraper', 'subscribers', 'sponsor'] as const).map(t => (
+        <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
+          {(['stats', 'queue', 'add', 'all', 'resources', 'scraper', 'subscribers', 'sponsor'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               padding: '8px 16px', borderRadius: 2, border: '1.5px solid var(--line)', cursor: 'pointer',
               fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 600,
               background: tab === t ? 'var(--btn-bg)' : 'var(--card)',
               color: tab === t ? 'var(--btn-text)' : 'var(--ink)',
             }}>
-              {t === 'queue' ? 'Needs review' : t === 'add' ? 'Add new' : t === 'all' ? 'All opportunities' : t === 'resources' ? 'Resources' : t === 'scraper' ? 'Scraper' : t === 'subscribers' ? 'Subscribers' : 'Sponsor slots'}
+              {t === 'stats' ? 'Stats' : t === 'queue' ? 'Needs review' : t === 'add' ? 'Add new' : t === 'all' ? 'All opportunities' : t === 'resources' ? 'Resources' : t === 'scraper' ? 'Scraper' : t === 'subscribers' ? 'Subscribers' : 'Sponsor slots'}
             </button>
           ))}
         </div>
 
-        {tab === 'add' ? (
+        {tab === 'stats' ? (
+          <StatsPanel />
+        ) : tab === 'add' ? (
           <AddForm onAdded={refresh} />
         ) : tab === 'resources' ? (
           <ResourcesPanel />

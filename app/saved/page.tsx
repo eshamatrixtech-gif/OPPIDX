@@ -6,9 +6,36 @@ import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { NotifyButton } from '@/components/ui/NotifyButton'
 import type { Opportunity } from '@/types'
 
+async function shareChaseCard(items: Opportunity[]) {
+  const params = new URLSearchParams()
+  items.slice(0, 3).forEach(o => params.append('title', o.title))
+  params.set('total', String(items.length))
+
+  const url = '/api/saved/card?' + params.toString()
+  try {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    const file = new File([blob], 'oppidx-chasing.png', { type: 'image/png' })
+    const nav = navigator as Navigator & { canShare?: (data: { files: File[] }) => boolean }
+    if (nav.share && nav.canShare?.({ files: [file] })) {
+      await nav.share({ files: [file], text: "Here's what I'm chasing — oppidx.com" })
+      return
+    }
+    const objectUrl = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = objectUrl
+    a.download = 'oppidx-chasing.png'
+    a.click()
+    URL.revokeObjectURL(objectUrl)
+  } catch {
+    // user can still screenshot the page as a fallback
+  }
+}
+
 export default function SavedPage() {
   const [items, setItems] = useState<Opportunity[]>([])
   const [loading, setLoading] = useState(true)
+  const [sharing, setSharing] = useState(false)
 
   useEffect(() => {
     fetch('/api/saved')
@@ -30,8 +57,21 @@ export default function SavedPage() {
           <p style={{ fontSize: 13.5, color: 'var(--ink-2)', fontFamily: 'var(--font-mono)', marginTop: 10 }}>
             Saved on this device — hit the ★ on any listing to add it here.
           </p>
-          <div style={{ marginTop: 16 }}>
+          <div style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
             <NotifyButton />
+            {items.length > 0 && (
+              <button
+                onClick={async () => { setSharing(true); await shareChaseCard(items); setSharing(false) }}
+                disabled={sharing}
+                style={{
+                  padding: '10px 18px', borderRadius: 2, border: 'none', cursor: 'pointer',
+                  background: 'var(--btn-bg)', color: 'var(--btn-text)', fontFamily: 'var(--font-mono)',
+                  fontSize: 12.5, fontWeight: 700, letterSpacing: '0.02em', opacity: sharing ? 0.6 : 1,
+                }}
+              >
+                {sharing ? 'Building card…' : "✦ Share what I'm chasing"}
+              </button>
+            )}
           </div>
         </div>
       </header>

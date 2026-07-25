@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PULSE_CATEGORIES } from "@/lib/mayatara/pulseStats";
 import { PulseCard, PulseCardGrid } from "@/app/mayatara/components/PulseCard";
+import { RelatedOpportunities } from "@/app/mayatara/components/RelatedOpportunities";
 
 interface Headline {
   id: string;
@@ -68,10 +69,13 @@ function HeadlineGroups({ headlines }: { headlines: Headline[] }) {
     <div className="flex flex-col gap-8">
       {grouped.map((g) => (
         <div key={g.category}>
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-1">
             <span className="text-lg" style={{ color: "var(--saffron)" }}>{g.sym}</span>
             <h3 className="font-typewriter text-sm tracking-widest" style={{ color: "var(--ink)" }}>{g.category.toUpperCase()}</h3>
           </div>
+          {g.whyItMatters && (
+            <p className="text-xs mb-3" style={{ color: "var(--ink-muted)" }}>{g.whyItMatters}</p>
+          )}
           <PulseCardGrid>
             {g.items.map((h) => (
               <PulseCard
@@ -86,6 +90,7 @@ function HeadlineGroups({ headlines }: { headlines: Headline[] }) {
               />
             ))}
           </PulseCardGrid>
+          <RelatedOpportunities category={g.category} />
         </div>
       ))}
     </div>

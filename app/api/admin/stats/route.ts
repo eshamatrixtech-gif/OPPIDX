@@ -32,6 +32,7 @@ export async function GET() {
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const since = new Date(Date.now() - DAYS * DAY_MS)
+  const sinceDateStr = since.toISOString().slice(0, 10)
 
   const [
     oppTotal, oppVerified, oppByAudience, oppBySource, oppRecentDates,
@@ -40,6 +41,7 @@ export async function GET() {
     submissionsByStatus,
     scrapeRuns, resourceScrapeRuns,
     digests,
+    visitorDayCounts, recentVisitDates,
   ] = await Promise.all([
     prisma.opportunity.count({ where: { deletedAt: null } }),
     prisma.opportunity.count({ where: { deletedAt: null, verified: true } }),
@@ -63,11 +65,20 @@ export async function GET() {
     prisma.resourceScrapeRun.findMany({ orderBy: { startedAt: 'desc' }, take: 10 }),
 
     prisma.policyDigest.findMany({ orderBy: { createdAt: 'desc' }, take: 10 }),
+
+    // Gate-0 retention: one row per (anonId, date) already means the count
+    // of rows per anonId IS the count of distinct days they showed up —
+    // "returning" is simply anyone with 2 or more.
+    prisma.visitLog.groupBy({ by: ['anonId'], _count: { date: true } }),
+    prisma.visitLog.findMany({ where: { date: { gte: sinceDateStr } }, select: { date: true } }),
   ])
 
   const digestItemCount = (items: string) => {
     try { return (JSON.parse(items) as unknown[]).length } catch { return 0 }
   }
+
+  const totalVisitors = visitorDayCounts.length
+  const returningVisitors = visitorDayCounts.filter(v => v._count.date >= 2).length
 
   return NextResponse.json({
     opportunities: {
@@ -102,5 +113,11 @@ export async function GET() {
     digests: digests.map(d => ({
       period: d.period, periodType: d.periodType, itemCount: digestItemCount(d.items), createdAt: d.createdAt,
     })),
+    retention: {
+      totalVisitors,
+      returningVisitors,
+      returnRatePct: totalVisitors > 0 ? Math.round((returningVisitors / totalVisitors) * 100) : 0,
+      last30Days: bucketByDay(recentVisitDates.map(v => new Date(`${v.date}T00:00:00Z`))),
+    },
   })
 }

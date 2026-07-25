@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { SITE_URL } from '@/lib/siteUrl'
 import { CrossPromoNav } from '@/components/ui/CrossPromoNav'
 import { ReferralCapture } from '@/components/ReferralCapture'
+import { VisitTracker } from '@/components/VisitTracker'
 import './globals.css'
 
 const typewriter = Special_Elite({
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${typewriter.variable} ${mono.variable}`} style={{ height: '100%' }}>
       <body style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
         <ReferralCapture />
+        <VisitTracker />
         <CrossPromoNav />
         {children}
         <Analytics />

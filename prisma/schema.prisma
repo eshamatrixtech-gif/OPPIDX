@@ -227,6 +227,22 @@ model ResourceScrapeRun {
   @@index([startedAt])
 }
 
+// Anonymous, first-party return-visit tracking — the one honest signal
+// for "does the same visitor come back on a later day, unprompted"
+// (retention, not pageviews). anonId is a random value set in a
+// long-lived cookie (see lib/visitTracking.ts), never tied to an email,
+// account, or IP — this exists purely to answer one question, not to
+// build a profile. One row per (anonId, date): a page load only ever
+// upserts, so refreshing 50 times in a day still counts as one visit.
+model VisitLog {
+  id     String @id @default(cuid())
+  anonId String
+  date   String // "2026-07-25" (UTC) — only needs day granularity
+
+  @@unique([anonId, date])
+  @@index([date])
+}
+
 // A durable, shareable snapshot of one day's "Today's picks from OppIDX"
 // social-digest run (see app/api/cron/social-digest/route.ts) — the picks
 // themselves are randomly sampled at generation time and never otherwise

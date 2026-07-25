@@ -343,6 +343,7 @@ interface StatsData {
   submissions: { byStatus: Breakdown[] }
   scraperRuns: { opportunities: { startedAt: string; added: number }[]; resources: { startedAt: string; added: number }[] }
   digests: { period: string; periodType: string; itemCount: number; createdAt: string }[]
+  retention: { totalVisitors: number; returningVisitors: number; returnRatePct: number; last30Days: DayCount[] }
 }
 
 function MetricCard({ label, value }: { label: string; value: number | string }) {
@@ -425,7 +426,17 @@ function StatsPanel() {
 
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 26 }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8 }}>
+        Retention — does anyone come back?
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 10 }}>
+        <MetricCard label="Tracked visitors" value={stats.retention.totalVisitors} />
+        <MetricCard label="Returned 2+ days" value={stats.retention.returningVisitors} />
+        <MetricCard label="Return rate" value={`${stats.retention.returnRatePct}%`} />
+      </div>
+      <GrowthSparkline title="Visits" data={stats.retention.last30Days} />
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 26, marginTop: 22 }}>
         <MetricCard label="Opportunities" value={stats.opportunities.total} />
         <MetricCard label="Opp. verified" value={stats.opportunities.verified} />
         <MetricCard label="Resources" value={stats.resources.total} />

@@ -4,8 +4,11 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { Wordmark } from '@/components/ui/Wordmark'
+import { ShareBar } from '@/components/ui/ShareBar'
 import { useCountUp } from '@/lib/hooks/useCountUp'
 import { DISCORD_INVITE_URL } from '@/lib/discord'
+import { SITE_URL } from '@/lib/siteUrl'
+import { getStoredReferralCode } from '@/lib/clientReferral'
 import type { Opportunity, Stats } from '@/types'
 
 /** Days since epoch (UTC) — the pick changes once a day and is identical
@@ -69,7 +72,7 @@ function SubscribeForm() {
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, ref: getStoredReferralCode() }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Something went wrong.')
@@ -320,8 +323,25 @@ export default function Home() {
           <p style={{ color: 'var(--ink-2)', fontSize: 13.5, marginBottom: 20 }}>
             We're not sending it yet — leave your email now and you'll be first in line the moment it goes live. No spam, ever.
           </p>
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
             <SubscribeForm />
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
+            Can&apos;t wait? A free daily digest already posts every morning —{' '}
+            <Link href="/newsletter" style={{ color: 'var(--pin)', textDecoration: 'underline' }}>see today&apos;s →</Link>
+          </p>
+        </div>
+
+        {/* ── Share ── */}
+        <div className="card-box" style={{ padding: '26px 28px', marginBottom: 70, textAlign: 'center' }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--ink)', marginBottom: 8 }}>
+            Know someone who&apos;d use this?
+          </h2>
+          <p style={{ color: 'var(--ink-2)', fontSize: 13.5, marginBottom: 18 }}>
+            Send them the board — it costs nothing and it&apos;s real.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <ShareBar title="OppIDX — every real opportunity, one honest board" url={SITE_URL} />
           </div>
         </div>
 
@@ -368,6 +388,7 @@ export default function Home() {
       <footer style={{ borderTop: '1px solid var(--line)', padding: '22px 24px', textAlign: 'center' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 20, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)' }}>
           <Link href="/philosophy" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Our philosophy</Link>
+          <Link href="/newsletter" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Daily digest</Link>
           <Link href="/saved" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Saved</Link>
           <Link href="/submit" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Enlist your opportunity (from ₹1,000)</Link>
           <Link href="/account" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Manage subscription</Link>

@@ -1,10 +1,15 @@
 import { ImageResponse } from 'next/og'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
-export const alt = 'OppIDX — the opportunity board'
+export const alt = 'OppIDX'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
 export default async function Image() {
+  const logoData = readFileSync(join(process.cwd(), 'public/logo.png'))
+  const logoSrc = `data:image/png;base64,${logoData.toString('base64')}`
+
   return new ImageResponse(
     (
       <div
@@ -17,18 +22,16 @@ export default async function Image() {
           alignItems: 'center',
           background: '#f5f0e8',
           fontFamily: 'sans-serif',
-          gap: 22,
+          gap: 26,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ width: 20, height: 20, borderRadius: 999, background: '#c0432a' }} />
-          <div style={{ fontSize: 40, fontWeight: 700, color: '#2b2620', letterSpacing: 3 }}>OPPIDX</div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={logoSrc} width={120} height={120} alt="" />
+        <div style={{ fontSize: 56, fontWeight: 700, color: '#2b2620', letterSpacing: 3, display: 'flex' }}>
+          OppIDX
         </div>
-        <div style={{ fontSize: 52, fontWeight: 700, color: '#2b2620', textAlign: 'center', display: 'flex' }}>
-          Every real opportunity.
-        </div>
-        <div style={{ fontSize: 52, fontWeight: 700, color: '#c0432a', textAlign: 'center', display: 'flex' }}>
-          One honest board.
+        <div style={{ fontSize: 28, color: '#5b5346', textAlign: 'center', display: 'flex' }}>
+          Building a genuine generation.
         </div>
       </div>
     ),

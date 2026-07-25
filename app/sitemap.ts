@@ -1,14 +1,16 @@
 import type { MetadataRoute } from 'next'
 import { prisma } from '@/lib/db'
 import { SITE_URL } from '@/lib/siteUrl'
+import { PAYWALL_ENABLED } from '@/lib/limits'
 
 const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency']; priority: number }> = [
   { path: '', changeFrequency: 'hourly', priority: 1 },
   { path: '/browse', changeFrequency: 'hourly', priority: 0.9 },
   { path: '/collections/students', changeFrequency: 'hourly', priority: 0.85 },
   { path: '/collections/founders', changeFrequency: 'hourly', priority: 0.85 },
+  { path: '/newsletter', changeFrequency: 'daily', priority: 0.8 },
   { path: '/philosophy', changeFrequency: 'monthly', priority: 0.5 },
-  { path: '/pricing', changeFrequency: 'monthly', priority: 0.5 },
+  ...(PAYWALL_ENABLED ? [{ path: '/pricing', changeFrequency: 'monthly' as const, priority: 0.5 }] : []),
   { path: '/submit', changeFrequency: 'monthly', priority: 0.4 },
   { path: '/widget', changeFrequency: 'monthly', priority: 0.3 },
   { path: '/terms', changeFrequency: 'yearly', priority: 0.2 },

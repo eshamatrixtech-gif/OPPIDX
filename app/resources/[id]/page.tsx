@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
+import { ShareBar } from '@/components/ui/ShareBar'
+import { SITE_URL } from '@/lib/siteUrl'
 
 async function getResource(id: string) {
   const item = await prisma.resource.findUnique({ where: { id } })
@@ -80,6 +82,13 @@ export default async function ResourcePage({ params }: { params: Promise<{ id: s
           }}>
             {item.body ? 'Further reading' : 'Open'} → {hostOf(item.url)}
           </a>
+
+          <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid var(--line)' }}>
+            <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8 }}>
+              Know someone this is for?
+            </div>
+            <ShareBar title={item.title} url={`${SITE_URL}/resources/${item.id}`} />
+          </div>
         </div>
 
         {similar.length > 0 && (

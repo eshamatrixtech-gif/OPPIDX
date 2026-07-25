@@ -227,6 +227,27 @@ model ResourceScrapeRun {
   @@index([startedAt])
 }
 
+// A durable, shareable snapshot of one day's "Today's picks from OppIDX"
+// social-digest run (see app/api/cron/social-digest/route.ts) — the picks
+// themselves are randomly sampled at generation time and never otherwise
+// persisted, so this is what a shared /newsletter/[date] link actually
+// points to. date: "2026-07-25", unique, doubles as the shareable URL
+// slug. opportunityIds: JSON array of picked Opportunity ids, joined live
+// at render time (same pattern as SavedOpportunity) so an edited listing
+// shows its current details. totalOpportunities/newLast24h are the real
+// board counts at generation time — same source as /api/stats, snapshotted
+// so they don't silently drift on an old page.
+model DailyDigest {
+  id                 String   @id @default(cuid())
+  date               String   @unique
+  opportunityIds     String
+  totalOpportunities Int
+  newLast24h         Int
+  createdAt          DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 // A generated, shareable snapshot of Mayatara Pulse content for one day or
 // week — see lib/policyDigest/generate.ts. Snapshotted at generation time on
 // purpose: pulse_headlines (Supabase) is a rolling 14-day window that

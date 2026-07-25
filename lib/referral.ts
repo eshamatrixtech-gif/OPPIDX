@@ -6,7 +6,7 @@ import { randomBytes } from 'crypto'
  * is captured anywhere; the schema stays in place so this can be switched
  * on later with no migration needed.
  */
-export const REFERRALS_ENABLED = false
+export const REFERRALS_ENABLED = true
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // no 0/O/1/I — avoids look-alike codes
 

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import QRCode from "qrcode";
+import { ShareBar } from "@/components/ui/ShareBar";
+import { MAYATARA_BASE_URL } from "@/lib/siteUrl";
 
 interface EventDetail {
   slug: string;
@@ -172,6 +174,12 @@ export default function EventDetailPage() {
               <a href={`/api/mayatara/events/${slug}/ics`} className="text-xs font-typewriter" style={{ color: "var(--saffron)", textDecoration: "underline" }}>
                 ⬇ Add to calendar
               </a>
+              <div className="mt-5 pt-4" style={{ borderTop: "1px solid var(--border)" }}>
+                <div className="text-xs font-typewriter tracking-widest mb-2" style={{ color: "var(--ink-muted)" }}>
+                  KNOW SOMEONE WHO&apos;D COME?
+                </div>
+                <ShareBar title={event.title} url={`${MAYATARA_BASE_URL}/events/${slug}`} />
+              </div>
             </div>
 
             {event.is_cancelled ? null : rsvp ? (

@@ -4,15 +4,38 @@ import { rateLimit } from '@/lib/rateLimit'
 import { getClientIp } from '@/lib/ip'
 import { getCurrentSubscriber } from '@/lib/subscriberSession'
 import { isPaidSubscriber } from '@/lib/billing/entitlements'
+import { generateReferralCode, REFERRALS_ENABLED } from '@/lib/referral'
 
 function isPlausibleEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s) && s.length <= 320
 }
 
-function shape(subscriber: {
-  plan: string; subscriptionStatus: string | null; currentPeriodEnd: Date | null; email: string
-  institutionEmail?: string | null; institutionVerified?: boolean
+async function shape(subscriber: {
+  id: string; plan: string; subscriptionStatus: string | null; currentPeriodEnd: Date | null; email: string
+  institutionEmail?: string | null; institutionVerified?: boolean; referralCode?: string | null
 }) {
+  let referralCode = subscriber.referralCode ?? null
+  let referralCount = 0
+
+  if (REFERRALS_ENABLED) {
+    // Backfill for subscribers created before referrals were switched on —
+    // retried on collision since referralCode is unique.
+    if (!referralCode) {
+      for (let attempt = 0; attempt < 5 && !referralCode; attempt++) {
+        try {
+          const code = generateReferralCode()
+          await prisma.subscriber.update({ where: { id: subscriber.id }, data: { referralCode: code } })
+          referralCode = code
+        } catch (e: any) {
+          if (e?.code !== 'P2002') throw e
+        }
+      }
+    }
+    if (referralCode) {
+      referralCount = await prisma.subscriber.count({ where: { referredBy: referralCode } })
+    }
+  }
+
   return {
     found: true,
     email: subscriber.email,
@@ -22,6 +45,8 @@ function shape(subscriber: {
     currentPeriodEnd: subscriber.currentPeriodEnd,
     institutionEmail: subscriber.institutionEmail ?? null,
     institutionVerified: subscriber.institutionVerified ?? false,
+    referralCode,
+    referralCount,
   }
 }
 
@@ -29,7 +54,7 @@ function shape(subscriber: {
 export async function GET() {
   const subscriber = await getCurrentSubscriber()
   if (!subscriber) return NextResponse.json({ found: false })
-  return NextResponse.json(shape(subscriber))
+  return NextResponse.json(await shape(subscriber))
 }
 
 /**
@@ -53,5 +78,5 @@ export async function POST(req: NextRequest) {
   const subscriber = await prisma.subscriber.findUnique({ where: { email } })
   if (!subscriber) return NextResponse.json({ found: false })
 
-  return NextResponse.json(shape(subscriber))
+  return NextResponse.json(await shape(subscriber))
 }

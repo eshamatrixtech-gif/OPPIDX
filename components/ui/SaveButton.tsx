@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import { getStoredReferralCode } from '@/lib/clientReferral'
 
 async function callSaved(method: 'POST' | 'DELETE', opportunityId: string, email?: string) {
   return fetch('/api/saved', {
     method,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ opportunityId, email }),
+    body: JSON.stringify({ opportunityId, email, ref: getStoredReferralCode() }),
   })
 }
 

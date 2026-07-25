@@ -4,6 +4,7 @@ import { getDailyPicks, AUDIENCE_LABEL } from '@/lib/dailyPicks'
 import { sendTelegramMessage, escapeTelegramHtml, TELEGRAM_CHANNEL_URL } from '@/lib/telegram'
 import { sendDiscordMessage, escapeDiscordMarkdown, DISCORD_INVITE_URL } from '@/lib/discord'
 import { getActiveSponsorSlot } from '@/lib/sponsor'
+import { snapshotDailyDigest, todayDateString } from '@/lib/dailyDigest'
 
 /**
  * GET /api/cron/social-digest — posts today's random pick (see
@@ -32,10 +33,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ sent: false, reason: 'nothing to pick from' })
   }
 
+  // Durable, shareable web page for today's picks — see /newsletter.
+  // Independent of the Telegram/Discord sends below; a failure here never
+  // blocks the actual distribution.
+  await snapshotDailyDigest(items.map(o => o.id)).catch(err => {
+    console.error('[social-digest] snapshot failed:', err)
+  })
+
   // A manually-booked sponsor line (see lib/sponsor.ts) — no self-serve
   // purchase flow, just a row someone added from /admin after an off-platform
   // deal. Silently absent (not an error) on every ordinary day.
   const sponsor = await getActiveSponsorSlot()
+  const digestUrl = `${SITE_URL}/newsletter/${todayDateString()}`
 
   // ── Telegram (HTML) ──
   const telegramLines = items.map(o => {
@@ -47,7 +56,7 @@ export async function GET(req: NextRequest) {
   const telegramSponsorLine = sponsor
     ? `<i>Today's picks brought to you by <a href="${sponsor.sponsorUrl}">${escapeTelegramHtml(sponsor.sponsorName)}</a> — ${escapeTelegramHtml(sponsor.tagline)}</i>\n\n`
     : ''
-  const telegramFooter = `<a href="${SITE_URL}/browse">See the full board →</a> · <a href="${DISCORD_INVITE_URL}">Join us on Discord →</a>`
+  const telegramFooter = `<a href="${digestUrl}">See today's digest online →</a> · <a href="${SITE_URL}/browse">Full board →</a> · <a href="${DISCORD_INVITE_URL}">Discord →</a>`
   let telegramMessage = `✦ <b>Today's picks from OppIDX</b>\n\n${telegramSponsorLine}${telegramLines.join('\n\n')}\n\n${telegramFooter}`
   if (telegramMessage.length > 4000) {
     telegramMessage = `${telegramMessage.slice(0, 3980 - telegramFooter.length)}…\n\n${telegramFooter}`
@@ -63,7 +72,7 @@ export async function GET(req: NextRequest) {
   const discordSponsorLine = sponsor
     ? `*Today's picks brought to you by [${escapeDiscordMarkdown(sponsor.sponsorName)}](${sponsor.sponsorUrl}) — ${escapeDiscordMarkdown(sponsor.tagline)}*\n\n`
     : ''
-  const discordFooter = `[See the full board →](${SITE_URL}/browse) · [Join us on Telegram →](${TELEGRAM_CHANNEL_URL})`
+  const discordFooter = `[See today's digest online →](${digestUrl}) · [Full board →](${SITE_URL}/browse) · [Telegram →](${TELEGRAM_CHANNEL_URL})`
   let discordMessage = `✦ **Today's picks from OppIDX**\n\n${discordSponsorLine}${discordLines.join('\n\n')}\n\n${discordFooter}`
   // Discord's webhook content field caps at 2000 chars, tighter than Telegram's.
   if (discordMessage.length > 1900) {

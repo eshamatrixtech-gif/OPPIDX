@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/authSupabase'
 import { PAYWALL_ENABLED } from '@/lib/limits'
+import { ShareBar } from '@/components/ui/ShareBar'
+import { SITE_URL } from '@/lib/siteUrl'
 
 type Status = {
   found: boolean
@@ -14,6 +16,8 @@ type Status = {
   currentPeriodEnd?: string | null
   institutionEmail?: string | null
   institutionVerified?: boolean
+  referralCode?: string | null
+  referralCount?: number
 }
 
 const STATUS_MESSAGE: Record<string, { label: string; tone: 'ok' | 'warn' | 'off' }> = {
@@ -371,6 +375,26 @@ export default function AccountPage() {
                   </>
                 )}
               </div>
+
+              {status.referralCode && (
+                <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16, marginTop: 20 }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 6 }}>
+                    Refer friends
+                  </div>
+                  <p style={{ fontSize: 12.5, color: 'var(--ink-3)', marginBottom: 10, lineHeight: 1.6 }}>
+                    {status.referralCount ? `${status.referralCount} friend${status.referralCount === 1 ? '' : 's'} joined via your link so far.` : 'Share your link — anyone who joins through it counts toward you.'}
+                  </p>
+                  <div style={{ marginBottom: 10 }}>
+                    <ShareBar
+                      title="OppIDX — every real opportunity, one honest board"
+                      url={`${SITE_URL}/?ref=${status.referralCode}`}
+                    />
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
+                    {SITE_URL}/?ref={status.referralCode}
+                  </div>
+                </div>
+              )}
 
               <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16, marginTop: 20 }}>
                 <p style={{ fontSize: 13, color: 'var(--ink-2)' }}>

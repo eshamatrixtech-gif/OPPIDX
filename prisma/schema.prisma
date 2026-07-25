@@ -78,6 +78,17 @@ model Subscriber {
   referralCode String? @unique
   referredBy   String?
 
+  // Free, optional identity verification: proves this subscriber controls
+  // the given email address, nothing more — deliberately no domain
+  // allowlist (that's an ongoing maintenance cost this doesn't need).
+  // institutionEmail is shown as-is on any "Verified" badge, so a reader
+  // judges credibility from the domain themselves (e.g. "@berkeley.edu").
+  institutionEmail                String?
+  institutionVerified             Boolean   @default(false)
+  institutionVerifiedAt           DateTime?
+  institutionVerifyToken          String?   @unique
+  institutionVerifyTokenExpiresAt DateTime?
+
   @@index([plan])
   @@index([referredBy])
 }
@@ -125,6 +136,25 @@ model OpportunitySubmission {
   payload          String    // JSON string of the submitted opportunity fields
   opportunityId    String?   // set once the paid Opportunity row is created
   createdAt        DateTime  @default(now())
+
+  @@index([status])
+}
+
+// The front of the sponsorship funnel — a public lead-capture form
+// (/advertise), not a checkout. `message` is checked against OpenAI's free
+// moderation endpoint (lib/mayatara/moderation.ai.ts) before being stored.
+// Admin reviews these by hand and, for real leads, manually creates the
+// matching SponsoredSlot row after an off-platform deal — same
+// no-self-serve philosophy as SponsoredSlot itself.
+model AdInquiry {
+  id           String   @id @default(cuid())
+  companyName  String
+  contactName  String
+  contactEmail String
+  website      String?
+  message      String
+  status       String   @default("new") // new | contacted | closed
+  createdAt    DateTime @default(now())
 
   @@index([status])
 }

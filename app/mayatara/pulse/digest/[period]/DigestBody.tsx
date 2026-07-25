@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PULSE_CATEGORIES } from "@/lib/mayatara/pulseStats";
+import { PulseCard, PulseCardGrid } from "@/app/mayatara/components/PulseCard";
 import type { DigestItem } from "@/lib/policyDigest/generate";
 
 export function DigestBody({ items }: { items: DigestItem[] }) {
@@ -55,16 +56,18 @@ export function DigestBody({ items }: { items: DigestItem[] }) {
                 <span className="text-lg" style={{ color: "var(--saffron)" }}>{g.sym}</span>
                 <h3 className="font-typewriter text-sm tracking-widest" style={{ color: "var(--ink)" }}>{g.category.toUpperCase()}</h3>
               </div>
-              <div className="flex flex-col gap-2">
+              <PulseCardGrid>
                 {g.items.map((item) => (
-                  <a key={item.url} href={item.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-                    <div className="card p-4 hover:opacity-90 transition-opacity flex items-start justify-between gap-3">
-                      <span className="text-sm leading-relaxed" style={{ color: "var(--ink)" }}>{item.title}</span>
-                      <span className="text-xs flex-shrink-0" style={{ color: "var(--ink-muted)" }}>{item.source}</span>
-                    </div>
-                  </a>
+                  <PulseCard
+                    key={item.url}
+                    sym={g.sym}
+                    category={g.category}
+                    title={item.title}
+                    source={item.source}
+                    url={item.url}
+                  />
                 ))}
-              </div>
+              </PulseCardGrid>
             </div>
           ))}
         </div>

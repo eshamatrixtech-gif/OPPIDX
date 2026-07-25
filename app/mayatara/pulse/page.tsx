@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PULSE_CATEGORIES } from "@/lib/mayatara/pulseStats";
+import { PulseCard, PulseCardGrid } from "@/app/mayatara/components/PulseCard";
 
 interface Headline {
   title: string;
@@ -70,19 +71,19 @@ function HeadlineGroups({ headlines }: { headlines: Headline[] }) {
             <span className="text-lg" style={{ color: "var(--saffron)" }}>{g.sym}</span>
             <h3 className="font-typewriter text-sm tracking-widest" style={{ color: "var(--ink)" }}>{g.category.toUpperCase()}</h3>
           </div>
-          <div className="flex flex-col gap-2">
+          <PulseCardGrid>
             {g.items.map((h) => (
-              <a key={h.url} href={h.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-                <div className="card p-4 hover:opacity-90 transition-opacity flex items-start justify-between gap-3">
-                  <div>
-                    <span className="text-sm leading-relaxed block" style={{ color: "var(--ink)" }}>{h.title}</span>
-                    <span className="text-xs" style={{ color: "var(--ink-muted)" }}>{h.source}</span>
-                  </div>
-                  <span className="text-xs flex-shrink-0" style={{ color: "var(--ink-muted)" }}>{timeAgo(h.fetched_at)}</span>
-                </div>
-              </a>
+              <PulseCard
+                key={h.url}
+                sym={g.sym}
+                category={g.category}
+                title={h.title}
+                source={h.source}
+                timeLabel={timeAgo(h.fetched_at)}
+                url={h.url}
+              />
             ))}
-          </div>
+          </PulseCardGrid>
         </div>
       ))}
     </div>

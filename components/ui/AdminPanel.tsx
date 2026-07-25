@@ -489,6 +489,77 @@ function StatsPanel() {
   )
 }
 
+interface AdInquiry {
+  id: string; companyName: string; contactName: string; contactEmail: string
+  website: string | null; message: string; status: string; createdAt: string
+}
+
+function AdInquiriesPanel() {
+  const [inquiries, setInquiries] = useState<AdInquiry[]>([])
+  const [loading, setLoading] = useState(true)
+
+  async function refresh() {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/advertise')
+      const data = await res.json()
+      setInquiries(data.inquiries ?? [])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { refresh() }, [])
+
+  async function setStatus(id: string, status: string) {
+    await fetch(`/api/advertise/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    })
+    await refresh()
+  }
+
+  if (loading) return <div style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Loading…</div>
+  if (inquiries.length === 0) return <div style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>No inquiries yet.</div>
+
+  return (
+    <div>
+      {inquiries.map(inq => (
+        <div key={inq.id} className="card-box" style={{ padding: '14px 16px', marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>
+              {inq.companyName}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
+              {new Date(inq.createdAt).toLocaleDateString()}
+            </div>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--ink-2)', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>
+            {inq.contactName} · {inq.contactEmail}{inq.website ? ` · ${inq.website}` : ''}
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.55, marginBottom: 10 }}>
+            {inq.message}
+          </div>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            {(['new', 'contacted', 'closed'] as const).map(s => (
+              <button key={s} onClick={() => setStatus(inq.id, s)} style={{
+                padding: '5px 10px', borderRadius: 3, cursor: 'pointer',
+                fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700,
+                background: inq.status === s ? 'var(--pin)' : 'var(--card)',
+                color: inq.status === s ? 'white' : 'var(--ink-2)',
+                border: inq.status === s ? 'none' : '1px solid var(--line)',
+              }}>
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function ScraperPanel() {
   const [runs, setRuns] = useState<ScrapeRun[]>([])
   const [running, setRunning] = useState(false)
@@ -785,10 +856,10 @@ function btnStyle(bg: string): React.CSSProperties {
 export function AdminPanel({ adminName }: { adminName: string }) {
   const router = useRouter()
   const [items, setItems] = useState<Opportunity[]>([])
-  const [tab, setTab] = useState<'stats' | 'add' | 'queue' | 'all' | 'resources' | 'scraper' | 'subscribers' | 'sponsor'>('stats')
+  const [tab, setTab] = useState<'stats' | 'add' | 'queue' | 'all' | 'resources' | 'scraper' | 'subscribers' | 'sponsor' | 'ads'>('stats')
 
   async function refresh() {
-    if (tab === 'stats' || tab === 'add' || tab === 'resources' || tab === 'scraper' || tab === 'subscribers' || tab === 'sponsor') return
+    if (tab === 'stats' || tab === 'add' || tab === 'resources' || tab === 'scraper' || tab === 'subscribers' || tab === 'sponsor' || tab === 'ads') return
     const status = tab === 'queue' ? 'unverified' : 'all'
     const res = await fetch(`/api/opportunities?status=${status}`)
     const data = await res.json()
@@ -815,14 +886,14 @@ export function AdminPanel({ adminName }: { adminName: string }) {
         </div>
 
         <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
-          {(['stats', 'queue', 'add', 'all', 'resources', 'scraper', 'subscribers', 'sponsor'] as const).map(t => (
+          {(['stats', 'queue', 'add', 'all', 'resources', 'scraper', 'subscribers', 'sponsor', 'ads'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               padding: '8px 16px', borderRadius: 2, border: '1.5px solid var(--line)', cursor: 'pointer',
               fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 600,
               background: tab === t ? 'var(--btn-bg)' : 'var(--card)',
               color: tab === t ? 'var(--btn-text)' : 'var(--ink)',
             }}>
-              {t === 'stats' ? 'Stats' : t === 'queue' ? 'Needs review' : t === 'add' ? 'Add new' : t === 'all' ? 'All opportunities' : t === 'resources' ? 'Resources' : t === 'scraper' ? 'Scraper' : t === 'subscribers' ? 'Subscribers' : 'Sponsor slots'}
+              {t === 'stats' ? 'Stats' : t === 'queue' ? 'Needs review' : t === 'add' ? 'Add new' : t === 'all' ? 'All opportunities' : t === 'resources' ? 'Resources' : t === 'scraper' ? 'Scraper' : t === 'subscribers' ? 'Subscribers' : t === 'sponsor' ? 'Sponsor slots' : 'Ad inquiries'}
             </button>
           ))}
         </div>
@@ -839,6 +910,8 @@ export function AdminPanel({ adminName }: { adminName: string }) {
           <SubscribersPanel />
         ) : tab === 'sponsor' ? (
           <SponsorPanel />
+        ) : tab === 'ads' ? (
+          <AdInquiriesPanel />
         ) : items.length === 0 ? (
           <div style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Nothing here.</div>
         ) : (

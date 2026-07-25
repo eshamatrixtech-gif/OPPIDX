@@ -12,6 +12,8 @@ type Status = {
   plan?: string
   subscriptionStatus?: string | null
   currentPeriodEnd?: string | null
+  institutionEmail?: string | null
+  institutionVerified?: boolean
 }
 
 const STATUS_MESSAGE: Record<string, { label: string; tone: 'ok' | 'warn' | 'off' }> = {
@@ -51,6 +53,29 @@ export default function AccountPage() {
   const [authPassword, setAuthPassword] = useState('')
   const [authState, setAuthState] = useState<'idle' | 'loading' | 'error'>('idle')
   const [authError, setAuthError] = useState('')
+
+  const [institutionEmailInput, setInstitutionEmailInput] = useState('')
+  const [verifyState, setVerifyState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [verifyError, setVerifyError] = useState('')
+
+  async function requestVerification(e: React.FormEvent) {
+    e.preventDefault()
+    setVerifyState('sending')
+    setVerifyError('')
+    try {
+      const res = await fetch('/api/account/verify-institution', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ institutionEmail: institutionEmailInput }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Something went wrong.')
+      setVerifyState('sent')
+    } catch (err) {
+      setVerifyError(err instanceof Error ? err.message : 'Something went wrong.')
+      setVerifyState('error')
+    }
+  }
 
   const refreshStatus = () =>
     fetch('/api/account/status').then(r => r.json()).then(setStatus)
@@ -311,6 +336,41 @@ export default function AccountPage() {
                   ✓ Cancelled. You&apos;re back on the free tier.
                 </div>
               )}
+
+              <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16, marginTop: 20 }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 8 }}>
+                  Verified email (optional)
+                </div>
+                {status.institutionVerified ? (
+                  <div style={{ fontSize: 13, color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>
+                    ✓ {status.institutionEmail}
+                  </div>
+                ) : verifyState === 'sent' ? (
+                  <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>
+                    Check {institutionEmailInput} for a verification link.
+                  </div>
+                ) : (
+                  <>
+                    <p style={{ fontSize: 12.5, color: 'var(--ink-3)', marginBottom: 10, lineHeight: 1.6 }}>
+                      Prove you control a college or work email — it shows on your profile as-is, so anyone can judge the domain themselves. Free, and never required.
+                    </p>
+                    <form onSubmit={requestVerification} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <input
+                        type="email" required value={institutionEmailInput}
+                        onChange={e => setInstitutionEmailInput(e.target.value)}
+                        placeholder="you@university.edu"
+                        style={{ ...inputStyle, flex: 1, minWidth: 200, width: 'auto' }}
+                      />
+                      <button type="submit" disabled={verifyState === 'sending'} style={primaryBtnStyle}>
+                        {verifyState === 'sending' ? 'Sending…' : 'Send link'}
+                      </button>
+                    </form>
+                    {verifyState === 'error' && (
+                      <div style={{ color: 'var(--danger)', fontSize: 12.5, marginTop: 8, fontFamily: 'var(--font-mono)' }}>{verifyError}</div>
+                    )}
+                  </>
+                )}
+              </div>
 
               <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16, marginTop: 20 }}>
                 <p style={{ fontSize: 13, color: 'var(--ink-2)' }}>

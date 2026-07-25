@@ -9,7 +9,10 @@ function isPlausibleEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s) && s.length <= 320
 }
 
-function shape(subscriber: { plan: string; subscriptionStatus: string | null; currentPeriodEnd: Date | null; email: string }) {
+function shape(subscriber: {
+  plan: string; subscriptionStatus: string | null; currentPeriodEnd: Date | null; email: string
+  institutionEmail?: string | null; institutionVerified?: boolean
+}) {
   return {
     found: true,
     email: subscriber.email,
@@ -17,6 +20,8 @@ function shape(subscriber: { plan: string; subscriptionStatus: string | null; cu
     plan: subscriber.plan,
     subscriptionStatus: subscriber.subscriptionStatus,
     currentPeriodEnd: subscriber.currentPeriodEnd,
+    institutionEmail: subscriber.institutionEmail ?? null,
+    institutionVerified: subscriber.institutionVerified ?? false,
   }
 }
 

@@ -374,6 +374,7 @@ export default function Home() {
           <a href="https://t.me/oppurtunityindex" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Telegram</a>
           <a href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Discord</a>
           <Link href="/widget" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Embed our widget</Link>
+          <Link href="/advertise" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Advertise with us</Link>
           <Link href="/terms" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Terms &amp; privacy</Link>
         </div>
       </footer>

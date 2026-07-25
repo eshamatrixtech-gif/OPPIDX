@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { isUniqueConstraintError } from '@/lib/isUniqueConstraintError'
 import type { Opportunity } from '@/types'
 
 /** UTC calendar date as "2026-07-25" — the DailyDigest.date / URL slug format. */
@@ -26,8 +27,8 @@ export async function snapshotDailyDigest(opportunityIds: string[]) {
     await prisma.dailyDigest.create({
       data: { date, opportunityIds: JSON.stringify(opportunityIds), totalOpportunities, newLast24h },
     })
-  } catch (e: any) {
-    if (e?.code !== 'P2002') throw e
+  } catch (e) {
+    if (!isUniqueConstraintError(e)) throw e
     // already snapshotted today — leave the existing page as the durable record
   }
 }

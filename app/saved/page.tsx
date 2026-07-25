@@ -6,10 +6,11 @@ import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { NotifyButton } from '@/components/ui/NotifyButton'
 import type { Opportunity } from '@/types'
 
-async function shareChaseCard(items: Opportunity[]) {
+async function shareChaseCard(items: Opportunity[], appliedCount: number) {
   const params = new URLSearchParams()
   items.slice(0, 3).forEach(o => params.append('title', o.title))
   params.set('total', String(items.length))
+  if (appliedCount > 0) params.set('applied', String(appliedCount))
 
   const url = '/api/saved/card?' + params.toString()
   try {
@@ -34,13 +35,17 @@ async function shareChaseCard(items: Opportunity[]) {
 
 export default function SavedPage() {
   const [items, setItems] = useState<Opportunity[]>([])
+  const [appliedCount, setAppliedCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [sharing, setSharing] = useState(false)
 
   useEffect(() => {
     fetch('/api/saved')
       .then(r => r.json())
-      .then(data => setItems(data.items ?? []))
+      .then(data => {
+        setItems(data.items ?? [])
+        setAppliedCount(data.appliedCount ?? 0)
+      })
       .finally(() => setLoading(false))
   }, [])
 
@@ -51,7 +56,10 @@ export default function SavedPage() {
           <Link href="/" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>
             ← OppIDX
           </Link>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(24px, 4vw, 34px)', color: 'var(--ink)', marginTop: 14 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pin)', fontFamily: 'var(--font-mono)', marginTop: 14 }}>
+            ◆ Chaser tools ◆
+          </div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(24px, 4vw, 34px)', color: 'var(--ink)', marginTop: 8 }}>
             Your saved opportunities
           </h1>
           <p style={{ fontSize: 13.5, color: 'var(--ink-2)', fontFamily: 'var(--font-mono)', marginTop: 10 }}>
@@ -61,7 +69,7 @@ export default function SavedPage() {
             <NotifyButton />
             {items.length > 0 && (
               <button
-                onClick={async () => { setSharing(true); await shareChaseCard(items); setSharing(false) }}
+                onClick={async () => { setSharing(true); await shareChaseCard(items, appliedCount); setSharing(false) }}
                 disabled={sharing}
                 style={{
                   padding: '10px 18px', borderRadius: 2, border: 'none', cursor: 'pointer',

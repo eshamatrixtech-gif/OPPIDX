@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma }       from '@/lib/db'
 import { requireAuth }  from '@/lib/auth'
+import { computeRetention, computeCohortRetention } from '@/lib/retention'
 
 const DAYS = 30
 const DAY_MS = 86_400_000
@@ -41,7 +42,9 @@ export async function GET() {
     submissionsByStatus,
     scrapeRuns, resourceScrapeRuns,
     digests,
-    visitorDayCounts, recentVisitDates,
+    recentVisitDates,
+    totalSaved, appliedFromSaved,
+    weeklySnapshots,
   ] = await Promise.all([
     prisma.opportunity.count({ where: { deletedAt: null } }),
     prisma.opportunity.count({ where: { deletedAt: null, verified: true } }),
@@ -66,19 +69,22 @@ export async function GET() {
 
     prisma.policyDigest.findMany({ orderBy: { createdAt: 'desc' }, take: 10 }),
 
-    // Gate-0 retention: one row per (anonId, date) already means the count
-    // of rows per anonId IS the count of distinct days they showed up —
-    // "returning" is simply anyone with 2 or more.
-    prisma.visitLog.groupBy({ by: ['anonId'], _count: { date: true } }),
     prisma.visitLog.findMany({ where: { date: { gte: sinceDateStr } }, select: { date: true } }),
+
+    // Law 5's real signal: of everything saved, how much did someone
+    // actually go on to click Apply for (see app/api/opportunities/[id]/view).
+    prisma.savedOpportunity.count(),
+    prisma.savedOpportunity.count({ where: { appliedAt: { not: null } } }),
+
+    prisma.retentionSnapshot.findMany({ orderBy: { weekOf: 'desc' }, take: 12 }),
   ])
+
+  const retention = await computeRetention()
+  const cohorts = await computeCohortRetention()
 
   const digestItemCount = (items: string) => {
     try { return (JSON.parse(items) as unknown[]).length } catch { return 0 }
   }
-
-  const totalVisitors = visitorDayCounts.length
-  const returningVisitors = visitorDayCounts.filter(v => v._count.date >= 2).length
 
   return NextResponse.json({
     opportunities: {
@@ -114,10 +120,17 @@ export async function GET() {
       period: d.period, periodType: d.periodType, itemCount: digestItemCount(d.items), createdAt: d.createdAt,
     })),
     retention: {
-      totalVisitors,
-      returningVisitors,
-      returnRatePct: totalVisitors > 0 ? Math.round((returningVisitors / totalVisitors) * 100) : 0,
+      ...retention,
       last30Days: bucketByDay(recentVisitDates.map(v => new Date(`${v.date}T00:00:00Z`))),
+      weeklyTrend: [...weeklySnapshots].reverse().map(s => ({
+        weekOf: s.weekOf, returnRatePct: s.returnRatePct, totalVisitors: s.totalVisitors,
+      })),
+      cohorts,
+    },
+    conversion: {
+      totalSaved,
+      appliedFromSaved,
+      conversionRatePct: totalSaved > 0 ? Math.round((appliedFromSaved / totalSaved) * 100) : 0,
     },
   })
 }

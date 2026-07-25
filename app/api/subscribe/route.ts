@@ -3,6 +3,7 @@ import { prisma }                    from '@/lib/db'
 import { rateLimit }                 from '@/lib/rateLimit'
 import { getClientIp }               from '@/lib/ip'
 import { generateReferralCode, REFERRALS_ENABLED } from '@/lib/referral'
+import { isUniqueConstraintError } from '@/lib/isUniqueConstraintError'
 
 function isPlausibleEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s) && s.length <= 320
@@ -27,8 +28,8 @@ export async function POST(req: NextRequest) {
     await prisma.subscriber.create({
       data: { email, referralCode: REFERRALS_ENABLED ? generateReferralCode() : null, referredBy },
     })
-  } catch (e: any) {
-    if (e?.code !== 'P2002') {
+  } catch (e) {
+    if (!isUniqueConstraintError(e)) {
       return NextResponse.json({ error: 'Something went wrong. Try again.' }, { status: 500 })
     }
     // already subscribed — treat as success, don't leak whether it existed

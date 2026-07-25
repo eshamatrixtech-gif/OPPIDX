@@ -343,7 +343,12 @@ interface StatsData {
   submissions: { byStatus: Breakdown[] }
   scraperRuns: { opportunities: { startedAt: string; added: number }[]; resources: { startedAt: string; added: number }[] }
   digests: { period: string; periodType: string; itemCount: number; createdAt: string }[]
-  retention: { totalVisitors: number; returningVisitors: number; returnRatePct: number; last30Days: DayCount[] }
+  retention: {
+    totalVisitors: number; returningVisitors: number; returnRatePct: number; last30Days: DayCount[]
+    weeklyTrend: { weekOf: string; returnRatePct: number; totalVisitors: number }[]
+    cohorts: { cohortDate: string; cohortSize: number; day1Pct: number | null; day7Pct: number | null; day30Pct: number | null }[]
+  }
+  conversion: { totalSaved: number; appliedFromSaved: number; conversionRatePct: number }
 }
 
 function MetricCard({ label, value }: { label: string; value: number | string }) {
@@ -435,6 +440,63 @@ function StatsPanel() {
         <MetricCard label="Return rate" value={`${stats.retention.returnRatePct}%`} />
       </div>
       <GrowthSparkline title="Visits" data={stats.retention.last30Days} />
+
+      {stats.retention.weeklyTrend.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8 }}>
+            Return rate by week — is it actually moving?
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            {stats.retention.weeklyTrend.map(w => (
+              <div key={w.weekOf} style={{ fontSize: 11.5, fontFamily: 'var(--font-mono)', color: 'var(--ink-2)' }}>
+                {w.weekOf}: <strong style={{ color: 'var(--ink)' }}>{w.returnRatePct}%</strong> ({w.totalVisitors})
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {stats.retention.cohorts.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8 }}>
+            Cohort retention — real day-1 / day-7 / day-30, not a guess
+          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-mono)', fontSize: 11.5 }}>
+            <thead>
+              <tr style={{ borderBottom: '1.5px solid var(--line)' }}>
+                <th style={{ textAlign: 'left', padding: '4px 6px', color: 'var(--ink-3)' }}>Cohort</th>
+                <th style={{ textAlign: 'right', padding: '4px 6px', color: 'var(--ink-3)' }}>Size</th>
+                <th style={{ textAlign: 'right', padding: '4px 6px', color: 'var(--ink-3)' }}>Day 1</th>
+                <th style={{ textAlign: 'right', padding: '4px 6px', color: 'var(--ink-3)' }}>Day 7</th>
+                <th style={{ textAlign: 'right', padding: '4px 6px', color: 'var(--ink-3)' }}>Day 30</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.retention.cohorts.map(c => (
+                <tr key={c.cohortDate} style={{ borderBottom: '1px solid var(--line)' }}>
+                  <td style={{ padding: '4px 6px', color: 'var(--ink-2)' }}>{c.cohortDate}</td>
+                  <td style={{ padding: '4px 6px', textAlign: 'right', color: 'var(--ink-2)' }}>{c.cohortSize}</td>
+                  <td style={{ padding: '4px 6px', textAlign: 'right', color: 'var(--ink)' }}>{c.day1Pct === null ? '—' : `${c.day1Pct}%`}</td>
+                  <td style={{ padding: '4px 6px', textAlign: 'right', color: 'var(--ink)' }}>{c.day7Pct === null ? '—' : `${c.day7Pct}%`}</td>
+                  <td style={{ padding: '4px 6px', textAlign: 'right', color: 'var(--ink)' }}>{c.day30Pct === null ? '—' : `${c.day30Pct}%`}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{ fontSize: 10.5, color: 'var(--ink-3)', marginTop: 6 }}>
+            — means that cohort hasn&apos;t reached that day yet, not a 0%.
+          </p>
+        </div>
+      )}
+
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8, marginTop: 22 }}>
+        Conversion — does saving something lead anywhere?
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 10 }}>
+        <MetricCard label="Total saved" value={stats.conversion.totalSaved} />
+        <MetricCard label="Applied from saved" value={stats.conversion.appliedFromSaved} />
+        <MetricCard label="Conversion rate" value={`${stats.conversion.conversionRatePct}%`} />
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 26, marginTop: 22 }}>
         <MetricCard label="Opportunities" value={stats.opportunities.total} />

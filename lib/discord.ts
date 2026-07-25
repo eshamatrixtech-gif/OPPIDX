@@ -1,3 +1,5 @@
+import { SOCIAL_CHANNELS_ENABLED } from '@/lib/socialChannels'
+
 /** Permanent (non-expiring) invite to the OppIDX Discord — cross-linked
  * into every Telegram digest message so people move freely between the
  * two communities. */
@@ -17,6 +19,7 @@ export function escapeDiscordMarkdown(input: string): string {
  * anything else.
  */
 export async function sendDiscordMessage(content: string): Promise<boolean> {
+  if (!SOCIAL_CHANNELS_ENABLED) return false
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL
   if (!webhookUrl) return false
 

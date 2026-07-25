@@ -1,3 +1,5 @@
+import { SOCIAL_CHANNELS_ENABLED } from '@/lib/socialChannels'
+
 /** The public channel itself — cross-linked into every Discord digest
  * message so people move freely between the two communities. */
 export const TELEGRAM_CHANNEL_URL = 'https://t.me/oppurtunityindex'
@@ -20,6 +22,7 @@ export function escapeTelegramHtml(input: string): string {
  * Returns false (never throws) if the bot isn't configured or the send
  * fails — a broken daily digest shouldn't take down anything else. */
 export async function sendTelegramMessage(html: string): Promise<boolean> {
+  if (!SOCIAL_CHANNELS_ENABLED) return false
   const config = getConfig()
   if (!config) return false
 

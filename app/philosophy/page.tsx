@@ -147,6 +147,15 @@ export default function PhilosophyPage() {
             </p>
           </Section>
 
+          <Section title="What we call the people here">
+            <p>
+              Not users. Not subscribers. If there&apos;s a word for someone who saves a real opportunity, follows
+              through on it, and doesn&apos;t fall for a fake deadline along the way — we&apos;d call that a
+              <strong> Chaser</strong>. Not an official title, not a membership card — just the plainest word
+              we could find for what this whole board is actually for.
+            </p>
+          </Section>
+
           <div style={{ textAlign: 'center', marginTop: 30 }}>
             <div style={{ color: 'var(--pin)', marginBottom: 20, fontFamily: 'var(--font-mono)', letterSpacing: 8 }}>◆ ✦ ◆</div>
             <Link href="/browse" style={{

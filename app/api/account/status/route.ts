@@ -5,6 +5,7 @@ import { getClientIp } from '@/lib/ip'
 import { getCurrentSubscriber } from '@/lib/subscriberSession'
 import { isPaidSubscriber } from '@/lib/billing/entitlements'
 import { generateReferralCode, REFERRALS_ENABLED } from '@/lib/referral'
+import { isUniqueConstraintError } from '@/lib/isUniqueConstraintError'
 
 function isPlausibleEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s) && s.length <= 320
@@ -26,8 +27,8 @@ async function shape(subscriber: {
           const code = generateReferralCode()
           await prisma.subscriber.update({ where: { id: subscriber.id }, data: { referralCode: code } })
           referralCode = code
-        } catch (e: any) {
-          if (e?.code !== 'P2002') throw e
+        } catch (e) {
+          if (!isUniqueConstraintError(e)) throw e
         }
       }
     }

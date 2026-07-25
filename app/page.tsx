@@ -7,6 +7,7 @@ import { Wordmark } from '@/components/ui/Wordmark'
 import { ShareBar } from '@/components/ui/ShareBar'
 import { useCountUp } from '@/lib/hooks/useCountUp'
 import { DISCORD_INVITE_URL } from '@/lib/discord'
+import { SOCIAL_CHANNELS_ENABLED } from '@/lib/socialChannels'
 import { SITE_URL } from '@/lib/siteUrl'
 import { getStoredReferralCode } from '@/lib/clientReferral'
 import type { Opportunity, Stats } from '@/types'
@@ -126,6 +127,7 @@ export default function Home() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [featured, setFeatured] = useState<Opportunity[] | null>(null)
   const [newSinceLastVisit, setNewSinceLastVisit] = useState<number | null>(null)
+  const [sponsor, setSponsor] = useState<{ sponsorName: string; sponsorUrl: string; tagline: string } | null>(null)
 
   useEffect(() => {
     async function poll() {
@@ -135,6 +137,13 @@ export default function Home() {
     poll()
     const id = setInterval(poll, 15_000)
     return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/sponsor/active')
+      .then(r => r.json())
+      .then(data => setSponsor(data.sponsor))
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -242,24 +251,26 @@ export default function Home() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <a href="https://t.me/oppurtunityindex" target="_blank" rel="noopener noreferrer" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 2,
-              background: '#229ED9', color: '#fff', textDecoration: 'none',
-              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, letterSpacing: '0.02em',
-              boxShadow: '3px 3px 0 var(--shadow)',
-            }}>
-              ✈ Join us on Telegram
-            </a>
-            <a href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 2,
-              background: '#5865F2', color: '#fff', textDecoration: 'none',
-              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, letterSpacing: '0.02em',
-              boxShadow: '3px 3px 0 var(--shadow)',
-            }}>
-              ◆ Join us on Discord
-            </a>
-          </div>
+          {SOCIAL_CHANNELS_ENABLED && (
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <a href="https://t.me/oppurtunityindex" target="_blank" rel="noopener noreferrer" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 2,
+                background: '#229ED9', color: '#fff', textDecoration: 'none',
+                fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, letterSpacing: '0.02em',
+                boxShadow: '3px 3px 0 var(--shadow)',
+              }}>
+                ✈ Join us on Telegram
+              </a>
+              <a href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 2,
+                background: '#5865F2', color: '#fff', textDecoration: 'none',
+                fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, letterSpacing: '0.02em',
+                boxShadow: '3px 3px 0 var(--shadow)',
+              }}>
+                ◆ Join us on Discord
+              </a>
+            </div>
+          )}
         </div>
       </header>
 
@@ -289,6 +300,14 @@ export default function Home() {
         <div className="divider" style={{ marginBottom: 10 }}>
           <span>◆ Best opportunities right now — refreshed daily ◆</span>
         </div>
+        {sponsor && (
+          <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginBottom: 16 }}>
+            Today&apos;s picks brought to you by{' '}
+            <a href={sponsor.sponsorUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--pin)' }}>
+              {sponsor.sponsorName}
+            </a>{' '}— {sponsor.tagline}
+          </div>
+        )}
         {featured === null ? (
           <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13, marginBottom: 20 }}>
             Loading today's picks…
@@ -392,8 +411,12 @@ export default function Home() {
           <Link href="/saved" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Saved</Link>
           <Link href="/submit" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Enlist your opportunity (from ₹1,000)</Link>
           <Link href="/account" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Manage subscription</Link>
-          <a href="https://t.me/oppurtunityindex" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Telegram</a>
-          <a href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Discord</a>
+          {SOCIAL_CHANNELS_ENABLED && (
+            <>
+              <a href="https://t.me/oppurtunityindex" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Telegram</a>
+              <a href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Discord</a>
+            </>
+          )}
           <Link href="/widget" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Embed our widget</Link>
           <Link href="/advertise" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Advertise with us</Link>
           <Link href="/terms" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Terms &amp; privacy</Link>

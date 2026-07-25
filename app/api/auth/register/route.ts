@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma }                    from '@/lib/db'
 import { createSession, hashPassword } from '@/lib/session'
 import { rateLimit }                 from '@/lib/rateLimit'
+import { isUniqueConstraintError }   from '@/lib/isUniqueConstraintError'
 
 const MAX_BODY = 4_096
 
@@ -93,9 +94,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, user: { id: user.id, name: user.name, email: user.email } })
 
-  } catch (e: any) {
-    // Prisma unique constraint violation on email
-    if (e?.code === 'P2002') {
+  } catch (e) {
+    // Unique constraint violation on email
+    if (isUniqueConstraintError(e)) {
       return NextResponse.json({ error: 'An account with that email already exists.' }, { status: 409 })
     }
     return NextResponse.json({ error: 'Registration failed. Please try again.' }, { status: 500 })

@@ -6,6 +6,7 @@ import { ShareBar } from '@/components/ui/ShareBar'
 import { SaveButton } from '@/components/ui/SaveButton'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { SITE_URL } from '@/lib/siteUrl'
+import { relatedResourceCategories } from '@/lib/opportunityResourceMap'
 import type { Opportunity } from '@/types'
 
 const AUDIENCE_LABEL: Record<string, string> = {
@@ -46,6 +47,19 @@ async function getSimilar(opp: { id: string; audience: string; region: string })
   return rows.map(r => ({ ...r, addedAt: r.addedAt.toISOString() })) as unknown as Opportunity[]
 }
 
+/** Real Resources related to this opportunity — the Opportunities →
+ * Resources graph edge. Empty when nothing genuinely matches, rather
+ * than forcing an unrelated category onto the page. */
+async function getRelatedResources(opp: { audience: string; tags: string }) {
+  const categories = relatedResourceCategories(opp)
+  if (categories.length === 0) return []
+  return prisma.resource.findMany({
+    where: { category: { in: categories }, verified: true, deletedAt: null },
+    orderBy: { addedAt: 'desc' },
+    take: 3,
+  })
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const opp = await getOpportunity(id)
@@ -63,6 +77,7 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
 
   const tags = opp.tags.split(',').map(t => t.trim()).filter(Boolean)
   const similar = await getSimilar(opp)
+  const relatedResources = await getRelatedResources(opp)
   const pageUrl = `${SITE_URL}/opportunities/${opp.id}`
 
   return (
@@ -121,6 +136,21 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
                 How to prepare
               </div>
               <div style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{opp.prepResources}</div>
+            </div>
+          )}
+
+          {relatedResources.length > 0 && (
+            <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 8 }}>
+                Resources that might help
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {relatedResources.map(r => (
+                  <Link key={r.id} href={`/resources/${r.id}`} style={{ fontSize: 13.5, color: 'var(--pin)', textDecoration: 'none' }}>
+                    {r.title} <span style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>· {r.category}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
 

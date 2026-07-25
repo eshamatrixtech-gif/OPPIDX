@@ -48,6 +48,9 @@ export async function GET(req: Request) {
   const titles = searchParams.getAll('title').slice(0, 3).map(t => clamp(t, 70))
   const total = Math.max(Number(searchParams.get('total')) || titles.length, titles.length)
   const extra = total - titles.length
+  // Momentum, not just a static list — only shown when genuinely > 0, since
+  // "0 applied" isn't a stat worth putting on a card.
+  const applied = Math.max(0, Number(searchParams.get('applied')) || 0)
 
   return new ImageResponse(
     (
@@ -59,6 +62,11 @@ export async function GET(req: Request) {
               <div style={{ fontSize: 28, fontWeight: 700, color: INK, letterSpacing: 4 }}>OPPIDX</div>
             </div>
             <div style={{ display: 'flex', fontSize: 42, color: INK, fontWeight: 700, marginTop: 30 }}>I&apos;m chasing</div>
+            {applied > 0 && (
+              <div style={{ display: 'flex', fontSize: 24, color: PIN, fontWeight: 700, marginTop: 14 }}>
+                {applied} applied to so far
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22 }}>

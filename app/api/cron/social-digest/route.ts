@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
 import { SITE_URL } from '@/lib/siteUrl'
 import { getDailyPicks, AUDIENCE_LABEL } from '@/lib/dailyPicks'
 import { sendTelegramMessage, escapeTelegramHtml, TELEGRAM_CHANNEL_URL } from '@/lib/telegram'
 import { sendDiscordMessage, escapeDiscordMarkdown, DISCORD_INVITE_URL } from '@/lib/discord'
 import { getActiveSponsorSlot } from '@/lib/sponsor'
 import { snapshotDailyDigest, todayDateString } from '@/lib/dailyDigest'
+import { sendDailyDigestEmail } from '@/lib/email'
 
 /**
  * GET /api/cron/social-digest — posts today's random pick (see
@@ -84,5 +86,35 @@ export async function GET(req: NextRequest) {
     sendDiscordMessage(discordMessage),
   ])
 
-  return NextResponse.json({ count: items.length, telegramSent, discordSent, sponsored: !!sponsor })
+  // ── Email (real subscribers, not Telegram/Discord followers) ──
+  // No-ops entirely (not an error) if RESEND_API_KEY isn't configured in
+  // this environment, same as every other distribution channel above.
+  let emailsSent = 0
+  if (process.env.RESEND_API_KEY) {
+    const [totalOpportunities, newLast24h, subscribers] = await Promise.all([
+      prisma.opportunity.count({ where: { verified: true, deletedAt: null } }),
+      prisma.opportunity.count({
+        where: { verified: true, deletedAt: null, addedAt: { gte: new Date(Date.now() - 24 * 60 * 60_000) } },
+      }),
+      prisma.subscriber.findMany({ where: { unsubscribedFromDigest: false }, select: { id: true, email: true } }),
+    ])
+
+    const dateLabel = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+    const picks = items.map(o => ({ title: o.title, org: o.org, id: o.id }))
+
+    // Sequential, not Promise.all — this is a plain loop over individual
+    // sends (fine at current subscriber counts), not a batch API call. One
+    // recipient's failure is logged and skipped rather than aborting the
+    // rest of the run.
+    for (const sub of subscribers) {
+      try {
+        await sendDailyDigestEmail(sub.id, sub.email, { dateLabel, totalOpportunities, newLast24h, picks })
+        emailsSent++
+      } catch (err) {
+        console.error('[social-digest] email failed for', sub.email, err)
+      }
+    }
+  }
+
+  return NextResponse.json({ count: items.length, telegramSent, discordSent, emailsSent, sponsored: !!sponsor })
 }

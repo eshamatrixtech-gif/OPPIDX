@@ -9,17 +9,21 @@ function isPlausibleEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s) && s.length <= 320
 }
 
-/** GET /api/saved — this visitor's saved opportunities, newest first. Empty
- * list (not an error) if they have no session yet. */
+/** GET /api/saved — this visitor's saved opportunities, newest first, plus
+ * how many of those they've actually gone on to apply to (see
+ * app/api/opportunities/[id]/view/route.ts) — the momentum stat the chase
+ * card uses instead of just a static saved count. Empty (not an error) if
+ * they have no session yet. */
 export async function GET() {
   const subscriber = await getCurrentSubscriber()
-  if (!subscriber) return NextResponse.json({ items: [] })
+  if (!subscriber) return NextResponse.json({ items: [], appliedCount: 0 })
 
   const saved = await prisma.savedOpportunity.findMany({
     where: { subscriberId: subscriber.id },
     orderBy: { savedAt: 'desc' },
   })
-  if (saved.length === 0) return NextResponse.json({ items: [] })
+  const appliedCount = saved.filter(s => s.appliedAt).length
+  if (saved.length === 0) return NextResponse.json({ items: [], appliedCount: 0 })
 
   const items = await prisma.opportunity.findMany({
     where: { id: { in: saved.map(s => s.opportunityId) }, deletedAt: null },
@@ -28,7 +32,7 @@ export async function GET() {
   const byId = new Map(items.map(o => [o.id, o]))
   const ordered = saved.map(s => byId.get(s.opportunityId)).filter((o): o is NonNullable<typeof o> => !!o)
 
-  return NextResponse.json({ items: ordered })
+  return NextResponse.json({ items: ordered, appliedCount })
 }
 
 /**

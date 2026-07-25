@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getRecentDigests } from '@/lib/dailyDigest'
+import { SOCIAL_CHANNELS_ENABLED } from '@/lib/socialChannels'
 
 export const metadata = {
   title: 'Daily Digest — OppIDX',
@@ -66,15 +67,17 @@ export default async function NewsletterArchivePage() {
             The daily digest
           </h1>
           <p style={{ color: 'var(--ink-2)', fontSize: 13.5, maxWidth: 480, margin: '0 auto', lineHeight: 1.65 }}>
-            Posted automatically every morning to Telegram and Discord — real board numbers, plus a hand-checked pick. Archived here so anyone can browse or share a past day.
+            Posted automatically every morning — real board numbers, plus a hand-checked pick. Archived here so anyone can browse or share a past day.
           </p>
         </div>
 
         {digests.length === 0 ? (
           <div className="card-box" style={{ padding: '40px 24px', textAlign: 'center' }}>
             <p style={{ color: 'var(--ink-2)', fontSize: 13.5, lineHeight: 1.65 }}>
-              Nothing archived yet — the first daily digest posts tomorrow morning. Follow along on{' '}
-              <a href="https://t.me/oppurtunityindex" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--pin)' }}>Telegram</a> in the meantime.
+              Nothing archived yet — the first daily digest posts tomorrow morning.
+              {SOCIAL_CHANNELS_ENABLED && (
+                <> Follow along on <a href="https://t.me/oppurtunityindex" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--pin)' }}>Telegram</a> in the meantime.</>
+              )}
             </p>
           </div>
         ) : (

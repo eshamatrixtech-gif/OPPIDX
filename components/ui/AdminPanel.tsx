@@ -349,6 +349,7 @@ interface StatsData {
     cohorts: { cohortDate: string; cohortSize: number; day1Pct: number | null; day7Pct: number | null; day30Pct: number | null }[]
   }
   conversion: { totalSaved: number; appliedFromSaved: number; conversionRatePct: number }
+  email: { last30DaysByStatus: Breakdown[]; suppressed: number }
 }
 
 function MetricCard({ label, value }: { label: string; value: number | string }) {
@@ -497,6 +498,14 @@ function StatsPanel() {
         <MetricCard label="Applied from saved" value={stats.conversion.appliedFromSaved} />
         <MetricCard label="Conversion rate" value={`${stats.conversion.conversionRatePct}%`} />
       </div>
+
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8, marginTop: 22 }}>
+        Email deliverability — last 30 days
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 10 }}>
+        <MetricCard label="Suppressed (bounced/complained)" value={stats.email.suppressed} />
+      </div>
+      <BreakdownBars title="Digest emails by status" data={stats.email.last30DaysByStatus} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 26, marginTop: 22 }}>
         <MetricCard label="Opportunities" value={stats.opportunities.total} />

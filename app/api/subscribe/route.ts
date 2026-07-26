@@ -4,6 +4,7 @@ import { rateLimit }                 from '@/lib/rateLimit'
 import { getClientIp }               from '@/lib/ip'
 import { generateReferralCode, REFERRALS_ENABLED } from '@/lib/referral'
 import { isUniqueConstraintError } from '@/lib/isUniqueConstraintError'
+import { sendWelcomeEmail } from '@/lib/email'
 
 function isPlausibleEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s) && s.length <= 320
@@ -32,7 +33,13 @@ export async function POST(req: NextRequest) {
     if (!isUniqueConstraintError(e)) {
       return NextResponse.json({ error: 'Something went wrong. Try again.' }, { status: 500 })
     }
-    // already subscribed — treat as success, don't leak whether it existed
+    // already subscribed — treat as success, don't leak whether it existed, and
+    // don't re-send a welcome email to someone who's already had one
+    return NextResponse.json({ ok: true })
+  }
+
+  if (process.env.RESEND_API_KEY) {
+    sendWelcomeEmail(email).catch(err => console.error('[subscribe] welcome email failed:', err))
   }
 
   return NextResponse.json({ ok: true })

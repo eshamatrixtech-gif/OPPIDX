@@ -94,6 +94,13 @@ model Subscriber {
   // Checked by app/api/cron/social-digest before every send.
   unsubscribedFromDigest Boolean @default(false)
 
+  // Auto-suppression from a Resend bounce/complaint webhook (see
+  // app/api/webhooks/resend/route.ts) — distinct from unsubscribedFromDigest
+  // because *why* mail stopped matters: a voluntary unsubscribe is a
+  // preference, a bounce/complaint is a deliverability signal an admin
+  // should be able to see and investigate separately. Null = not suppressed.
+  emailSuppressedReason String? // "bounced" | "complained"
+
   @@index([plan])
   @@index([referredBy])
 }
@@ -265,6 +272,24 @@ model RetentionSnapshot {
   returningVisitors Int
   returnRatePct     Int
   createdAt         DateTime @default(now())
+}
+
+// One row per (subscriber, digest date) actually emailed — durable record
+// that does two jobs at once: (1) idempotency, so a same-day cron re-run
+// never double-sends to anyone already logged for that date, and (2) a
+// place for the Resend webhook (app/api/webhooks/resend/route.ts) to
+// update delivery status by resendId, since email_id is the only shared
+// key between "we sent this" and "here's what happened to it."
+model DigestEmailLog {
+  id           String   @id @default(cuid())
+  subscriberId String
+  date         String
+  resendId     String?  @unique
+  status       String   @default("sent") // "sent" | "delivered" | "opened" | "clicked" | "bounced" | "complained" | "failed"
+  createdAt    DateTime @default(now())
+
+  @@unique([subscriberId, date])
+  @@index([date])
 }
 
 // A durable, shareable snapshot of one day's "Today's picks from OppIDX"

@@ -4,46 +4,39 @@ import { SITE_URL } from '@/lib/siteUrl'
 
 // Separate from lib/mayatara/email.ts on purpose — same Resend account and
 // free tier, but a different FROM identity and template voice for OppIDX
-// proper vs. the Mayatara sub-brand.
-const resend = new Resend(process.env.RESEND_API_KEY)
+// proper vs. the Mayatara sub-brand. Exported (not just used internally) so
+// the webhook route can call resend.webhooks.verify with the same client.
+export const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.EMAIL_FROM || 'OppIDX <onboarding@resend.dev>'
 
-export interface DailyDigestEmailData {
-  dateLabel: string
+// Resend's batch endpoint caps at 100 emails per call — chunk rather than
+// assume the subscriber list always fits in one request.
+const BATCH_SIZE = 100
+
+export interface WeeklyDigestEmailData {
+  weekRangeLabel: string
   totalOpportunities: number
-  newLast24h: number
-  picks: { title: string; org: string | null; id: string }[]
+  newLast7Days: number
+  topPicks: { title: string; org: string | null; id: string }[]
 }
 
-/**
- * Sends the same daily-digest content already posted to Telegram/Discord
- * and shown on /newsletter — the actual email delivery channel that never
- * existed until now. Every send gets its own unsubscribe link (required,
- * not optional — never ship a marketing/content email without a working
- * one), and only ever flips Subscriber.unsubscribedFromDigest, never
- * deletes the row.
- */
-export async function sendDailyDigestEmail(subscriberId: string, toEmail: string, digest: DailyDigestEmailData) {
-  const unsubscribeUrl = `${SITE_URL}/api/subscribe/unsubscribe?token=${signUnsubscribeToken(subscriberId)}`
-
-  const picksHtml = digest.picks.map(p => `
+function weeklyDigestHtml(digest: WeeklyDigestEmailData, unsubscribeUrl: string): string {
+  const picksHtml = digest.topPicks.map((p, i) => `
     <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #e0d6c4;">
+      <span style="color:#5b5346;font-size:12px;font-weight:bold;">${i + 1}.</span>
       <a href="${SITE_URL}/opportunities/${p.id}" style="color:#c0432a;font-weight:bold;font-size:14px;text-decoration:none;">${p.title}</a>
-      ${p.org ? `<div style="color:#5b5346;font-size:12.5px;margin-top:2px;">${p.org}</div>` : ''}
+      ${p.org ? `<div style="color:#5b5346;font-size:12.5px;margin-top:2px;margin-left:16px;">${p.org}</div>` : ''}
     </div>`).join('')
 
-  await resend.emails.send({
-    from: FROM,
-    to: toEmail,
-    subject: `Today's picks from OppIDX — ${digest.dateLabel}`,
-    html: `
+  return `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="background:#f5f0e8;font-family:'Courier New',monospace;margin:0;padding:0;">
   <div style="max-width:480px;margin:40px auto;background:#faf6ee;border:2px solid #c0432a;padding:32px 28px;">
-    <div style="color:#2b2620;font-size:20px;font-weight:bold;letter-spacing:2px;margin-bottom:6px;">OPPIDX DAILY</div>
-    <div style="color:#5b5346;font-size:13px;margin-bottom:22px;">${digest.dateLabel}</div>
+    <div style="color:#2b2620;font-size:20px;font-weight:bold;letter-spacing:2px;margin-bottom:6px;">OPPIDX WEEKLY</div>
+    <div style="color:#5b5346;font-size:13px;margin-bottom:4px;">${digest.weekRangeLabel}</div>
+    <div style="color:#2b2620;font-size:14px;font-weight:bold;margin-bottom:22px;">This week's top ${digest.topPicks.length} opportunities</div>
 
     <div style="display:table;width:100%;margin-bottom:24px;">
       <div style="display:table-cell;text-align:center;">
@@ -51,8 +44,8 @@ export async function sendDailyDigestEmail(subscriberId: string, toEmail: string
         <div style="color:#5b5346;font-size:10.5px;text-transform:uppercase;">On the board</div>
       </div>
       <div style="display:table-cell;text-align:center;">
-        <div style="color:#c0432a;font-size:22px;font-weight:bold;">${digest.newLast24h}</div>
-        <div style="color:#5b5346;font-size:10.5px;text-transform:uppercase;">Added in 24h</div>
+        <div style="color:#c0432a;font-size:22px;font-weight:bold;">${digest.newLast7Days}</div>
+        <div style="color:#5b5346;font-size:10.5px;text-transform:uppercase;">Added this week</div>
       </div>
     </div>
 
@@ -63,8 +56,94 @@ export async function sendDailyDigestEmail(subscriberId: string, toEmail: string
     </a>
 
     <p style="color:#5b5346;font-size:11px;margin:28px 0 0;line-height:1.6;">
-      Real, hand-verified opportunities — no hype, no fake urgency.
-      <br><a href="${unsubscribeUrl}" style="color:#5b5346;">Unsubscribe from this digest</a>
+      Real, hand-verified opportunities — ranked by genuine views, not hype or fake urgency.
+      <br><a href="${unsubscribeUrl}" style="color:#5b5346;">Unsubscribe from this weekly email</a>
+    </p>
+  </div>
+</body>
+</html>`
+}
+
+export interface DigestRecipient {
+  subscriberId: string
+  email: string
+}
+
+export interface DigestSendResult {
+  subscriberId: string
+  resendId: string | null
+  error: string | null
+}
+
+/**
+ * Sends the week's top-10-by-real-viewcount opportunities to every
+ * recipient in one batch call per 100 (Resend's own limit) instead of one
+ * request per subscriber — fewer round trips, and 'permissive' validation
+ * means one bad address in a batch doesn't block the other 99. Every send
+ * still gets its own unsubscribe link; the caller (the weekly cron) is
+ * responsible for logging each result against DigestEmailLog for
+ * idempotency and webhook correlation. This is deliberately the only
+ * recurring email OppIDX sends — no daily email, by design.
+ */
+export async function sendWeeklyDigestBatch(
+  recipients: DigestRecipient[],
+  digest: WeeklyDigestEmailData
+): Promise<DigestSendResult[]> {
+  const results: DigestSendResult[] = []
+
+  for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+    const chunk = recipients.slice(i, i + BATCH_SIZE)
+    const payload = chunk.map(r => ({
+      from: FROM,
+      to: r.email,
+      subject: `This week's top opportunities from OppIDX — ${digest.weekRangeLabel}`,
+      html: weeklyDigestHtml(digest, `${SITE_URL}/api/subscribe/unsubscribe?token=${signUnsubscribeToken(r.subscriberId)}`),
+    }))
+
+    try {
+      const { data, error } = await resend.batch.send(payload, { batchValidation: 'permissive' })
+      if (error) {
+        chunk.forEach(r => results.push({ subscriberId: r.subscriberId, resendId: null, error: error.message }))
+        continue
+      }
+      const permissiveErrors = new Map((data as { errors?: { index: number; message: string }[] })?.errors?.map(e => [e.index, e.message]) ?? [])
+      chunk.forEach((r, idx) => {
+        const errMsg = permissiveErrors.get(idx)
+        results.push({
+          subscriberId: r.subscriberId,
+          resendId: errMsg ? null : data?.data[idx]?.id ?? null,
+          error: errMsg ?? null,
+        })
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'unknown'
+      chunk.forEach(r => results.push({ subscriberId: r.subscriberId, resendId: null, error: message }))
+    }
+  }
+
+  return results
+}
+
+export async function sendWelcomeEmail(toEmail: string) {
+  await resend.emails.send({
+    from: FROM,
+    to: toEmail,
+    subject: "You're on the list — OppIDX",
+    html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="background:#f5f0e8;font-family:'Courier New',monospace;margin:0;padding:0;">
+  <div style="max-width:480px;margin:40px auto;background:#faf6ee;border:2px solid #c0432a;padding:32px 28px;">
+    <div style="color:#2b2620;font-size:20px;font-weight:bold;letter-spacing:2px;margin-bottom:16px;">WELCOME TO OPPIDX</div>
+    <p style="color:#2b2620;font-size:14px;line-height:1.7;margin:0 0 20px;">
+      You're on the list for the weekly email — the real top 10 opportunities of the week, ranked by genuine views, once a week. No hype, no fake urgency, no inflated numbers. Just what's actually there.
+    </p>
+    <a href="${SITE_URL}/browse" style="display:inline-block;padding:11px 20px;background:#c0432a;color:#faf6ee;text-decoration:none;font-weight:bold;font-size:13px;">
+      Browse the board now →
+    </a>
+    <p style="color:#5b5346;font-size:11px;margin:28px 0 0;line-height:1.6;">
+      Didn't expect this? You (or someone with your email) signed up at oppidx.com — reply and let us know if that wasn't you.
     </p>
   </div>
 </body>

@@ -45,6 +45,7 @@ export async function GET() {
     recentVisitDates,
     totalSaved, appliedFromSaved,
     weeklySnapshots,
+    emailByStatus, suppressedSubscribers,
   ] = await Promise.all([
     prisma.opportunity.count({ where: { deletedAt: null } }),
     prisma.opportunity.count({ where: { deletedAt: null, verified: true } }),
@@ -77,6 +78,9 @@ export async function GET() {
     prisma.savedOpportunity.count({ where: { appliedAt: { not: null } } }),
 
     prisma.retentionSnapshot.findMany({ orderBy: { weekOf: 'desc' }, take: 12 }),
+
+    prisma.digestEmailLog.groupBy({ by: ['status'], where: { date: { gte: sinceDateStr } }, _count: true }),
+    prisma.subscriber.count({ where: { emailSuppressedReason: { not: null } } }),
   ])
 
   const retention = await computeRetention()
@@ -131,6 +135,10 @@ export async function GET() {
       totalSaved,
       appliedFromSaved,
       conversionRatePct: totalSaved > 0 ? Math.round((appliedFromSaved / totalSaved) * 100) : 0,
+    },
+    email: {
+      last30DaysByStatus: emailByStatus.map(r => ({ label: r.status, count: r._count })),
+      suppressed: suppressedSubscribers,
     },
   })
 }

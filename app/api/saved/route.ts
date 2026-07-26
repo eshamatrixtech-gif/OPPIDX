@@ -4,6 +4,8 @@ import { rateLimit } from '@/lib/rateLimit'
 import { getClientIp } from '@/lib/ip'
 import { getCurrentSubscriber, createSubscriberSession } from '@/lib/subscriberSession'
 import { generateReferralCode, REFERRALS_ENABLED } from '@/lib/referral'
+import { isUniqueConstraintError } from '@/lib/isUniqueConstraintError'
+import { sendWelcomeEmail } from '@/lib/email'
 
 function isPlausibleEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s) && s.length <= 320
@@ -59,12 +61,24 @@ export async function POST(req: NextRequest) {
 
     const referredBy = REFERRALS_ENABLED && typeof body?.ref === 'string' && body.ref.trim() ? body.ref.trim().toUpperCase() : null
 
-    subscriber = await prisma.subscriber.upsert({
-      where: { email },
-      create: { email, referralCode: REFERRALS_ENABLED ? generateReferralCode() : null, referredBy },
-      update: {},
-    })
+    // create-then-catch, not upsert — upsert can't tell us whether this was
+    // a brand new subscriber (who should get a welcome email) or an
+    // existing one saving from a new device.
+    let isNewSubscriber = false
+    try {
+      subscriber = await prisma.subscriber.create({
+        data: { email, referralCode: REFERRALS_ENABLED ? generateReferralCode() : null, referredBy },
+      })
+      isNewSubscriber = true
+    } catch (e) {
+      if (!isUniqueConstraintError(e)) throw e
+      subscriber = await prisma.subscriber.findUniqueOrThrow({ where: { email } })
+    }
     await createSubscriberSession(subscriber.id)
+
+    if (isNewSubscriber && process.env.RESEND_API_KEY) {
+      sendWelcomeEmail(email).catch(err => console.error('[saved] welcome email failed:', err))
+    }
   }
 
   const opp = await prisma.opportunity.findUnique({ where: { id: opportunityId } })

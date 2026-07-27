@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { SaveButton } from '@/components/ui/SaveButton'
 import { SafeImage } from '@/components/ui/SafeImage'
+import { GeneratedBanner } from '@/components/ui/GeneratedBanner'
 import type { Opportunity } from '@/types'
 
 const AUDIENCE_LABEL: Record<string, string> = {
@@ -99,33 +100,28 @@ export function OpportunityCard({ opp, extras }: { opp: Opportunity; extras?: Ca
   return (
     <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.2 }}>
       <div className="card-box" style={{ minHeight: 220, overflow: 'hidden' }}>
-        {opp.imageUrl && (
-          <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative' }}>
+          {opp.imageUrl ? (
             <SafeImage
               src={opp.imageUrl}
               alt=""
               style={{ display: 'block', width: '100%', height: 132, objectFit: 'cover', borderBottom: '1px solid var(--line)' }}
+              fallback={<GeneratedBanner id={opp.id} audience={opp.audience} height={132} />}
             />
-            {opp.videoUrl && (
-              <span style={{
-                position: 'absolute', bottom: 8, left: 8,
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                fontSize: 10, fontWeight: 700, color: '#fff', background: 'rgba(0,0,0,0.65)',
-                borderRadius: 20, padding: '3px 9px', fontFamily: 'var(--font-mono)',
-              }}>
-                ▶ Video
-              </span>
-            )}
-          </div>
-        )}
-        {!opp.imageUrl && opp.videoUrl && (
-          <div style={{
-            padding: '6px 18px', borderBottom: '1px solid var(--line)',
-            fontSize: 10, fontWeight: 700, color: 'var(--terracotta)', fontFamily: 'var(--font-mono)',
-          }}>
-            ▶ Video
-          </div>
-        )}
+          ) : (
+            <GeneratedBanner id={opp.id} audience={opp.audience} height={132} />
+          )}
+          {opp.videoUrl && (
+            <span style={{
+              position: 'absolute', bottom: 8, left: 8,
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              fontSize: 10, fontWeight: 700, color: '#fff', background: 'rgba(0,0,0,0.65)',
+              borderRadius: 20, padding: '3px 9px', fontFamily: 'var(--font-mono)',
+            }}>
+              ▶ Video
+            </span>
+          )}
+        </div>
         <Link
           href={`/opportunities/${opp.id}`}
           style={{ display: 'block', padding: '20px 18px 14px', textDecoration: 'none' }}

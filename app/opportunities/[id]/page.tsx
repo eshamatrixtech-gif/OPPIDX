@@ -14,6 +14,7 @@ import { fetchDirectoryPool, matchDirectoryFromPool } from '@/lib/directoryMap'
 import { Discussion } from '@/components/ui/Discussion'
 import { SafeImage } from '@/components/ui/SafeImage'
 import { VideoEmbed } from '@/components/ui/VideoEmbed'
+import { GeneratedBanner } from '@/components/ui/GeneratedBanner'
 import type { Opportunity } from '@/types'
 
 const AUDIENCE_LABEL: Record<string, string> = {
@@ -142,16 +143,25 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
 
         {opp.videoUrl ? (
           <VideoEmbed src={opp.videoUrl} />
-        ) : opp.imageUrl && (
-          <SafeImage
-            src={opp.imageUrl}
-            alt=""
-            style={{
-              display: 'block', width: '100%', maxHeight: 280, objectFit: 'cover',
-              marginTop: 20, borderRadius: 3, border: '1.5px solid var(--line)',
-              boxShadow: '4px 4px 0 var(--shadow)',
-            }}
-          />
+        ) : opp.imageUrl ? (
+          <div style={{
+            marginTop: 20, borderRadius: 3, border: '1.5px solid var(--line)',
+            boxShadow: '4px 4px 0 var(--shadow)', overflow: 'hidden',
+          }}>
+            <SafeImage
+              src={opp.imageUrl}
+              alt=""
+              style={{ display: 'block', width: '100%', maxHeight: 280, objectFit: 'cover' }}
+              fallback={<GeneratedBanner id={opp.id} audience={opp.audience} height={220} />}
+            />
+          </div>
+        ) : (
+          <div style={{
+            marginTop: 20, borderRadius: 3, border: '1.5px solid var(--line)',
+            boxShadow: '4px 4px 0 var(--shadow)', overflow: 'hidden',
+          }}>
+            <GeneratedBanner id={opp.id} audience={opp.audience} height={220} />
+          </div>
         )}
 
         <div className="card-box" style={{ marginTop: 20, padding: '36px 32px' }}>

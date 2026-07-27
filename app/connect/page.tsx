@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { GeneratedAvatar } from '@/components/ui/GeneratedBanner'
 
 interface DirectoryItem {
   id: string
@@ -275,7 +276,10 @@ export default function ConnectPage() {
           <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
             {filtered.map(item => (
               <div key={item.id} className="card-box" style={{ padding: '18px 18px' }}>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: 'var(--ink)', marginBottom: 6 }}>{item.displayName}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <GeneratedAvatar id={item.id} name={item.displayName} size={38} />
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: 'var(--ink)' }}>{item.displayName}</div>
+                </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
                   {item.lookingFor.map(lf => (
                     <span key={lf} style={{ fontSize: 10.5, fontFamily: 'var(--font-mono)', color: 'var(--ink-2)', background: 'rgba(43,38,32,0.06)', borderRadius: 20, padding: '2px 9px' }}>

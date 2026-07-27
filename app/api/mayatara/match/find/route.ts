@@ -2,12 +2,115 @@ import { supabaseAdmin } from "@/lib/mayatara/supabase";
 import { decrypt } from "@/lib/mayatara/encryption";
 import { sendMatchEmail, sendNoMatchEmail, sendCronAlertEmail } from "@/lib/mayatara/email";
 import { runMatching, buildMatchReason, type MatchProfile } from "@/lib/mayatara/matcher";
+import { opportunitiesWithChasingCohorts, chasingCohortProfilePool } from "@/lib/chasingCohort";
 
 // ─── FRIDAY NIGHT MATCHING JOB ───────────────────────────────────────────────
 // Runs every Friday at 8pm IST (2:30pm UTC).
 // vercel.json: { "crons": [{ "path": "/api/match/find", "schedule": "30 14 * * 5" }] }
 // Protected by CRON_SECRET header.
+//
+// Two phases, in order:
+//   1. Opportunity-cohort matching — people who saved/applied to the same
+//      real opportunity (via the shared OppIDX/Mayatara identity, see
+//      lib/chasingCohort.ts) get first crack at each other this Friday,
+//      grouped by looking_for exactly like the main pool. The shared
+//      pursuit is the real signal here, so it runs before the general pool.
+//   2. The existing full-pool match, unchanged in behavior — its own DB
+//      fetch naturally excludes anyone phase 1 already matched, since
+//      phase 1 writes matched=true before phase 2 queries.
 // ─────────────────────────────────────────────────────────────────────────────
+
+/** Pairs off one pool via the real matcher and persists+notifies+emails
+ * exactly like the original single-pool implementation did — shared by
+ * both the cohort phase and the main pool phase so there's one true
+ * implementation of "what happens when two people match," not two. */
+async function matchPoolAndNotify(
+  pool: MatchProfile[],
+  buildReason: (a: MatchProfile, b: MatchProfile) => string
+): Promise<{ matched: number; matchedUserIds: string[] }> {
+  if (pool.length < 2 || !supabaseAdmin) return { matched: 0, matchedUserIds: [] }
+
+  const pairs = runMatching(pool);
+  const matchedUserIds: string[] = [];
+  let matched = 0;
+
+  for (const { a, b, score } of pairs) {
+    if (matchedUserIds.includes(a.user_id) || matchedUserIds.includes(b.user_id)) continue;
+
+    const { data: existing } = await supabaseAdmin
+      .from("matches")
+      .select("id")
+      .or(`and(profile_a.eq.${a.id},profile_b.eq.${b.id}),and(profile_a.eq.${b.id},profile_b.eq.${a.id})`)
+      .maybeSingle();
+    if (existing) continue;
+
+    const reason = buildReason(a, b);
+
+    const { error: matchErr } = await supabaseAdmin.from("matches").insert({
+      profile_a: a.id, profile_b: b.id, score, match_reason: reason,
+    });
+    if (matchErr) continue;
+
+    await supabaseAdmin.from("profiles").update({ matched: true }).in("id", [a.id, b.id]);
+
+    const contactA = decrypt(a.contact_encrypted);
+    const contactB = decrypt(b.contact_encrypted);
+
+    await Promise.all([
+      supabaseAdmin.from("notifications").insert({
+        user_id: a.user_id, type: "match",
+        title: `Your Friday match — ${b.name}`,
+        body: reason,
+        contact_revealed: contactB,
+        contact_type: b.contact_type,
+        match_name: b.name,
+        matched_user_id: b.user_id,
+      }),
+      supabaseAdmin.from("notifications").insert({
+        user_id: b.user_id, type: "match",
+        title: `Your Friday match — ${a.name}`,
+        body: reason,
+        contact_revealed: contactA,
+        contact_type: a.contact_type,
+        match_name: a.name,
+        matched_user_id: a.user_id,
+      }),
+    ]);
+
+    const { data: authA } = await supabaseAdmin.auth.admin.getUserById(a.user_id);
+    const { data: authB } = await supabaseAdmin.auth.admin.getUserById(b.user_id);
+
+    await Promise.allSettled([
+      authA?.user?.email && sendMatchEmail(authA.user.email, a.name, b.name, contactB, b.contact_type, reason),
+      authB?.user?.email && sendMatchEmail(authB.user.email, b.name, a.name, contactA, a.contact_type, reason),
+    ]);
+
+    matchedUserIds.push(a.user_id, b.user_id);
+    matched++;
+  }
+
+  return { matched, matchedUserIds };
+}
+
+/** Groups a pool by looking_for and runs matchPoolAndNotify per group —
+ * the same partition-then-match structure both phases use. */
+async function matchByCategory(
+  pool: MatchProfile[],
+  buildReason: (a: MatchProfile, b: MatchProfile, category: string) => string
+): Promise<number> {
+  const groups: Record<string, MatchProfile[]> = {};
+  for (const p of pool) {
+    if (!groups[p.looking_for]) groups[p.looking_for] = [];
+    groups[p.looking_for].push(p);
+  }
+
+  let total = 0;
+  for (const [category, groupPool] of Object.entries(groups)) {
+    const { matched } = await matchPoolAndNotify(groupPool, (a, b) => buildReason(a, b, category));
+    total += matched;
+  }
+  return total;
+}
 
 export async function POST(req: Request) {
   const secret   = req.headers.get("x-cron-secret") || "";
@@ -29,10 +132,24 @@ export async function POST(req: Request) {
   }
 
   let totalMatched = 0;
+  let cohortMatched = 0;
   let totalUnmatched = 0;
 
   try {
 
+  // ── Phase 1: opportunity-cohort matching ──────────────────────────────
+  const cohorts = await opportunitiesWithChasingCohorts();
+  for (const cohort of cohorts) {
+    const pool = await chasingCohortProfilePool(cohort.userIds);
+    if (pool.length < 2) continue;
+    const matched = await matchByCategory(pool, (a, b, category) =>
+      `You're both chasing ${cohort.title}. ${buildMatchReason(a, b, category)}`
+    );
+    cohortMatched += matched;
+  }
+  totalMatched += cohortMatched;
+
+  // ── Phase 2: the existing full-pool match ──────────────────────────────
   // Fetch all active unmatched profiles joined with user demographics
   const { data: rows, error } = await supabaseAdmin
     .from("profiles")
@@ -44,12 +161,12 @@ export async function POST(req: Request) {
     .eq("matched", false);
 
   if (error) {
-    await sendCronAlertEmail(error.message, 0, 0).catch(console.error);
+    await sendCronAlertEmail(error.message, totalMatched, 0).catch(console.error);
     return Response.json({ error: error.message }, { status: 500 });
   }
   if (!rows || rows.length < 2) {
-    await sendCronAlertEmail("", 0, 0).catch(console.error);
-    return Response.json({ matched: 0 });
+    await sendCronAlertEmail("", totalMatched, 0).catch(console.error);
+    return Response.json({ matched: totalMatched, cohort_matched: cohortMatched });
   }
 
   // Flatten joined user data onto profile
@@ -73,102 +190,40 @@ export async function POST(req: Request) {
     };
   });
 
-  // Group by looking_for, run matching per category
-  const groups: Record<string, MatchProfile[]> = {};
-  for (const p of profiles) {
-    if (!groups[p.looking_for]) groups[p.looking_for] = [];
-    groups[p.looking_for].push(p);
-  }
+  const poolMatched = await matchByCategory(profiles, buildMatchReason);
+  totalMatched += poolMatched;
 
-  const matchedUserIds = new Set<string>();
+  // Notify everyone still unmatched — re-queried from the DB rather than
+  // tracked in memory, since matchByCategory's per-group matching already
+  // wrote matched=true for anyone paired off above.
+  const { data: stillUnmatched } = await supabaseAdmin
+    .from("profiles")
+    .select("id, user_id, users!inner(name)")
+    .in("id", profiles.map(p => p.id))
+    .eq("matched", false);
 
-  for (const [category, pool] of Object.entries(groups)) {
-    if (pool.length < 2) continue;
-
-    const pairs = runMatching(pool);
-
-    for (const { a, b, score } of pairs) {
-      // Skip if already matched in another category (shouldn't happen but guard anyway)
-      if (matchedUserIds.has(a.user_id) || matchedUserIds.has(b.user_id)) continue;
-
-      // Idempotency check — don't re-match an existing pair
-      const { data: existing } = await supabaseAdmin
-        .from("matches")
-        .select("id")
-        .or(`and(profile_a.eq.${a.id},profile_b.eq.${b.id}),and(profile_a.eq.${b.id},profile_b.eq.${a.id})`)
-        .maybeSingle();
-      if (existing) continue;
-
-      const reason = buildMatchReason(a, b, category);
-
-      const { error: matchErr } = await supabaseAdmin.from("matches").insert({
-        profile_a: a.id, profile_b: b.id, score, match_reason: reason,
-      });
-      if (matchErr) continue;
-
-      await supabaseAdmin.from("profiles").update({ matched: true }).in("id", [a.id, b.id]);
-
-      const contactA = decrypt(a.contact_encrypted);
-      const contactB = decrypt(b.contact_encrypted);
-
-      // Write dashboard notifications
-      await Promise.all([
-        supabaseAdmin.from("notifications").insert({
-          user_id: a.user_id, type: "match",
-          title: `Your Friday match — ${b.name}`,
-          body: reason,
-          contact_revealed: contactB,
-          contact_type: b.contact_type,
-          match_name: b.name,
-          matched_user_id: b.user_id,
-        }),
-        supabaseAdmin.from("notifications").insert({
-          user_id: b.user_id, type: "match",
-          title: `Your Friday match — ${a.name}`,
-          body: reason,
-          contact_revealed: contactA,
-          contact_type: a.contact_type,
-          match_name: a.name,
-          matched_user_id: a.user_id,
-        }),
-      ]);
-
-      // Send emails
-      const { data: authA } = await supabaseAdmin.auth.admin.getUserById(a.user_id);
-      const { data: authB } = await supabaseAdmin.auth.admin.getUserById(b.user_id);
-
-      await Promise.allSettled([
-        authA?.user?.email && sendMatchEmail(authA.user.email, a.name, b.name, contactB, b.contact_type, reason),
-        authB?.user?.email && sendMatchEmail(authB.user.email, b.name, a.name, contactA, a.contact_type, reason),
-      ]);
-
-      matchedUserIds.add(a.user_id);
-      matchedUserIds.add(b.user_id);
-      totalMatched++;
-    }
-  }
-
-  // Notify everyone still unmatched
-  const unmatched = profiles.filter(p => !matchedUserIds.has(p.user_id));
-  totalUnmatched = unmatched.length;
-  for (const p of unmatched) {
-    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(p.user_id);
+  totalUnmatched = stillUnmatched?.length ?? 0;
+  for (const p of stillUnmatched ?? []) {
+    const userId = p.user_id as string;
+    const userRow = Array.isArray(p.users) ? p.users[0] : p.users;
+    const name = (userRow as { name: string } | undefined)?.name ?? "";
 
     await supabaseAdmin.from("notifications").insert({
-      user_id: p.user_id, type: "no_match",
+      user_id: userId, type: "no_match",
       title: "No match this Friday — we're still looking.",
       body: "Nobody in the current pool was the right fit this week. We run again next Friday.",
     });
 
+    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId);
     if (authUser?.user?.email) {
-      await sendNoMatchEmail(authUser.user.email, p.name).catch(console.error);
+      await sendNoMatchEmail(authUser.user.email, name).catch(console.error);
     }
   }
 
   // Success alert to admin
   await sendCronAlertEmail("", totalMatched, totalUnmatched).catch(console.error);
 
-  return Response.json({ matched: totalMatched, no_match_notified: totalUnmatched });
+  return Response.json({ matched: totalMatched, cohort_matched: cohortMatched, no_match_notified: totalUnmatched });
 
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

@@ -7,6 +7,11 @@ import { SaveButton } from '@/components/ui/SaveButton'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { SITE_URL } from '@/lib/siteUrl'
 import { relatedResourceCategories } from '@/lib/opportunityResourceMap'
+import { fetchUpcomingGatheringsPool, matchGatheringsFromPool } from '@/lib/opportunityGatheringMap'
+import { chasingCohortSize } from '@/lib/chasingCohort'
+import { Discussion } from '@/components/ui/Discussion'
+import { SafeImage } from '@/components/ui/SafeImage'
+import { VideoEmbed } from '@/components/ui/VideoEmbed'
 import type { Opportunity } from '@/types'
 
 const AUDIENCE_LABEL: Record<string, string> = {
@@ -60,6 +65,15 @@ async function getRelatedResources(opp: { audience: string; tags: string }) {
   })
 }
 
+/** Real, upcoming, published Mayatara gatherings related to this
+ * opportunity — the Opportunities → Gatherings graph edge
+ * (lib/opportunityGatheringMap.ts). Empty when nothing's genuinely
+ * scheduled, same rule as everywhere else. */
+async function getRelatedGatherings(opp: { audience: string; tags: string }) {
+  const pool = await fetchUpcomingGatheringsPool()
+  return matchGatheringsFromPool(opp, pool)
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const opp = await getOpportunity(id)
@@ -78,6 +92,8 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
   const tags = opp.tags.split(',').map(t => t.trim()).filter(Boolean)
   const similar = await getSimilar(opp)
   const relatedResources = await getRelatedResources(opp)
+  const relatedGatherings = await getRelatedGatherings(opp)
+  const chasingCount = await chasingCohortSize(opp.id)
   const pageUrl = `${SITE_URL}/opportunities/${opp.id}`
 
   return (
@@ -87,6 +103,20 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
         <Link href="/" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>
           ← Back to the board
         </Link>
+
+        {opp.videoUrl ? (
+          <VideoEmbed src={opp.videoUrl} />
+        ) : opp.imageUrl && (
+          <SafeImage
+            src={opp.imageUrl}
+            alt=""
+            style={{
+              display: 'block', width: '100%', maxHeight: 280, objectFit: 'cover',
+              marginTop: 20, borderRadius: 3, border: '1.5px solid var(--line)',
+              boxShadow: '4px 4px 0 var(--shadow)',
+            }}
+          />
+        )}
 
         <div className="card-box" style={{ marginTop: 20, padding: '36px 32px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 16 }}>
@@ -139,20 +169,51 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
             </div>
           )}
 
-          {relatedResources.length > 0 && (
-            <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 8 }}>
-                Resources that might help
+          <div id="related">
+            {relatedResources.length > 0 && (
+              <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 8 }}>
+                  Resources that might help
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {relatedResources.map(r => (
+                    <Link key={r.id} href={`/resources/${r.id}`} style={{ fontSize: 13.5, color: 'var(--pin)', textDecoration: 'none' }}>
+                      {r.title} <span style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>· {r.category}</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {relatedResources.map(r => (
-                  <Link key={r.id} href={`/resources/${r.id}`} style={{ fontSize: 13.5, color: 'var(--pin)', textDecoration: 'none' }}>
-                    {r.title} <span style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>· {r.category}</span>
-                  </Link>
-                ))}
+            )}
+
+            {relatedGatherings.length > 0 && (
+              <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--green)', marginBottom: 8 }}>
+                  📍 Gatherings for people chasing this
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {relatedGatherings.map(g => (
+                    <a key={g.slug} href={`/mayatara/events/${g.slug}`} style={{ fontSize: 13.5, color: 'var(--pin)', textDecoration: 'none' }}>
+                      {g.title} <span style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>· {g.location}</span>
+                    </a>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {chasingCount > 0 && (
+              <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--terracotta)', marginBottom: 6 }}>
+                  💘 {chasingCount} others also chasing this
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.6 }}>
+                  No browsable list here — that would out who's applying to what. If you're linked with{' '}
+                  <Link href="/mayatara" style={{ color: 'var(--pin)' }}>Mayatara</Link>, a real match within this group (if there's a good one) reveals itself the usual way, this Friday.
+                </div>
+              </div>
+            )}
+
+            <Discussion opportunityId={opp.id} />
+          </div>
 
           {tags.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 30 }}>

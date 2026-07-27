@@ -4,8 +4,15 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { OpportunityCard } from '@/components/ui/OpportunityCard'
+import { OpportunityCard, type CardExtras } from '@/components/ui/OpportunityCard'
+import { PulseCard, type PulseDigest } from '@/components/ui/PulseCard'
+import { ScrollSubscribePrompt } from '@/components/ui/ScrollSubscribePrompt'
+import { interleave } from '@/lib/feed/interleave'
 import type { Facet, Opportunity } from '@/types'
+
+// One Pulse digest card every this many opportunity cards — occasional,
+// not competing for attention with the thing people came here for.
+const PULSE_EVERY = 9
 
 const AUDIENCE_TABS = [
   { id: 'STUDENT', label: 'Students' },
@@ -19,6 +26,22 @@ const DIFFICULTY_TABS = ['Easy', 'Medium', 'Hard']
 // Fixed, stable order — actual chips shown are still filtered down to
 // whatever /api/opportunities/facets says has real listings behind it.
 const REGION_ORDER = ['North America', 'South America', 'Europe', 'Africa', 'Asia', 'Oceania', 'Remote / Global']
+
+// Auto-loading stops here and falls back to a manual button — protects a
+// long session's tab from holding an unbounded number of cards in the DOM.
+const AUTO_LOAD_CAP = 240
+
+const CACHE_PREFIX = 'oppidx_browse_cache:'
+
+interface BrowseCache {
+  items: Opportunity[]
+  extras: Record<string, CardExtras>
+  total: number
+  restricted: boolean
+  teaser: { title: string; org: string | null; descriptionPreview: string } | null
+  page: number
+  scrollY: number
+}
 
 function toggle(list: string[], value: string): string[] {
   return list.includes(value) ? list.filter(v => v !== value) : [...list, value]
@@ -50,22 +73,53 @@ export default function Browse() {
 function BrowseInner() {
   const searchParams = useSearchParams()
   const initialAudience = searchParams.get('audience')
+  const initialSearch = searchParams.get('search') ?? ''
 
-  const [items, setItems] = useState<Opportunity[]>([])
-  const [total, setTotal] = useState(0)
-  const [restricted, setRestricted] = useState(false)
-  const [teaser, setTeaser] = useState<{ title: string; org: string | null; descriptionPreview: string } | null>(null)
-  const [page, setPage] = useState(1)
   const [audiences, setAudiences] = useState<string[]>(initialAudience ? [initialAudience] : [])
   const [difficulties, setDifficulties] = useState<string[]>([])
   const [regions, setRegions] = useState<string[]>([])
   const [countries, setCountries] = useState<string[]>([])
+  const [search, setSearch] = useState(initialSearch)
+
+  const filterKey = useMemo(
+    () => CACHE_PREFIX + JSON.stringify({ audiences, difficulties, regions, countries, search }),
+    [audiences, difficulties, regions, countries, search]
+  )
+
+  // Read any cached page for these exact filters once, synchronously, so a
+  // back-navigation restores content (and, below, scroll position) instead
+  // of flashing empty and re-fetching page 1 — a scroll depth of 40 cards
+  // shouldn't cost a full re-scroll just because you clicked into one.
+  const restoredCache = useRef<BrowseCache | null>(null)
+  useState(() => {
+    try {
+      const raw = sessionStorage.getItem(filterKey)
+      restoredCache.current = raw ? (JSON.parse(raw) as BrowseCache) : null
+    } catch {
+      restoredCache.current = null
+    }
+  })
+
+  const [items, setItems] = useState<Opportunity[]>(restoredCache.current?.items ?? [])
+  const [extras, setExtras] = useState<Record<string, CardExtras>>(restoredCache.current?.extras ?? {})
+  const [total, setTotal] = useState(restoredCache.current?.total ?? 0)
+  const [restricted, setRestricted] = useState(restoredCache.current?.restricted ?? false)
+  const [teaser, setTeaser] = useState(restoredCache.current?.teaser ?? null)
+  const [page, setPage] = useState(restoredCache.current?.page ?? 1)
   const [regionFacets, setRegionFacets] = useState<Facet[]>([])
   const [countryFacets, setCountryFacets] = useState<Facet[]>([])
-  const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [pulseDigests, setPulseDigests] = useState<PulseDigest[]>([])
+  const hasValidCache = !!restoredCache.current && restoredCache.current.items.length > 0
+  const [loading, setLoading] = useState(!hasValidCache)
   const [loadingMore, setLoadingMore] = useState(false)
   const requestId = useRef(0)
+  // Only trust a restored cache enough to skip the initial fetch if it
+  // actually has content — an empty snapshot (e.g. saved mid an earlier
+  // request that failed) is indistinguishable from "no cache" and should
+  // just fall through to a normal fetch instead of getting stuck forever.
+  const skipNextFetch = useRef(hasValidCache)
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
+  const restoredScroll = useRef(false)
 
   useEffect(() => {
     fetch('/api/opportunities/facets')
@@ -76,6 +130,34 @@ function BrowseInner() {
       })
       .catch(() => {})
   }, [])
+
+  // Fetched once, not paginated alongside opportunities — Pulse digests
+  // are low-frequency (one a day), no reason to re-fetch on every loadMore.
+  useEffect(() => {
+    fetch('/api/pulse/recent')
+      .then(r => r.json())
+      .then(data => setPulseDigests(data.items ?? []))
+      .catch(() => {})
+  }, [])
+
+  // Restore scroll position exactly once, after the restored cache's items
+  // have painted (so the page actually has enough height to scroll to).
+  // history.scrollRestoration is set to 'manual' so the browser's own
+  // native restore-on-back doesn't race this and win with position 0 — a
+  // short timeout rather than requestAnimationFrame, same reasoning as the
+  // scroll-trigger switch above.
+  useEffect(() => {
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
+  }, [])
+
+  useEffect(() => {
+    if (restoredScroll.current) return
+    const target = restoredCache.current?.scrollY
+    if (target) {
+      restoredScroll.current = true
+      setTimeout(() => window.scrollTo(0, target), 50)
+    }
+  }, [items])
 
   function buildParams(pageNum: number) {
     const params = new URLSearchParams({ page: String(pageNum) })
@@ -88,6 +170,10 @@ function BrowseInner() {
   }
 
   useEffect(() => {
+    if (skipNextFetch.current) {
+      skipNextFetch.current = false
+      return
+    }
     const thisRequest = ++requestId.current
     const debounce = setTimeout(async () => {
       setLoading(true)
@@ -96,6 +182,7 @@ function BrowseInner() {
         const data = await res.json()
         if (thisRequest !== requestId.current) return
         setItems(data.items ?? [])
+        setExtras(data.extras ?? {})
         setTotal(data.total ?? 0)
         setRestricted(!!data.restricted)
         setTeaser(data.teaser ?? null)
@@ -109,12 +196,14 @@ function BrowseInner() {
   }, [audiences, difficulties, regions, countries, search])
 
   async function loadMore() {
+    if (loadingMore) return
     setLoadingMore(true)
     const nextPage = page + 1
     try {
       const res = await fetch(`/api/opportunities?${buildParams(nextPage)}`)
       const data = await res.json()
       setItems(prev => [...prev, ...(data.items ?? [])])
+      setExtras(prev => ({ ...prev, ...(data.extras ?? {}) }))
       setPage(nextPage)
     } finally {
       setLoadingMore(false)
@@ -123,8 +212,63 @@ function BrowseInner() {
 
   const emptyState = useMemo(() => !loading && items.length === 0, [loading, items])
   const hasMore = !loading && items.length < total && !restricted
+  const autoLoadCapped = items.length >= AUTO_LOAD_CAP
   const lockedCount = restricted ? Math.max(0, total - items.length) : 0
   const anyFilterActive = audiences.length > 0 || difficulties.length > 0 || regions.length > 0 || countries.length > 0 || search.trim().length > 0
+
+  // Pulse only interleaves on the unfiltered board — a digest card mixed
+  // into a specific search's results would just be noise unrelated to
+  // what someone's actually looking for.
+  const feedSlots = useMemo(
+    () => interleave(items, anyFilterActive ? [] : pulseDigests, PULSE_EVERY),
+    [items, pulseDigests, anyFilterActive]
+  )
+
+  // Auto-load on scroll instead of waiting for a click — every extra click
+  // is a chance to bounce. Capped, and falls back to the manual button once
+  // capped so a long session can't grow the DOM without limit. A plain
+  // scroll listener + getBoundingClientRect, not IntersectionObserver —
+  // same trigger style as ScrollSubscribePrompt, and avoids depending on
+  // rAF-driven observer callbacks some hosts throttle for backgrounded or
+  // non-visible tabs.
+  useEffect(() => {
+    if (!hasMore || autoLoadCapped || loadingMore || loading) return
+    function onScroll() {
+      const el = sentinelRef.current
+      if (!el) return
+      if (el.getBoundingClientRect().top < window.innerHeight + 600) loadMore()
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener('scroll', onScroll)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMore, autoLoadCapped, loadingMore, loading, page])
+
+  // Keep a fresh snapshot cached (including scroll position) so clicking
+  // into a card and coming back restores exactly where you were.
+  useEffect(() => {
+    if (loading) return
+    // Never cache an empty result — that's indistinguishable from a
+    // request that failed partway (e.g. a transient API error) from a
+    // genuine "no opportunities" state, and caching it would get a real
+    // future load stuck showing nothing. A real empty-filters state is
+    // rare enough that just re-fetching it next time costs nothing.
+    if (items.length === 0) return
+    function persist() {
+      try {
+        sessionStorage.setItem(filterKey, JSON.stringify({
+          items, extras, total, restricted, teaser, page, scrollY: window.scrollY,
+        } satisfies BrowseCache))
+      } catch {}
+    }
+    persist()
+    window.addEventListener('pagehide', persist)
+    document.addEventListener('visibilitychange', persist)
+    return () => {
+      window.removeEventListener('pagehide', persist)
+      document.removeEventListener('visibilitychange', persist)
+    }
+  }, [items, extras, total, restricted, teaser, page, loading, filterKey])
 
   const orderedRegionFacets = useMemo(() => {
     const byValue = new Map(regionFacets.map(f => [f.value, f]))
@@ -256,11 +400,23 @@ function BrowseInner() {
               gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
             }}>
               <AnimatePresence mode="popLayout">
-                {items.map(opp => <OpportunityCard key={opp.id} opp={opp} />)}
+                {feedSlots.map(slot => slot.kind === 'primary'
+                  ? <OpportunityCard key={slot.item.id} opp={slot.item} extras={extras[slot.item.id]} />
+                  : <PulseCard key={`pulse-${slot.item.period}`} digest={slot.item} />
+                )}
               </AnimatePresence>
             </motion.div>
 
-            {hasMore && (
+            {/* Auto-load sentinel — invisible, triggers the next page before
+                you'd ever notice a boundary. */}
+            {hasMore && !autoLoadCapped && <div ref={sentinelRef} style={{ height: 1 }} />}
+            {loadingMore && (
+              <div style={{ textAlign: 'center', marginTop: 24, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)' }}>
+                Loading more…
+              </div>
+            )}
+
+            {hasMore && autoLoadCapped && (
               <div style={{ textAlign: 'center', marginTop: 40 }}>
                 <button onClick={loadMore} disabled={loadingMore} style={{
                   padding: '12px 30px', borderRadius: 2, border: '1.5px solid var(--line)', cursor: 'pointer',
@@ -309,6 +465,8 @@ function BrowseInner() {
           </>
         )}
       </main>
+
+      <ScrollSubscribePrompt itemsSeen={items.length} />
     </div>
   )
 }

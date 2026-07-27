@@ -16,6 +16,8 @@ export interface Opportunity {
   region: string
   country: string
   compType: string | null
+  imageUrl: string | null
+  videoUrl: string | null
   viewCount: number
   verified: boolean
   featured: boolean

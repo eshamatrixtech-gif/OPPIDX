@@ -6,6 +6,8 @@ import { getClientIp }               from '@/lib/ip'
 import { inferGeo }                  from '@/lib/scraper/geo'
 import { getCurrentPaidSubscriber }  from '@/lib/subscriberSession'
 import { FREE_SEARCH_LIMIT, PAYWALL_ENABLED } from '@/lib/limits'
+import { enrichOpportunities }       from '@/lib/feedEnrichment'
+import { fetchOgMedia }              from '@/lib/ogImage'
 
 const PAGE_SIZE = 24
 const VALID_AUDIENCES = ['STUDENT', 'EARLY_CAREER', 'FOUNDER', 'GENERAL']
@@ -110,8 +112,13 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // The attachment strip's data (stats, discussion, resources, gatherings,
+  // chasing-cohort) — skipped for admin review-queue pulls, which don't
+  // render a card and shouldn't pay for the extra queries.
+  const extras = isAdminQuery ? {} : await enrichOpportunities(items)
+
   return NextResponse.json({
-    items, total, page, pageSize: PAGE_SIZE,
+    items, total, page, pageSize: PAGE_SIZE, extras,
     ...(restricted ? { restricted: true, visibleLimit: FREE_SEARCH_LIMIT, teaser } : {}),
   })
 }
@@ -172,6 +179,16 @@ export async function POST(req: NextRequest) {
       sourceUrl: typeof sourceUrl === 'string' ? sourceUrl.trim() : null,
     },
   })
+
+  // Fire-and-forget — a real og:image is worth having, but not worth
+  // making an admin wait on this form submission for.
+  fetchOgMedia(created.url)
+    .then(({ imageUrl, videoUrl }) => {
+      if (imageUrl || videoUrl) {
+        return prisma.opportunity.update({ where: { id: created.id }, data: { imageUrl, videoUrl } })
+      }
+    })
+    .catch(() => {})
 
   return NextResponse.json({ ok: true, item: created })
 }

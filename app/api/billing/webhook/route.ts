@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Razorpay from 'razorpay'
 import { prisma } from '@/lib/db'
 import { inferGeo } from '@/lib/scraper/geo'
+import { fetchOgMedia } from '@/lib/ogImage'
 import type { SubmissionInput } from '@/lib/submissions/validate'
 import { FEATURED_DURATION_DAYS } from '@/lib/billing/razorpay'
 
@@ -137,4 +138,15 @@ async function handleSubmissionPayment(razorpayOrderId: string) {
     where: { id: submission.id },
     data: { status: 'paid', opportunityId: created.id },
   })
+
+  // Fire-and-forget — a real og:image is worth having, but this is a
+  // payment webhook and Razorpay expects a fast response, so the fetch
+  // happens after responding rather than blocking it.
+  fetchOgMedia(created.url)
+    .then(({ imageUrl, videoUrl }) => {
+      if (imageUrl || videoUrl) {
+        return prisma.opportunity.update({ where: { id: created.id }, data: { imageUrl, videoUrl } })
+      }
+    })
+    .catch(() => {})
 }

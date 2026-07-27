@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import { SOURCES } from './sources'
 import { normalize } from './normalize'
+import { fetchOgMedia } from '@/lib/ogImage'
 
 interface SourceStats {
   fetched: number
@@ -33,6 +34,7 @@ export async function runScrapePass(): Promise<RunResult> {
         if (exists) continue
 
         const normalized = normalize(raw)
+        const { imageUrl, videoUrl } = await fetchOgMedia(raw.url)
 
         await prisma.opportunity.create({
           data: {
@@ -49,6 +51,8 @@ export async function runScrapePass(): Promise<RunResult> {
             region: normalized.region,
             country: normalized.country,
             compType: normalized.compType,
+            imageUrl,
+            videoUrl,
             verified: true,
             featured: false,
             source: 'scraped',

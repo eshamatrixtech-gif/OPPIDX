@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { SaveButton } from '@/components/ui/SaveButton'
+import { SafeImage } from '@/components/ui/SafeImage'
 import type { Opportunity } from '@/types'
 
 const AUDIENCE_LABEL: Record<string, string> = {
@@ -32,17 +33,95 @@ function trackView(id: string) {
   fetch(`/api/opportunities/${id}/view`, { method: 'POST' }).catch(() => {})
 }
 
-export function OpportunityCard({ opp }: { opp: Opportunity }) {
+export interface CardExtras {
+  heroStat: { kind: string; label: string } | null
+  discussionCount: number
+  resourceCount: number
+  gatheringCount: number
+  chasingCount: number
+}
+
+const ATTACHMENT_ICON: Record<string, string> = {
+  resource: '📚',
+  discussion: '💬',
+  gathering: '📍',
+  chasing: '💘',
+}
+
+/** The attachment strip — resources, discussion, a real gathering, people
+ * also chasing this. Every entry here already cleared its own threshold
+ * server-side (lib/feedEnrichment.ts); this only ever decides layout, not
+ * whether something's real enough to show. A card that clears none of
+ * these renders no strip at all, same as a card with no stats gets no
+ * stat badge — never a row of zeroes. */
+function AttachmentStrip({ oppId, extras }: { oppId: string; extras: CardExtras }) {
+  const entries: Array<{ kind: string; label: string }> = []
+  if (extras.resourceCount > 0) entries.push({ kind: 'resource', label: `${extras.resourceCount} related guide${extras.resourceCount === 1 ? '' : 's'}` })
+  if (extras.discussionCount > 0) entries.push({ kind: 'discussion', label: `${extras.discussionCount} comment${extras.discussionCount === 1 ? '' : 's'}` })
+  if (extras.gatheringCount > 0) entries.push({ kind: 'gathering', label: `${extras.gatheringCount} gathering${extras.gatheringCount === 1 ? '' : 's'} for people chasing this` })
+  // Deliberately no "see who" — real identities only ever reveal through
+  // Mayatara's own weekly match cadence (never a browsable list; that
+  // would out who's applying to what), so the card promises exactly what
+  // exists: a real count, not a place to look someone up.
+  if (extras.chasingCount > 0) entries.push({ kind: 'chasing', label: `${extras.chasingCount} others also chasing this` })
+
+  if (entries.length === 0) return null
+
+  return (
+    <Link
+      href={`/opportunities/${oppId}#related`}
+      style={{
+        display: 'flex', flexWrap: 'wrap', gap: 12, padding: '9px 18px',
+        borderTop: '1px solid var(--line)', textDecoration: 'none',
+      }}
+    >
+      {entries.map(e => (
+        <span key={e.kind} style={{ fontSize: 10.5, color: 'var(--ink-2)', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span aria-hidden>{ATTACHMENT_ICON[e.kind]}</span>{e.label}
+        </span>
+      ))}
+    </Link>
+  )
+}
+
+export function OpportunityCard({ opp, extras }: { opp: Opportunity; extras?: CardExtras }) {
   const tags = opp.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 3)
 
   return (
     <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.2 }}>
-      <div className="card-box" style={{ minHeight: 220 }}>
+      <div className="card-box" style={{ minHeight: 220, overflow: 'hidden' }}>
+        {opp.imageUrl && (
+          <div style={{ position: 'relative' }}>
+            <SafeImage
+              src={opp.imageUrl}
+              alt=""
+              style={{ display: 'block', width: '100%', height: 132, objectFit: 'cover', borderBottom: '1px solid var(--line)' }}
+            />
+            {opp.videoUrl && (
+              <span style={{
+                position: 'absolute', bottom: 8, left: 8,
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                fontSize: 10, fontWeight: 700, color: '#fff', background: 'rgba(0,0,0,0.65)',
+                borderRadius: 20, padding: '3px 9px', fontFamily: 'var(--font-mono)',
+              }}>
+                ▶ Video
+              </span>
+            )}
+          </div>
+        )}
+        {!opp.imageUrl && opp.videoUrl && (
+          <div style={{
+            padding: '6px 18px', borderBottom: '1px solid var(--line)',
+            fontSize: 10, fontWeight: 700, color: 'var(--terracotta)', fontFamily: 'var(--font-mono)',
+          }}>
+            ▶ Video
+          </div>
+        )}
         <Link
           href={`/opportunities/${opp.id}`}
           style={{ display: 'block', padding: '20px 18px 14px', textDecoration: 'none' }}
         >
-          <div style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
             <span style={{
               fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700,
               letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -50,6 +129,15 @@ export function OpportunityCard({ opp }: { opp: Opportunity }) {
             }}>
               {AUDIENCE_LABEL[opp.audience] ?? opp.audience}
             </span>
+            {extras?.heroStat && (
+              <span style={{
+                fontSize: 10.5, fontWeight: 700, color: 'var(--terracotta)',
+                background: 'rgba(168,85,46,0.1)', borderRadius: 20, padding: '3px 9px',
+                fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap',
+              }}>
+                {extras.heroStat.label}
+              </span>
+            )}
           </div>
 
           <h3 style={{
@@ -109,6 +197,8 @@ export function OpportunityCard({ opp }: { opp: Opportunity }) {
           </a>
           <SaveButton opportunityId={opp.id} />
         </div>
+
+        {extras && <AttachmentStrip oppId={opp.id} extras={extras} />}
       </div>
     </motion.div>
   )

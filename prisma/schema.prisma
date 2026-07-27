@@ -40,6 +40,12 @@ model Opportunity {
   region        String    @default("") // North America | South America | Europe | Africa | Asia | Oceania | Remote / Global | "" (unknown)
   country       String    @default("") // best-effort from location text, e.g. "India" — "" if not confidently known
   compType      String?
+  // Real og:image / og:video pulled from the listing's own application
+  // page at ingestion time (lib/ogImage.ts) — never stock media. Null for
+  // most pre-existing rows until a backfill runs; the card renders
+  // text-only when both are null, same as it always has.
+  imageUrl      String?
+  videoUrl      String?
   viewCount     Int       @default(0)
   verified      Boolean   @default(false)
   featured      Boolean   @default(false)
@@ -344,4 +350,22 @@ model ScrapeRun {
   details    String   @default("{}")
 
   @@index([startedAt])
+}
+
+// The one discussion primitive, attachable to anything in the feed —
+// itemType/itemId instead of a relation, same loose-coupling style as
+// Subscriber.referredBy: one model instead of a thread table per content
+// type. itemType is "opportunity" today; more kinds reuse this as they
+// join the feed rather than getting their own comment table.
+model Comment {
+  id           String    @id @default(cuid())
+  itemType     String
+  itemId       String
+  subscriberId String
+  body         String
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
+
+  @@index([itemType, itemId, createdAt])
+  @@index([subscriberId])
 }

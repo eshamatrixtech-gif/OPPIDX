@@ -120,6 +120,14 @@ function BrowseInner() {
   const skipNextFetch = useRef(hasValidCache)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const restoredScroll = useRef(false)
+  // Which filterKey the current `items` actually belong to — a restored
+  // cache always matches (it was read using this exact filterKey), but a
+  // fresh fetch is async: if the search text changes again before the
+  // debounced fetch even starts, `items` can briefly be stale relative to
+  // `filterKey` while `loading` is still false. Without this, a pagehide
+  // in that window persists the old filter's results under the new
+  // filter's cache key.
+  const itemsFilterKey = useRef(filterKey)
 
   useEffect(() => {
     fetch('/api/opportunities/facets')
@@ -175,6 +183,7 @@ function BrowseInner() {
       return
     }
     const thisRequest = ++requestId.current
+    const scheduledForKey = filterKey
     const debounce = setTimeout(async () => {
       setLoading(true)
       try {
@@ -187,6 +196,7 @@ function BrowseInner() {
         setRestricted(!!data.restricted)
         setTeaser(data.teaser ?? null)
         setPage(1)
+        itemsFilterKey.current = scheduledForKey
       } finally {
         if (thisRequest === requestId.current) setLoading(false)
       }
@@ -199,12 +209,14 @@ function BrowseInner() {
     if (loadingMore) return
     setLoadingMore(true)
     const nextPage = page + 1
+    const keyAtLoadTime = filterKey
     try {
       const res = await fetch(`/api/opportunities?${buildParams(nextPage)}`)
       const data = await res.json()
       setItems(prev => [...prev, ...(data.items ?? [])])
       setExtras(prev => ({ ...prev, ...(data.extras ?? {}) }))
       setPage(nextPage)
+      itemsFilterKey.current = keyAtLoadTime
     } finally {
       setLoadingMore(false)
     }
@@ -254,6 +266,10 @@ function BrowseInner() {
     // future load stuck showing nothing. A real empty-filters state is
     // rare enough that just re-fetching it next time costs nothing.
     if (items.length === 0) return
+    // And never cache items that don't actually belong to the current
+    // filter yet (see itemsFilterKey's declaration) — a stale write here
+    // would stick around across sessions, not just one render.
+    if (itemsFilterKey.current !== filterKey) return
     function persist() {
       try {
         sessionStorage.setItem(filterKey, JSON.stringify({

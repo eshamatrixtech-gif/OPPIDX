@@ -26,8 +26,8 @@ export interface PolicyRead extends DigestItem {
 /** One query for the whole page of cards — the last two weeks of daily
  * digests, each already storing its real headline items (title, url,
  * category, source) at generation time (lib/policyDigest/generate.ts).
- * Same degrade-to-empty guard as this file's siblings (fetchDirectoryPool,
- * fetchUpcomingGatheringsPool) — a database or connection issue here
+ * Same degrade-to-empty guard as this file's sibling
+ * (fetchUpcomingGatheringsPool) — a database or connection issue here
  * should never take down the whole feed. */
 export async function fetchRecentPolicyItemsPool(): Promise<PolicyRead[]> {
   let digests: Awaited<ReturnType<typeof prisma.policyDigest.findMany>>

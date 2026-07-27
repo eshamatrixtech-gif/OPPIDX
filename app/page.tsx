@@ -166,7 +166,6 @@ const SIDEBAR_LINKS = [
   { href: '/mayatara/pulse', icon: '◈', label: 'The Pulse', desc: 'A daily, apolitical read on the country.' },
   { href: '/mayatara', icon: '◆', label: 'The Mayatara', desc: 'Find your person. One honest match, every Friday.' },
   { href: '/mayatara/events', icon: '📍', label: 'Events', desc: 'Real, upcoming gatherings.' },
-  { href: '/connect', icon: '🤝', label: "People's directory", desc: 'Opt in to be found for a friend, a date, or a cofounder.' },
 ]
 
 /** Everything that isn't the feed itself — cross-product nav, newsletter,

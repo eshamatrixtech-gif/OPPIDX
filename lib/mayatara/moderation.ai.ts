@@ -2,7 +2,7 @@ import OpenAI from "openai";
 
 /**
  * AI-backed content safety check, used by every route that accepts public
- * free text (advertise inquiries, directory profiles/messages). The client
+ * free text (e.g. advertise inquiries). The client
  * is constructed lazily, inside the try block below, rather than at module
  * scope — `new OpenAI()` throws immediately if OPENAI_API_KEY is missing,
  * which at module scope would crash every route that imports this file at

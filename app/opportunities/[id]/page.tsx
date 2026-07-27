@@ -10,7 +10,6 @@ import { relatedResourceCategories } from '@/lib/opportunityResourceMap'
 import { fetchUpcomingGatheringsPool, matchGatheringsFromPool } from '@/lib/opportunityGatheringMap'
 import { chasingCohortSize } from '@/lib/chasingCohort'
 import { fetchRecentPolicyItemsPool, matchPolicyReadsFromPool } from '@/lib/opportunityPulseMap'
-import { fetchDirectoryPool, matchDirectoryFromPool } from '@/lib/directoryMap'
 import { Discussion } from '@/components/ui/Discussion'
 import { SafeImage } from '@/components/ui/SafeImage'
 import { VideoEmbed } from '@/components/ui/VideoEmbed'
@@ -101,14 +100,6 @@ async function getRelatedPolicyReads(opp: { audience: string; tags: string }) {
   return matchPolicyReadsFromPool(opp, pool)
 }
 
-/** Opted-in people directory profiles related to this opportunity — the
- * newest graph edge (lib/directoryMap.ts). Only ever people who chose to
- * be found; never derived from who saved or applied. */
-async function getRelatedDirectory(opp: { audience: string; tags: string }) {
-  const pool = await fetchDirectoryPool()
-  return matchDirectoryFromPool(opp, pool)
-}
-
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const opp = await getOpportunity(id)
@@ -129,7 +120,6 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
   const relatedResources = await getRelatedResources(opp)
   const relatedGatherings = await getRelatedGatherings(opp)
   const relatedPolicyReads = await getRelatedPolicyReads(opp)
-  const relatedDirectory = await getRelatedDirectory(opp)
   const chasingCount = await chasingCohortSize(opp.id)
   const pageUrl = `${SITE_URL}/opportunities/${opp.id}`
 
@@ -263,21 +253,6 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
               </div>
             ) : (
               <RelatedPrompt text="No gathering for people chasing this — yet." cta="Wanna create one? →" href="/mayatara/events/new" />
-            )}
-
-            {relatedDirectory.length > 0 ? (
-              <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
-                <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 8 }}>
-                  🤝 {relatedDirectory.length} open to connect over this
-                </div>
-                <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 8 }}>
-                  {relatedDirectory.slice(0, 4).map(d => d.displayName).join(', ')}
-                  {relatedDirectory.length > 4 ? ` +${relatedDirectory.length - 4} more` : ''} opted in to be found for friends, dating, or a cofounder around this.
-                </div>
-                <Link href="/connect" style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none' }}>Browse the directory & connect →</Link>
-              </div>
-            ) : (
-              <RelatedPrompt text="Nobody's opted in to connect over this yet." cta="Wanna connect with a person? →" href="/connect" />
             )}
 
             {chasingCount > 0 && (

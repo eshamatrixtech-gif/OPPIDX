@@ -41,7 +41,6 @@ export interface CardExtras {
   gatheringCount: number
   chasingCount: number
   policyReadCount: number
-  directoryCount: number
 }
 
 const ATTACHMENT_ICON: Record<string, string> = {
@@ -50,7 +49,6 @@ const ATTACHMENT_ICON: Record<string, string> = {
   gathering: '📍',
   chasing: '💘',
   policy: '📰',
-  directory: '🤝',
 }
 
 /** The attachment strip — resources, discussion, a real gathering, people
@@ -70,10 +68,6 @@ function AttachmentStrip({ oppId, extras }: { oppId: string; extras: CardExtras 
   // would out who's applying to what), so the card promises exactly what
   // exists: a real count, not a place to look someone up.
   if (extras.chasingCount > 0) entries.push({ kind: 'chasing', label: `${extras.chasingCount} others also chasing this` })
-  // The directory is the opt-in counterpart to `chasing` above — everyone
-  // counted here chose to be found (see lib/directoryMap.ts), so unlike
-  // `chasing` this one *does* link somewhere real: /connect.
-  if (extras.directoryCount > 0) entries.push({ kind: 'directory', label: `${extras.directoryCount} open to connect` })
 
   if (entries.length === 0) return null
 

@@ -118,23 +118,3 @@ export function GeneratedBanner({
     </div>
   )
 }
-
-/** Same generated-art system, sized down to a badge — the people's
- * directory has no photos by design (nobody uploads one), so this is what
- * gives each listing a face without inventing one. Color keyed to `id`
- * (stable across re-renders), letter pulled from the display name. */
-export function GeneratedAvatar({ id, name, size = 40 }: { id: string; name: string; size?: number }) {
-  const h = hash(id)
-  const { bg, ink } = PALETTE[h % PALETTE.length]
-  const initial = name.trim().charAt(0).toUpperCase() || '?'
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%', flex: 'none',
-      background: bg, border: '1.5px solid var(--line)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: 'var(--font-display)', fontSize: size * 0.42, color: ink,
-    }}>
-      {initial}
-    </div>
-  )
-}

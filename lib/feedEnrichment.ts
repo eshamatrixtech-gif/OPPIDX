@@ -5,7 +5,6 @@ import { relatedResourceCategories } from '@/lib/opportunityResourceMap'
 import { fetchUpcomingGatheringsPool, matchGatheringsFromPool } from '@/lib/opportunityGatheringMap'
 import { chasingCohortSizes } from '@/lib/chasingCohort'
 import { fetchRecentPolicyItemsPool, matchPolicyReadsFromPool } from '@/lib/opportunityPulseMap'
-import { fetchDirectoryPool, matchDirectoryFromPool } from '@/lib/directoryMap'
 
 export interface CardExtras {
   heroStat: { kind: string; label: string } | null
@@ -14,7 +13,6 @@ export interface CardExtras {
   gatheringCount: number
   chasingCount: number
   policyReadCount: number
-  directoryCount: number
 }
 
 /**
@@ -30,7 +28,7 @@ export async function enrichOpportunities(
   const ids = opps.map(o => o.id)
   if (ids.length === 0) return {}
 
-  const [stats, discussionCounts, chasingCounts, resourceCategoryCounts, gatheringPool, policyPool, directoryPool] = await Promise.all([
+  const [stats, discussionCounts, chasingCounts, resourceCategoryCounts, gatheringPool, policyPool] = await Promise.all([
     getOpportunityStats(ids),
     getCommentCounts('opportunity', ids),
     chasingCohortSizes(ids),
@@ -41,7 +39,6 @@ export async function enrichOpportunities(
     }),
     fetchUpcomingGatheringsPool(),
     fetchRecentPolicyItemsPool(),
-    fetchDirectoryPool(),
   ])
 
   const categoryCountMap = new Map(resourceCategoryCounts.map(r => [r.category, r._count._all]))
@@ -56,7 +53,6 @@ export async function enrichOpportunities(
 
     const gatheringCount = matchGatheringsFromPool(opp, gatheringPool).length
     const policyReadCount = matchPolicyReadsFromPool(opp, policyPool).length
-    const directoryCount = matchDirectoryFromPool(opp, directoryPool).length
 
     const discussionCount = discussionCounts[opp.id] ?? 0
     const chasingCount = chasingCounts[opp.id] ?? 0
@@ -68,7 +64,6 @@ export async function enrichOpportunities(
       gatheringCount,
       chasingCount: chasingCount >= STAT_THRESHOLDS.chasing ? chasingCount : 0,
       policyReadCount,
-      directoryCount,
     }
   }
   return result

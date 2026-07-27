@@ -28,6 +28,11 @@ export function CrossPromoNav() {
   // it must never show site nav, that's someone else's page framing it.
   if (pathname.startsWith("/embed/")) return null;
 
+  // The home page folds this same cross-product nav into its own sidebar
+  // (see app/page.tsx's Sidebar) so the top of the page is the feed, not a
+  // second row of tabs above the header.
+  if (pathname === "/") return null;
+
   return (
     <div
       style={{

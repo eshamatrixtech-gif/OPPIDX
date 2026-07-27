@@ -9,6 +9,8 @@ import { SITE_URL } from '@/lib/siteUrl'
 import { relatedResourceCategories } from '@/lib/opportunityResourceMap'
 import { fetchUpcomingGatheringsPool, matchGatheringsFromPool } from '@/lib/opportunityGatheringMap'
 import { chasingCohortSize } from '@/lib/chasingCohort'
+import { fetchRecentPolicyItemsPool, matchPolicyReadsFromPool } from '@/lib/opportunityPulseMap'
+import { fetchDirectoryPool, matchDirectoryFromPool } from '@/lib/directoryMap'
 import { Discussion } from '@/components/ui/Discussion'
 import { SafeImage } from '@/components/ui/SafeImage'
 import { VideoEmbed } from '@/components/ui/VideoEmbed'
@@ -25,6 +27,22 @@ const DIFFICULTY_COLOR: Record<string, string> = {
   Easy: 'var(--green)',
   Medium: 'var(--pin)',
   Hard: 'var(--danger)',
+}
+
+/** The empty-state counterpart to a populated related-edge box — same
+ * "leave it blank rather than fake it" rule, just turned into an
+ * invitation instead of nothing at all. Never claims anything exists. */
+function RelatedPrompt({ text, cta, href }: { text: string; cta: string; href: string }) {
+  return (
+    <div style={{
+      marginBottom: 20, padding: '12px 16px', borderRadius: 2,
+      border: '1px dashed var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      gap: 10, flexWrap: 'wrap',
+    }}>
+      <span style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>{text}</span>
+      <Link href={href} style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none', whiteSpace: 'nowrap' }}>{cta}</Link>
+    </div>
+  )
 }
 
 async function getOpportunity(id: string) {
@@ -74,6 +92,22 @@ async function getRelatedGatherings(opp: { audience: string; tags: string }) {
   return matchGatheringsFromPool(opp, pool)
 }
 
+/** Real Pulse policy headlines related to this opportunity — the
+ * Opportunities → Policy graph edge (lib/opportunityPulseMap.ts). Empty
+ * when nothing genuinely matches. */
+async function getRelatedPolicyReads(opp: { audience: string; tags: string }) {
+  const pool = await fetchRecentPolicyItemsPool()
+  return matchPolicyReadsFromPool(opp, pool)
+}
+
+/** Opted-in people directory profiles related to this opportunity — the
+ * newest graph edge (lib/directoryMap.ts). Only ever people who chose to
+ * be found; never derived from who saved or applied. */
+async function getRelatedDirectory(opp: { audience: string; tags: string }) {
+  const pool = await fetchDirectoryPool()
+  return matchDirectoryFromPool(opp, pool)
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const opp = await getOpportunity(id)
@@ -93,6 +127,8 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
   const similar = await getSimilar(opp)
   const relatedResources = await getRelatedResources(opp)
   const relatedGatherings = await getRelatedGatherings(opp)
+  const relatedPolicyReads = await getRelatedPolicyReads(opp)
+  const relatedDirectory = await getRelatedDirectory(opp)
   const chasingCount = await chasingCohortSize(opp.id)
   const pageUrl = `${SITE_URL}/opportunities/${opp.id}`
 
@@ -170,10 +206,10 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
           )}
 
           <div id="related">
-            {relatedResources.length > 0 && (
+            {relatedResources.length > 0 ? (
               <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
                 <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 8 }}>
-                  Resources that might help
+                  📚 Resources that might help
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {relatedResources.map(r => (
@@ -183,9 +219,26 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
                   ))}
                 </div>
               </div>
+            ) : (
+              <RelatedPrompt text="No guides linked to this one yet." cta="Wanna add a guide? →" href="/resources/submit" />
             )}
 
-            {relatedGatherings.length > 0 && (
+            {relatedPolicyReads.length > 0 && (
+              <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--terracotta)', marginBottom: 8 }}>
+                  📰 Policy reads
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {relatedPolicyReads.map(p => (
+                    <a key={p.url} href={p.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13.5, color: 'var(--pin)', textDecoration: 'none' }}>
+                      {p.title} <span style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>· {p.source}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {relatedGatherings.length > 0 ? (
               <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
                 <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--green)', marginBottom: 8 }}>
                   📍 Gatherings for people chasing this
@@ -198,6 +251,23 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
                   ))}
                 </div>
               </div>
+            ) : (
+              <RelatedPrompt text="No gathering for people chasing this — yet." cta="Wanna create one? →" href="/mayatara/events/new" />
+            )}
+
+            {relatedDirectory.length > 0 ? (
+              <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 8 }}>
+                  🤝 {relatedDirectory.length} open to connect over this
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 8 }}>
+                  {relatedDirectory.slice(0, 4).map(d => d.displayName).join(', ')}
+                  {relatedDirectory.length > 4 ? ` +${relatedDirectory.length - 4} more` : ''} opted in to be found for friends, dating, or a cofounder around this.
+                </div>
+                <Link href="/connect" style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none' }}>Browse the directory & connect →</Link>
+              </div>
+            ) : (
+              <RelatedPrompt text="Nobody's opted in to connect over this yet." cta="Wanna connect with a person? →" href="/connect" />
             )}
 
             {chasingCount > 0 && (

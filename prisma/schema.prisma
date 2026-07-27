@@ -369,3 +369,29 @@ model Comment {
   @@index([itemType, itemId, createdAt])
   @@index([subscriberId])
 }
+
+// The people's directory — deliberately opt-in only. Saving or applying to
+// an opportunity never puts anyone here (that's the private, anonymous
+// chasing-cohort in lib/chasingCohort.ts, which stays exactly as
+// anonymous as it already was). A profile only exists because its owner
+// chose to create one, one per subscriber. `tags` is matched against an
+// opportunity's own tags/audience the same keyword-matched,
+// blank-if-nothing-real pattern as Resources/Pulse/Gatherings (see
+// lib/directoryMap.ts) — never a browsable "everyone who saved this."
+// No raw contact info is ever stored or rendered here: a "Connect" click
+// sends an email introduction via the owning Subscriber's own email
+// (lib/email.ts), reply-to set to the requester, so neither address is
+// ever exposed on the page.
+model DirectoryProfile {
+  id           String    @id @default(cuid())
+  subscriberId String    @unique
+  displayName  String
+  lookingFor   String // comma list: friend,dating,cofounder
+  tags         String    @default("") // comma list, matched against opportunity tags/audience
+  bio          String    @default("")
+  visible      Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
+
+  @@index([visible])
+}

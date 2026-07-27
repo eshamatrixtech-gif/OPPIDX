@@ -151,6 +151,57 @@ export async function sendWelcomeEmail(toEmail: string) {
   })
 }
 
+/** Minimal HTML-entity escape for user-supplied text dropped into an email
+ * template's markup — every directory-connect field below (message, name)
+ * is free text from an unauthenticated request, so this runs before any
+ * of it reaches the `html` string. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/**
+ * The people's directory's "Connect" action — an email introduction, not
+ * a chat feature. Sent to the profile owner's own registered email
+ * (never rendered on any page), with reply-to set to the requester so a
+ * real conversation can start without OppIDX ever showing either party's
+ * address to the other.
+ */
+export async function sendDirectoryIntroEmail(opts: {
+  toEmail: string
+  toName: string
+  fromEmail: string
+  message: string
+}) {
+  await resend.emails.send({
+    from: FROM,
+    to: opts.toEmail,
+    replyTo: opts.fromEmail,
+    subject: `Someone wants to connect on OppIDX — ${opts.toName}`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="background:#f5f0e8;font-family:'Courier New',monospace;margin:0;padding:0;">
+  <div style="max-width:480px;margin:40px auto;background:#faf6ee;border:2px solid #c0432a;padding:32px 28px;">
+    <div style="color:#2b2620;font-size:18px;font-weight:bold;margin-bottom:16px;">Someone found your OppIDX directory profile</div>
+    <p style="color:#2b2620;font-size:14px;line-height:1.7;margin:0 0 16px;">
+      They sent this note — just reply to this email to respond directly to them, your address is never shown to us either way:
+    </p>
+    <div style="background:#fff;border-left:3px solid #c0432a;padding:12px 16px;color:#2b2620;font-size:13.5px;line-height:1.6;white-space:pre-wrap;margin-bottom:20px;">${escapeHtml(opts.message)}</div>
+    <p style="color:#5b5346;font-size:11px;margin:20px 0 0;line-height:1.6;">
+      You opted into OppIDX's people directory. Remove your profile any time from <a href="${SITE_URL}/connect" style="color:#5b5346;">oppidx.com/connect</a>.
+    </p>
+  </div>
+</body>
+</html>`,
+  })
+}
+
 export async function sendInstitutionVerificationEmail(toEmail: string, verifyUrl: string) {
   await resend.emails.send({
     from: FROM,

@@ -1,18 +1,20 @@
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 /**
- * AI-backed version of the content safety check, parked here (not wired into
- * any route) until we can afford the token cost. Swap lib/moderation.ts's
- * import for this file in app/api/auth/register/route.ts and
- * app/api/profile/save/route.ts to re-enable — same function signature.
+ * AI-backed content safety check, used by every route that accepts public
+ * free text (advertise inquiries, directory profiles/messages). The client
+ * is constructed lazily, inside the try block below, rather than at module
+ * scope — `new OpenAI()` throws immediately if OPENAI_API_KEY is missing,
+ * which at module scope would crash every route that imports this file at
+ * load time instead of just failing this one check open like the catch
+ * block below already intends.
  */
 export async function checkContentSafety(texts: string[]): Promise<{ flagged: boolean; reason?: string }> {
   const combined = texts.filter(Boolean).join("\n").trim();
   if (!combined) return { flagged: false };
 
   try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const res = await openai.moderations.create({
       model: "omni-moderation-latest",
       input: combined.slice(0, 4000),

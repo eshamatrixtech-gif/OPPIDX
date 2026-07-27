@@ -5,6 +5,7 @@ import { getClientIp } from '@/lib/ip'
 import { getCurrentSubscriber, createSubscriberSession } from '@/lib/subscriberSession'
 import { isUniqueConstraintError } from '@/lib/isUniqueConstraintError'
 import { listComments, addComment } from '@/lib/comments'
+import { checkContentSafety } from '@/lib/mayatara/moderation'
 
 function isPlausibleEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s) && s.length <= 320
@@ -41,6 +42,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const text = typeof body?.body === 'string' ? body.body.trim() : ''
   if (!text) return NextResponse.json({ error: 'Comment cannot be empty.' }, { status: 400 })
   if (text.length > 2000) return NextResponse.json({ error: 'Keep it under 2000 characters.' }, { status: 400 })
+
+  // Same keyword-based screen used at Mayatara registration — this is a
+  // public, unmoderated-until-now surface, so it gets the same floor
+  // every other public free-text field on the site already has.
+  const safety = await checkContentSafety([text])
+  if (safety.flagged) {
+    return NextResponse.json({ error: 'That comment can\'t be posted — try rewording it.' }, { status: 400 })
+  }
 
   let subscriber = await getCurrentSubscriber()
 

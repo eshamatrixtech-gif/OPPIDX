@@ -32,3 +32,11 @@ export async function addComment(itemType: string, itemId: string, subscriberId:
     data: { itemType, itemId, subscriberId, body: trimmed },
   })
 }
+
+/** Soft delete — admin moderation only (see the [commentId] DELETE route).
+ * Never a hard delete: keeps the row for abuse-history purposes the same
+ * way Opportunity/Resource soft-deletes already do, just excluded from
+ * every read path via the deletedAt: null filter above. */
+export async function deleteComment(id: string) {
+  await prisma.comment.update({ where: { id }, data: { deletedAt: new Date() } })
+}

@@ -1,40 +1,100 @@
+import { lookup } from 'dns/promises'
+import { isIP } from 'net'
+
 export interface OgMedia {
   imageUrl: string | null
   videoUrl: string | null
 }
 
+const BLOCKED_HOSTNAMES = new Set(['localhost', '0.0.0.0', '[::1]'])
+
+/** IPv4/IPv6 loopback, private, and link-local ranges — includes the
+ * 169.254.169.254-style cloud metadata range. */
+function isPrivateAddress(ip: string): boolean {
+  if (/^127\./.test(ip)) return true
+  if (/^10\./.test(ip)) return true
+  if (/^192\.168\./.test(ip)) return true
+  if (/^169\.254\./.test(ip)) return true
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(ip)) return true
+  const v6 = ip.toLowerCase()
+  if (v6 === '::1') return true
+  if (v6.startsWith('fe80:')) return true // link-local
+  if (v6.startsWith('fc') || v6.startsWith('fd')) return true // unique local
+  return false
+}
+
 /**
- * Best-effort og:image + og:video fetch for a listing's own application
- * page — real, sourced media at ingestion time, never a stock photo or a
- * fabricated visual. One fetch does both (no reason to hit the same URL
- * twice), bounded read (stops at </head> or 60KB, whichever's first — both
- * tags always live in <head>) and a hard timeout, so one slow or hostile
- * site can't stall a scrape pass. Fails silently: a listing with no
- * fetchable media just renders text-only, same as every card does today —
- * never broken media, never a placeholder pretending to be real.
- *
- * Video is deliberately conservative: only an explicit og:video/og:video:url
- * tag counts. A site that tags one is making a real claim about it; a
- * YouTube iframe spotted somewhere in the page body could be an ad, a
- * footer video, anything — not worth the false-positive risk or the extra
- * bytes it'd take to scan past </head> looking for one.
+ * Refuses to fetch a hostname that resolves to a loopback/private/
+ * link-local address — the SSRF guard. An opportunity's URL is
+ * user-controlled in two of this module's three callers (a paid
+ * submission's own application link, an admin manual create), so this
+ * runs before every fetch and before following every redirect hop, not
+ * just once up front.
  */
-export async function fetchOgMedia(url: string): Promise<OgMedia> {
-  const empty: OgMedia = { imageUrl: null, videoUrl: null }
+async function isSafeHost(hostname: string): Promise<boolean> {
+  const h = hostname.toLowerCase()
+  if (BLOCKED_HOSTNAMES.has(h)) return false
+  if (isIP(h)) return !isPrivateAddress(h)
   try {
+    const results = await lookup(h, { all: true })
+    return results.length > 0 && results.every(r => !isPrivateAddress(r.address))
+  } catch {
+    return false // can't resolve — don't fetch what we can't vet
+  }
+}
+
+/**
+ * Fetches a URL's <head> HTML, refusing loopback/private targets at the
+ * start and at every redirect hop (fetch() follows redirects by default,
+ * which would otherwise let a public-looking URL 30x its way to an
+ * internal address). Bounded to 4 hops, a 5s timeout per hop, and a 60KB /
+ * </head> read cap — the same limits as before, just redirect-aware now.
+ */
+async function fetchHtmlHead(startUrl: string): Promise<string | null> {
+  let currentUrl = startUrl
+
+  for (let hop = 0; hop < 4; hop++) {
+    let parsed: URL
+    try {
+      parsed = new URL(currentUrl)
+    } catch {
+      return null
+    }
+    if (parsed.protocol !== 'https:') return null
+    if (!(await isSafeHost(parsed.hostname))) return null
+
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 5000)
-    const res = await fetch(url, {
-      signal: controller.signal,
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; OppIDXBot/1.0; +https://oppidx.com)' },
-    }).finally(() => clearTimeout(timeout))
+    let res: Response
+    try {
+      res = await fetch(currentUrl, {
+        signal: controller.signal,
+        redirect: 'manual',
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; OppIDXBot/1.0; +https://oppidx.com)' },
+      })
+    } catch {
+      return null
+    } finally {
+      clearTimeout(timeout)
+    }
 
-    if (!res.ok) return empty
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get('location')
+      if (!location) return null
+      try {
+        currentUrl = new URL(location, currentUrl).toString()
+      } catch {
+        return null
+      }
+      continue
+    }
+
+    if (!res.ok) return null
     const contentType = res.headers.get('content-type') ?? ''
-    if (!contentType.includes('text/html')) return empty
+    if (!contentType.includes('text/html')) return null
 
     const reader = res.body?.getReader()
-    if (!reader) return empty
+    if (!reader) return null
     const decoder = new TextDecoder()
     let html = ''
     try {
@@ -47,22 +107,42 @@ export async function fetchOgMedia(url: string): Promise<OgMedia> {
     } finally {
       reader.cancel().catch(() => {})
     }
-
-    const imageMatch =
-      html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
-      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
-      html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)
-    const rawImage = imageMatch?.[1]?.trim()
-    const imageUrl = rawImage && /^https:\/\//.test(rawImage) ? rawImage : null
-
-    const videoMatch =
-      html.match(/<meta[^>]+property=["']og:video(?::url|:secure_url)?["'][^>]+content=["']([^"']+)["']/i) ||
-      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:video(?::url|:secure_url)?["']/i)
-    const rawVideo = videoMatch?.[1]?.trim()
-    const videoUrl = rawVideo && /^https:\/\//.test(rawVideo) ? rawVideo : null
-
-    return { imageUrl, videoUrl }
-  } catch {
-    return empty
+    return html
   }
+
+  return null // too many redirects
+}
+
+/**
+ * Best-effort og:image + og:video fetch for a listing's own application
+ * page — real, sourced media at ingestion time, never a stock photo or a
+ * fabricated visual. Fails silently: a listing with no fetchable media
+ * just renders text-only, same as every card does today — never broken
+ * media, never a placeholder pretending to be real.
+ *
+ * Video is deliberately conservative: only an explicit og:video/og:video:url
+ * tag counts. A site that tags one is making a real claim about it; a
+ * YouTube iframe spotted somewhere in the page body could be an ad, a
+ * footer video, anything — not worth the false-positive risk or the extra
+ * bytes it'd take to scan past </head> looking for one.
+ */
+export async function fetchOgMedia(url: string): Promise<OgMedia> {
+  const empty: OgMedia = { imageUrl: null, videoUrl: null }
+  const html = await fetchHtmlHead(url)
+  if (!html) return empty
+
+  const imageMatch =
+    html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+    html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
+    html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)
+  const rawImage = imageMatch?.[1]?.trim()
+  const imageUrl = rawImage && /^https:\/\//.test(rawImage) ? rawImage : null
+
+  const videoMatch =
+    html.match(/<meta[^>]+property=["']og:video(?::url|:secure_url)?["'][^>]+content=["']([^"']+)["']/i) ||
+    html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:video(?::url|:secure_url)?["']/i)
+  const rawVideo = videoMatch?.[1]?.trim()
+  const videoUrl = rawVideo && /^https:\/\//.test(rawVideo) ? rawVideo : null
+
+  return { imageUrl, videoUrl }
 }

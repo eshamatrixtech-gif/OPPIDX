@@ -61,6 +61,7 @@ export async function fetchRecentPolicyItemsPool(): Promise<PolicyRead[]> {
 const COUNTRY_NAME_TO_CODE: Record<string, string> = {
   India: 'IN',
   'United States': 'US',
+  'United Kingdom': 'GB',
 }
 
 export function matchPolicyReadsFromPool(

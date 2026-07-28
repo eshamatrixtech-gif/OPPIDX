@@ -1,53 +1,47 @@
-import OpenAI from 'openai'
 import type { DigestItem } from '@/lib/policyDigest/generate'
 
 /**
- * Writes the digest's one-paragraph intro as real prose instead of a
- * templated stat line ("N policy actions across M categories") — the
- * bare-list version nobody actually reads. The one rule that matters
- * here: this only ever describes what's genuinely in `items` (real
- * headlines already fetched from PIB/RBI/SEBI/Federal Register/SEC — see
- * lib/mayatara/pulseFeed.ts). It never invents a name, number, or event
- * beyond that list — same "never fake it" rule as every other AI/no-AI
- * call in this codebase, just applied to writing instead of moderation.
- *
- * The OpenAI client is constructed lazily inside the try block (not at
- * module scope) — same reasoning as lib/mayatara/moderation.ai.ts: a
- * missing OPENAI_API_KEY should fail this one call open, not crash the
- * digest cron.
+ * Writes the digest's opening paragraph as real prose, without an LLM call.
+ * Pure templating over the same `items` list the digest already fetched —
+ * every name, count, and title below is read directly off a real item, so
+ * there is nothing to invent and nothing that can drift from the truth.
+ * No external API calls, no tokens, no cost. AI-backed version (same
+ * "never fake it" rule, written by GPT instead of templated) parked in
+ * lib/policyDigest/summarize.ai.ts — swap the import in generate.ts back
+ * to that file when there's budget for it again.
  */
 export async function writeNarrativeSummary(items: DigestItem[], periodLabel: string, fallback: string): Promise<string> {
   if (items.length === 0) return fallback
 
-  try {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-    const listing = items
-      .slice(0, 40)
-      .map(i => `- [${i.category}] ${i.title} — ${i.source}`)
-      .join('\n')
-
-    const res = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: [
-            'You write the opening paragraph of a daily/weekly policy briefing for a general audience of students and young professionals.',
-            'Write 3-5 sentences of plain, flowing prose — no bullet points, no headers, no lists.',
-            'You may ONLY describe what is literally present in the headline list you are given below: real titles, categories, and sources. Never invent a name, number, policy, agency, or event that is not in the list.',
-            'Group related items by theme where it reads naturally. Stay factual and calm — no opinion, no political framing, no speculation about intent or consequences beyond what the headlines themselves say.',
-          ].join(' '),
-        },
-        { role: 'user', content: `Period: ${periodLabel}\n\nReal headlines from this period:\n${listing}` },
-      ],
-      max_tokens: 260,
-      temperature: 0.4,
-    })
-
-    const text = res.choices[0]?.message?.content?.trim()
-    return text || fallback
-  } catch (e) {
-    console.error('[policyDigest] AI summary failed, falling back to the templated line:', e instanceof Error ? e.message : e)
-    return fallback
+  const byCategory = new Map<string, DigestItem[]>()
+  for (const item of items) {
+    const list = byCategory.get(item.category) ?? []
+    list.push(item)
+    byCategory.set(item.category, list)
   }
+  const ranked = [...byCategory.entries()].sort((a, b) => b[1].length - a[1].length)
+
+  const sentences: string[] = []
+
+  const categoryCount = ranked.length
+  sentences.push(
+    `${items.length} policy action${items.length === 1 ? '' : 's'} landed ${periodLabel} across ${categoryCount} area${categoryCount === 1 ? '' : 's'}.`
+  )
+
+  const [topCategory, topItems] = ranked[0]
+  sentences.push(
+    `${topCategory} saw the most movement — ${topItems.length} update${topItems.length === 1 ? '' : 's'}, including "${topItems[0].title}" from ${topItems[0].source}.`
+  )
+
+  const rest = ranked.slice(1, 3)
+  if (rest.length > 0) {
+    const clauses = rest.map(([cat, list]) => `${cat} ("${list[0].title}")`)
+    sentences.push(`${clauses.join(' and ')} also moved.`)
+  }
+
+  const sources = [...new Set(items.map(i => i.source))]
+  const sourceList = sources.length > 3 ? `${sources.slice(0, 3).join(', ')}, and ${sources.length - 3} more` : sources.join(', ')
+  sentences.push(`Sourced directly from ${sourceList} — no news outlets, no opinion.`)
+
+  return sentences.join(' ')
 }

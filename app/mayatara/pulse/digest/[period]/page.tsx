@@ -70,7 +70,7 @@ export default async function DigestPage({ params }: { params: Promise<{ period:
         <DigestBody items={digest.items} />
 
         <p className="text-xs text-center mt-10 leading-relaxed" style={{ color: "var(--ink-muted)" }}>
-          Sourced from the Press Information Bureau, RBI, and SEBI&apos;s own official feeds — generated automatically, nothing hand-picked.
+          Sourced from official government and regulatory feeds — India&apos;s PIB/RBI/SEBI, the U.S.&apos;s Federal Register/SEC, and the UK&apos;s GOV.UK/FCA/Bank of England — generated automatically, nothing hand-picked.
           <br />
           <Link href="/mayatara/pulse" style={{ color: "var(--saffron)" }}>See today&apos;s live Pulse →</Link>
         </p>

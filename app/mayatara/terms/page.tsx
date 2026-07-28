@@ -74,7 +74,7 @@ export default function TermsPage() {
           },
           {
             title: "THE PULSE",
-            body: `The Pulse does not require an account and we do not collect any personal data through it. The headlines shown are pulled automatically, once a day, from the Government of India's official press-release feed (Press Information Bureau) and from the business and economy sections of The Hindu, The Indian Express, and LiveMint. Every headline links back to its original source — we do not reproduce full articles, rewrite them, or claim authorship. Categorisation is done by a plain keyword filter, not by AI, and the same filter screens out political, election, and conflict-related content so this stays a policy-and-development read, not a news opinion feed.`,
+            body: `The Pulse does not require an account and we do not collect any personal data through it. The headlines shown are pulled automatically, once a day, from official government and regulatory sources: India's Press Information Bureau, Reserve Bank of India, and SEBI; the United States' Federal Register and Securities and Exchange Commission; and the United Kingdom's GOV.UK, Financial Conduct Authority, and Bank of England — plus, for India only, the business and economy sections of The Hindu, The Indian Express, and LiveMint. Every headline links back to its original source — we do not reproduce full articles, rewrite them, or claim authorship. Categorisation is done by a plain keyword filter, not by AI, and the same filter screens out political, election, and conflict-related content so this stays a policy-and-development read, not a news opinion feed.`,
           },
           {
             title: "GOVERNING LAW & JURISDICTION",

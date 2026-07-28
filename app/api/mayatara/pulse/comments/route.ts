@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/mayatara/supabase";
 import { rateLimit, getIP, rateLimitResponse, sanitise, checkSize } from "@/lib/mayatara/security";
-import { checkContentSafety } from "@/lib/mayatara/moderation.ai";
+import { checkContentSafety } from "@/lib/mayatara/moderation";
 
 /** GET /api/mayatara/pulse/comments?headlineId=<uuid> — public, oldest first. */
 export async function GET(req: Request) {
@@ -25,8 +25,9 @@ export async function GET(req: Request) {
 /**
  * POST /api/mayatara/pulse/comments — anonymous, no login required (see
  * discussion in the conversation that shipped this: open commenting was
- * the deliberate choice, with AI content-safety + IP-hash-gated reporting
- * as the moderation backstop, given Pulse's explicit apolitical branding).
+ * the deliberate choice, with keyword-based content-safety + IP-hash-gated
+ * reporting as the moderation backstop, given Pulse's explicit apolitical
+ * branding).
  */
 export async function POST(req: Request) {
   const sizeErr = checkSize(req, 4_096);

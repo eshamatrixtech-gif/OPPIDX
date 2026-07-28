@@ -3,7 +3,7 @@ import { prisma }                    from '@/lib/db'
 import { requireAuth }               from '@/lib/auth'
 import { rateLimit }                 from '@/lib/rateLimit'
 import { getClientIp }               from '@/lib/ip'
-import { checkContentSafety }        from '@/lib/mayatara/moderation.ai'
+import { checkContentSafety }        from '@/lib/mayatara/moderation'
 
 function isPlausibleEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s) && s.length <= 320
@@ -19,9 +19,9 @@ export async function GET() {
 }
 
 /**
- * POST /api/advertise — public lead-capture form. Free-tier OpenAI
- * moderation (lib/mayatara/moderation.ai.ts) runs on the message before
- * anything is stored — this is the one open free-text field on an
+ * POST /api/advertise — public lead-capture form. Keyword-based moderation
+ * (lib/mayatara/moderation.ts — no API calls, no cost) runs on the message
+ * before anything is stored — this is the one open free-text field on an
  * otherwise-unauthenticated public form, so it's the one that needs a gate.
  */
 export async function POST(req: NextRequest) {

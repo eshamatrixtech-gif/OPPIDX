@@ -25,7 +25,7 @@ export interface RawHeadline {
 }
 
 export type PulseSourceType = "government" | "newspaper";
-export type CountryCode = "IN" | "US";
+export type CountryCode = "IN" | "US" | "GB";
 
 export interface ClassifiedHeadline extends RawHeadline {
   category: string;
@@ -82,6 +82,29 @@ async function fetchRss(url: string): Promise<{ title: string; url: string }[]> 
   return extractItems(await fetchText(url));
 }
 
+// gov.uk's own news feed is Atom, not RSS 2.0 — <entry> instead of <item>,
+// and <link> is a self-closing tag with an href attribute instead of text
+// content. Verified live: https://www.gov.uk/search/news-and-communications.atom
+function extractAtomItems(xml: string): { title: string; url: string }[] {
+  const items: { title: string; url: string }[] = [];
+  const entryRe = /<entry[^>]*>([\s\S]*?)<\/entry>/g;
+  let m: RegExpExecArray | null;
+  while ((m = entryRe.exec(xml))) {
+    const block = m[1];
+    const titleMatch = block.match(/<title>([\s\S]*?)<\/title>/);
+    const linkMatch = block.match(/<link[^>]*rel="alternate"[^>]*href="([^"]*)"/);
+    if (!titleMatch || !linkMatch) continue;
+    const title = unwrap(titleMatch[1]);
+    const url = unwrap(linkMatch[1]);
+    if (title && url) items.push({ title, url });
+  }
+  return items;
+}
+
+async function fetchAtom(url: string): Promise<{ title: string; url: string }[]> {
+  return extractAtomItems(await fetchText(url));
+}
+
 const DEVANAGARI = /[ऀ-ॿ]/;
 // Exported for lib/policyDigest/generate.ts — the digest reads whatever is
 // currently sitting in Supabase's pulse_headlines table rather than a fresh
@@ -122,6 +145,11 @@ const COUNTRY_EXCLUDE_PATTERNS: Record<CountryCode, RegExp[]> = {
     /\bRepublican(s)?\b/i, /\bDemocrat(ic)?(s)?\b/i, /\bGOP\b/i,
     /\bimpeachment\b/i, /\bpartisan\b/i, /\bcampaign\s+(rally|finance|trail)\b/i,
   ],
+  GB: [
+    /\bConservative\s+Party\b/i, /\bLabour\s+Party\b/i, /\bTory\b/i, /\bTories\b/i,
+    /\bLib\s+Dem(s)?\b/i, /\bReform\s+UK\b/i, /\bSNP\b/i,
+    /\bby-election\b/i, /\bpartisan\b/i, /\bno[-\s]confidence\b/i,
+  ],
 };
 
 function isExcluded(title: string, country: CountryCode): boolean {
@@ -135,15 +163,15 @@ function isExcluded(title: string, country: CountryCode): boolean {
 // CAQM, AYUSH) just never fire against non-Indian text — harmless to leave
 // in a shared list rather than forking the whole taxonomy per country.
 const CATEGORY_RULES: { category: string; patterns: RegExp[] }[] = [
-  { category: "Health & Sanitation", patterns: [/\bhealth\b/i, /\bsanitation\b/i, /\bhospital\b/i, /\bsewer\b/i, /\bseptic\b/i, /\bswachh\b/i, /\bAYUSH\b/i, /\bmedical\b/i, /\bFDA\b/i, /\bCDC\b/i] },
-  { category: "Education & Skilling", patterns: [/\beducation\b/i, /\bschool\b/i, /\bskill\b/i, /\bNCVET\b/i, /\btraining\s+institute\b/i, /\buniversity\b/i, /\bliteracy\b/i, /\bstudent\s+loan\b/i, /\bDepartment of Education\b/i] },
+  { category: "Health & Sanitation", patterns: [/\bhealth\b/i, /\bsanitation\b/i, /\bhospital\b/i, /\bsewer\b/i, /\bseptic\b/i, /\bswachh\b/i, /\bAYUSH\b/i, /\bmedical\b/i, /\bFDA\b/i, /\bCDC\b/i, /\bNHS\b/i] },
+  { category: "Education & Skilling", patterns: [/\beducation\b/i, /\bschool\b/i, /\bskill\b/i, /\bNCVET\b/i, /\btraining\s+institute\b/i, /\buniversity\b/i, /\bliteracy\b/i, /\bstudent\s+loan\b/i, /\bDepartment of Education\b/i, /\bOfsted\b/i, /\bDfE\b/i] },
   { category: "Women & Child Welfare", patterns: [/\bwomen\b/i, /\bchild\b/i, /\bminorit(y|ies)\b/i, /\bgender\b/i, /\banganwadi\b/i] },
   { category: "Rural Development", patterns: [/\brural\b/i, /\bpanchayat\b/i, /\bPMGSY\b/i, /\bPMAY-G\b/i, /\bNRLM\b/i, /\bNSAP\b/i, /\bgram\b/i] },
-  { category: "Agriculture", patterns: [/\bagricultur(e|al)\b/i, /\bfarmer\b/i, /\bfertiliser\b/i, /\bfertilizer\b/i, /\bcrop\b/i, /\birrigation\b/i, /\bmonsoon\b/i, /\bseed\b/i, /\breservoir\b/i, /\bUSDA\b/i] },
-  { category: "Environment & Cleanliness", patterns: [/\benvironment\b/i, /\bpollution\b/i, /\bCAQM\b/i, /\bair\s+quality\b/i, /\bwaste\b/i, /\bclean(liness|-up)?\b/i, /\bforest\b/i, /\bEPA\b/i, /\bemissions\b/i] },
-  { category: "Infrastructure", patterns: [/\binfrastructure\b/i, /\broad(s)?\b/i, /\brailway\b/i, /\bhighway\b/i, /\bdigit(al|isation|ization)\b/i, /\bdrone\b/i, /\baviation\b/i, /\bFAA\b/i, /\bFCC\b/i] },
-  { category: "Governance & Welfare Schemes", patterns: [/\bscheme\b/i, /\bministry\b/i, /\byojana\b/i, /\bwelfare\b/i, /\bfinancial\s+inclusion\b/i, /\bexecutive\s+order\b/i, /\bagency\s+rule\b/i, /\bfederal\s+register\b/i] },
-  { category: "Markets & Business", patterns: [/\bshares?\b/i, /\bstock(s)?\b/i, /\bIPO\b/i, /\bprofit\b/i, /\bmarket(s)?\b/i, /\bRBI\b/i, /\bSEC\b/i, /\bbank(ing|s)?\b/i, /\bcompany\b/i, /\bearnings\b/i, /\brupee\b/i, /\bdollar\b/i, /\bGDP\b/i, /\beconomy\b/i, /\btariff(s)?\b/i] },
+  { category: "Agriculture", patterns: [/\bagricultur(e|al)\b/i, /\bfarmer\b/i, /\bfertiliser\b/i, /\bfertilizer\b/i, /\bcrop\b/i, /\birrigation\b/i, /\bmonsoon\b/i, /\bseed\b/i, /\breservoir\b/i, /\bUSDA\b/i, /\bDefra\b/i] },
+  { category: "Environment & Cleanliness", patterns: [/\benvironment\b/i, /\bpollution\b/i, /\bCAQM\b/i, /\bair\s+quality\b/i, /\bwaste\b/i, /\bclean(liness|-up)?\b/i, /\bforest\b/i, /\bEPA\b/i, /\bemissions\b/i, /\bOfgem\b/i] },
+  { category: "Infrastructure", patterns: [/\binfrastructure\b/i, /\broad(s)?\b/i, /\brailway\b/i, /\bhighway\b/i, /\bdigit(al|isation|ization)\b/i, /\bdrone\b/i, /\baviation\b/i, /\bFAA\b/i, /\bFCC\b/i, /\bOfcom\b/i] },
+  { category: "Governance & Welfare Schemes", patterns: [/\bscheme\b/i, /\bministry\b/i, /\byojana\b/i, /\bwelfare\b/i, /\bfinancial\s+inclusion\b/i, /\bexecutive\s+order\b/i, /\bagency\s+rule\b/i, /\bfederal\s+register\b/i, /\bDWP\b/i, /\bWhitehall\b/i] },
+  { category: "Markets & Business", patterns: [/\bshares?\b/i, /\bstock(s)?\b/i, /\bIPO\b/i, /\bprofit\b/i, /\bmarket(s)?\b/i, /\bRBI\b/i, /\bSEC\b/i, /\bbank(ing|s)?\b/i, /\bcompany\b/i, /\bearnings\b/i, /\brupee\b/i, /\bdollar\b/i, /\bGDP\b/i, /\beconomy\b/i, /\btariff(s)?\b/i, /\bFCA\b/i, /\bBank of England\b/i, /\bHMRC\b/i, /\bpound\s+sterling\b/i] },
 ];
 
 function classifyCategory(title: string): string {
@@ -249,6 +277,28 @@ const US_REGULATORY_FEEDS: { source: string; url: string }[] = [
   { source: "U.S. Securities and Exchange Commission", url: "https://www.sec.gov/news/pressreleases.rss" },
 ];
 
+// ── United Kingdom ───────────────────────────────────────────────────────
+// 1. Government — GOV.UK's own official "News and communications" feed,
+//    the direct structural equivalent of PIB/Federal Register: every UK
+//    government department's announcements in one place, run by HM
+//    Government itself. Atom, not RSS (see extractAtomItems above).
+//    Verified live: https://www.gov.uk/search/news-and-communications.atom
+// 2. Regulatory — the Financial Conduct Authority (SEBI/SEC's equivalent)
+//    and the Bank of England (RBI's equivalent), both official RSS feeds.
+//    Verified live: https://www.fca.org.uk/news/rss.xml and
+//    https://www.bankofengland.co.uk/rss/news
+// No newspaper tier yet — same reasoning as US: individually verifying a
+// UK outlet's section feed is future work, not a guess.
+async function fetchUkGovernment(): Promise<RawHeadline[]> {
+  const items = await fetchAtom("https://www.gov.uk/search/news-and-communications.atom");
+  return items.map((i) => ({ ...i, source: "GOV.UK" }));
+}
+
+const UK_REGULATORY_FEEDS: { source: string; url: string }[] = [
+  { source: "Financial Conduct Authority", url: "https://www.fca.org.uk/news/rss.xml" },
+  { source: "Bank of England", url: "https://www.bankofengland.co.uk/rss/news" },
+];
+
 interface CountrySource {
   fetchGovernment: () => Promise<RawHeadline[]>;
   fetchRegulatory: () => Promise<RawHeadline[]>;
@@ -266,9 +316,14 @@ const COUNTRY_SOURCES: Record<CountryCode, CountrySource> = {
     fetchRegulatory: () => fetchRssList(US_REGULATORY_FEEDS),
     fetchNewspaper: async () => [],
   },
+  GB: {
+    fetchGovernment: fetchUkGovernment,
+    fetchRegulatory: () => fetchRssList(UK_REGULATORY_FEEDS),
+    fetchNewspaper: async () => [],
+  },
 };
 
-export const SUPPORTED_COUNTRIES: CountryCode[] = ["IN", "US"];
+export const SUPPORTED_COUNTRIES: CountryCode[] = ["IN", "US", "GB"];
 
 async function classify(raw: RawHeadline[], sourceType: PulseSourceType, country: CountryCode): Promise<ClassifiedHeadline[]> {
   return raw

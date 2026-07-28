@@ -261,7 +261,7 @@ export default function PulsePage() {
           <>
             <div className="gem-divider mb-3 text-sm">◆ TODAY&apos;S POLICY FEED ◆</div>
             <p className="text-xs text-center mb-8" style={{ color: "var(--ink-muted)" }}>
-              Straight from official government and regulatory feeds — India&apos;s PIB/RBI/SEBI and the U.S.&apos;s Federal Register/SEC, nothing from a news outlet.
+              Straight from official government and regulatory feeds — India&apos;s PIB/RBI/SEBI, the U.S.&apos;s Federal Register/SEC, and the UK&apos;s GOV.UK/FCA/Bank of England, nothing from a news outlet.
             </p>
             <HeadlineGroups headlines={government} />
           </>

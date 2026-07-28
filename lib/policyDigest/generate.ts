@@ -17,6 +17,10 @@ export interface DigestItem {
   url: string
   category: string
   source: string
+  // Absent on digests generated before supabase-schema-pulse-v5.sql ran —
+  // treated as 'IN' by every reader (lib/opportunityPulseMap.ts), since
+  // every row before that migration was India's.
+  country?: string
 }
 
 interface PulseHeadlineRow {
@@ -26,6 +30,7 @@ interface PulseHeadlineRow {
   source: string
   source_type: string
   fetched_at: string
+  country?: string
 }
 
 function todayDateString(): string {
@@ -52,17 +57,32 @@ function summarize(items: DigestItem[], periodLabel: string): string {
 export async function generateDailyDigest(): Promise<{ period: string; itemCount: number }> {
   if (!supabaseAdmin) throw new Error('Supabase is not configured.')
 
-  const { data, error } = await supabaseAdmin
+  // Selects `country` optimistically; falls back to the pre-v5 column set
+  // if that migration (supabase-schema-pulse-v5.sql) hasn't run yet, same
+  // "never let a not-yet-applied migration break something that worked
+  // yesterday" rule as the refresh cron.
+  let data: PulseHeadlineRow[] | null = null
+  const withCountry = await supabaseAdmin
     .from('pulse_headlines')
-    .select('title, url, category, source, source_type, fetched_at')
+    .select('title, url, category, source, source_type, fetched_at, country')
     .eq('source_type', 'government')
     .order('fetched_at', { ascending: false })
 
-  if (error) throw error
+  if (!withCountry.error) {
+    data = withCountry.data as PulseHeadlineRow[]
+  } else {
+    const withoutCountry = await supabaseAdmin
+      .from('pulse_headlines')
+      .select('title, url, category, source, source_type, fetched_at')
+      .eq('source_type', 'government')
+      .order('fetched_at', { ascending: false })
+    if (withoutCountry.error) throw withoutCountry.error
+    data = withoutCountry.data as PulseHeadlineRow[]
+  }
 
-  const items: DigestItem[] = ((data ?? []) as PulseHeadlineRow[])
+  const items: DigestItem[] = (data ?? [])
     .filter(h => isEnglish(h.title))
-    .map(h => ({ title: h.title, url: h.url, category: h.category, source: h.source }))
+    .map(h => ({ title: h.title, url: h.url, category: h.category, source: h.source, country: h.country ?? 'IN' }))
 
   const period = todayDateString()
   const summary = summarize(items, 'today')

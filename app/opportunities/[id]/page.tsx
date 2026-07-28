@@ -80,7 +80,7 @@ async function getRelatedGatherings(opp: { audience: string; tags: string }) {
 /** Real Pulse policy headlines related to this opportunity — the
  * Opportunities → Policy graph edge (lib/opportunityPulseMap.ts). Empty
  * when nothing genuinely matches. */
-async function getRelatedPolicyReads(opp: { audience: string; tags: string }) {
+async function getRelatedPolicyReads(opp: { audience: string; tags: string; country: string }) {
   const pool = await fetchRecentPolicyItemsPool()
   return matchPolicyReadsFromPool(opp, pool)
 }

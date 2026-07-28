@@ -23,7 +23,7 @@ export interface CardExtras {
  * what to render; this only ever hands it real, meaningful numbers.
  */
 export async function enrichOpportunities(
-  opps: Array<{ id: string; tags: string; audience: string; viewCount: number; addedAt: Date }>
+  opps: Array<{ id: string; tags: string; audience: string; country: string; viewCount: number; addedAt: Date }>
 ): Promise<Record<string, CardExtras>> {
   const ids = opps.map(o => o.id)
   if (ids.length === 0) return {}

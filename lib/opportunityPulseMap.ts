@@ -52,17 +52,35 @@ export async function fetchRecentPolicyItemsPool(): Promise<PolicyRead[]> {
   return items
 }
 
+// Bridges Opportunity.country's full display names (see lib/scraper/geo.ts,
+// e.g. "India", "United States") to the ISO codes pulse_headlines/DigestItem
+// tag country with (lib/mayatara/pulseFeed.ts's SUPPORTED_COUNTRIES). Only
+// countries Pulse actually ingests belong here — an opportunity from a
+// country not in this map just doesn't get the country filter applied
+// below (falls back to category-only matching), never a guessed code.
+const COUNTRY_NAME_TO_CODE: Record<string, string> = {
+  India: 'IN',
+  'United States': 'US',
+}
+
 export function matchPolicyReadsFromPool(
-  opp: { tags: string; audience: string },
+  opp: { tags: string; audience: string; country?: string },
   pool: PolicyRead[]
 ): PolicyRead[] {
   const categories = relatedPulseCategories(opp)
   if (categories.length === 0 || pool.length === 0) return []
-  const set = new Set(categories)
+  const categorySet = new Set(categories)
+  // Undefined when the opportunity's country isn't one Pulse ingests (e.g.
+  // "Remote / Global", or a country not yet in COUNTRY_NAME_TO_CODE) —
+  // matching then stays category-only, same as before this file knew
+  // about country at all, rather than going strict and losing matches.
+  const countryCode = opp.country ? COUNTRY_NAME_TO_CODE[opp.country] : undefined
+
   const seen = new Set<string>()
   const out: PolicyRead[] = []
   for (const item of pool) {
-    if (!set.has(item.category) || seen.has(item.url)) continue
+    if (!categorySet.has(item.category) || seen.has(item.url)) continue
+    if (countryCode && (item.country ?? 'IN') !== countryCode) continue
     seen.add(item.url)
     out.push(item)
     if (out.length >= 3) break

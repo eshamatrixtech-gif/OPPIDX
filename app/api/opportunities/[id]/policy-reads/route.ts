@@ -12,7 +12,7 @@ import { fetchRecentPolicyItemsPool, matchPolicyReadsFromPool } from '@/lib/oppo
  */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const opp = await prisma.opportunity.findUnique({ where: { id }, select: { tags: true, audience: true, deletedAt: true } })
+  const opp = await prisma.opportunity.findUnique({ where: { id }, select: { tags: true, audience: true, country: true, deletedAt: true } })
   if (!opp || opp.deletedAt) return NextResponse.json({ items: [] }, { status: 404 })
 
   const pool = await fetchRecentPolicyItemsPool()

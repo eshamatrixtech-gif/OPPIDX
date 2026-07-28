@@ -81,7 +81,7 @@ export function EcosystemActions({ opp, variant = 'compact', hasResources = fals
     <>
       {variant === 'compact' ? (
         <div style={{ display: 'flex', borderTop: '1px solid var(--line)' }}>
-          <IconButton icon="🤗" label="Find your person" onClick={() => setOpen('match')} />
+          <IconButton icon="🫂" label="Find your person" onClick={() => setOpen('match')} />
           <IconButton icon="📍" label="Host a gathering" onClick={() => setOpen('event')} />
           <IconButton icon="📚" label="Add a guide" onClick={() => setOpen('resource')} />
           <IconButton icon="📰" label="Policy reads" onClick={() => setOpen('policy')} />

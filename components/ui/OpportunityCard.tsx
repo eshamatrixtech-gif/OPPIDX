@@ -49,7 +49,7 @@ const ATTACHMENT_ICON: Record<string, string> = {
   resource: '📚',
   discussion: '💬',
   gathering: '📍',
-  chasing: '🤗',
+  chasing: '🫂',
   policy: '📰',
 }
 

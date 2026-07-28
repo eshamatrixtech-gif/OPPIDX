@@ -56,8 +56,11 @@ export default async function DigestPage({ params }: { params: Promise<{ period:
           <h1 className="font-typewriter text-2xl md:text-3xl mb-3" style={{ color: "var(--ink)" }}>
             {periodLabel(period, digest.periodType).toUpperCase()}
           </h1>
-          <p className="text-sm leading-relaxed max-w-xl mx-auto mb-6" style={{ color: "var(--ink-muted)" }}>
-            {digest.summary} Every item links to the original government or regulatory source — no summarizing, no AI.
+          <p className="text-sm leading-relaxed max-w-xl mx-auto mb-2" style={{ color: "var(--ink-muted)" }}>
+            {digest.summary}
+          </p>
+          <p className="text-xs leading-relaxed max-w-xl mx-auto mb-6" style={{ color: "var(--ink-muted)", opacity: 0.75 }}>
+            That paragraph is AI-written, generated only from the real headlines below — it never adds a name, number, or event that isn&apos;t in them. Every individual item still links straight to its original government or regulatory source, itself untouched.
           </p>
           <div className="flex justify-center">
             <ShareBar title={`Policy digest — ${periodLabel(period, digest.periodType)}`} url={pageUrl} />

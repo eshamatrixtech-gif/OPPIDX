@@ -1,7 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Modal, ModalHeader } from '@/components/ui/Modal'
+
+function todayPeriod(): string {
+  return new Date().toISOString().slice(0, 10)
+}
 
 interface PolicyRead {
   title: string
@@ -48,6 +53,12 @@ export function PolicyDigestModal({ opportunityId, opportunityTitle, onClose }: 
           ))}
         </div>
       )}
+      <Link href={`/mayatara/pulse/digest/${todayPeriod()}`} style={{
+        display: 'block', marginTop: 16, paddingTop: 14, borderTop: '1px dashed var(--line)',
+        fontSize: 12.5, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none', textAlign: 'center',
+      }}>
+        📰 Read today&apos;s full policy digest →
+      </Link>
     </Modal>
   )
 }

@@ -55,7 +55,11 @@ function weeklyDigestHtml(digest: WeeklyDigestEmailData, unsubscribeUrl: string)
       See the full board →
     </a>
 
-    <p style="color:#5b5346;font-size:11px;margin:28px 0 0;line-height:1.6;">
+    <p style="color:#5b5346;font-size:12px;margin:20px 0 0;line-height:1.6;">
+      Also this week: <a href="${SITE_URL}/mayatara/pulse" style="color:#c0432a;">Mayatara Pulse</a> — a daily, apolitical read on real government and regulatory action, written from real headlines.
+    </p>
+
+    <p style="color:#5b5346;font-size:11px;margin:20px 0 0;line-height:1.6;">
       Real, hand-verified opportunities — ranked by genuine views, not hype or fake urgency.
       <br><a href="${unsubscribeUrl}" style="color:#5b5346;">Unsubscribe from this weekly email</a>
     </p>

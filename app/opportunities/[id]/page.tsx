@@ -246,7 +246,7 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
             {chasingCount > 0 && (
               <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
                 <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--terracotta)', marginBottom: 6 }}>
-                  💘 {chasingCount} others also chasing this
+                  🤗 {chasingCount} others also chasing this
                 </div>
                 <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.6 }}>
                   No browsable list here — that would out who's applying to what. If you're linked with{' '}

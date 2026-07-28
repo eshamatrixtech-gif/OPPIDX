@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 
@@ -18,8 +19,11 @@ function periodLabel(period: string): string {
  * feed (see app/api/pulse/recent), interleaved into the opportunities feed
  * rather than living behind its own tab. Deliberately denser and
  * text-only compared to an OpportunityCard — a digest is a dispatch, not
- * a listing. */
-export function PulseCard({ digest }: { digest: PulseDigest }) {
+ * a listing. Memoized for the same reason as OpportunityCard: this sits
+ * inside pages that re-render on a timer or on unrelated state changes,
+ * and without it the `layout` prop below re-measures on every one of
+ * those. */
+export const PulseCard = memo(function PulseCard({ digest }: { digest: PulseDigest }) {
   return (
     <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.2 }}>
       <div className="card-box" style={{ display: 'flex', overflow: 'hidden' }}>
@@ -32,7 +36,10 @@ export function PulseCard({ digest }: { digest: PulseDigest }) {
           }}>
             ◈ Pulse · {periodLabel(digest.period)}
           </div>
-          <h3 style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14, lineHeight: 1.4, color: 'var(--ink)', marginBottom: 10 }}>
+          <h3 style={{
+            fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14, lineHeight: 1.4, color: 'var(--ink)', marginBottom: 10,
+            display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+          }}>
             {digest.summary}
           </h3>
           <Link
@@ -49,4 +56,4 @@ export function PulseCard({ digest }: { digest: PulseDigest }) {
       </div>
     </motion.div>
   )
-}
+})

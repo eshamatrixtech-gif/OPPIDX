@@ -11,6 +11,7 @@
 import { prisma } from '@/lib/db'
 import { supabaseAdmin } from '@/lib/mayatara/supabase'
 import { isEnglish } from '@/lib/mayatara/pulseFeed'
+import { writeNarrativeSummary } from '@/lib/policyDigest/summarize'
 
 export interface DigestItem {
   title: string
@@ -52,7 +53,12 @@ function isoWeekString(date: Date): string {
   return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`
 }
 
-function summarize(items: DigestItem[], periodLabel: string): string {
+/** The old, purely templated line — "40 policy actions across 3
+ * categories." Nobody reads that. Still used as the fallback when there's
+ * nothing to summarize, or if the AI rewrite (writeNarrativeSummary)
+ * fails for any reason — the digest should never be left with an empty
+ * intro. */
+function templateSummary(items: DigestItem[], periodLabel: string): string {
   if (items.length === 0) return `No policy actions captured for ${periodLabel}.`
   const categories = new Set(items.map(i => i.category)).size
   return `${items.length} policy action${items.length === 1 ? '' : 's'} across ${categories} categor${categories === 1 ? 'y' : 'ies'} — ${periodLabel}.`
@@ -96,7 +102,7 @@ export async function generateDailyDigest(): Promise<{ period: string; itemCount
     .map(h => ({ title: h.title, url: h.url, category: h.category, source: h.source, country: columnExists ? h.country : undefined }))
 
   const period = todayDateString()
-  const summary = summarize(items, 'today')
+  const summary = await writeNarrativeSummary(items, 'today', templateSummary(items, 'today'))
 
   await prisma.policyDigest.upsert({
     where: { period },
@@ -129,7 +135,7 @@ export async function generateWeeklyDigest(): Promise<{ period: string; itemCoun
   }
 
   const period = isoWeekString(new Date())
-  const summary = summarize(items, 'this week')
+  const summary = await writeNarrativeSummary(items, 'this week', templateSummary(items, 'this week'))
 
   await prisma.policyDigest.upsert({
     where: { period },

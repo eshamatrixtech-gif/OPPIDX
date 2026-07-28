@@ -60,6 +60,60 @@ function CategoryFilters({ active, onToggle }: { active: string[]; onToggle: (c:
   );
 }
 
+interface ArchivedDigest {
+  period: string;
+  periodType: string;
+  summary: string;
+  createdAt: string;
+}
+
+/** Past daily/weekly digests, newest first — otherwise the only way to
+ * reach one is already knowing its exact date or ISO-week slug. */
+function DigestArchive() {
+  const [digests, setDigests] = useState<ArchivedDigest[] | null>(null);
+
+  useEffect(() => {
+    fetch("/api/pulse/digests")
+      .then((r) => r.json())
+      .then((data) => setDigests(data.items ?? []))
+      .catch(() => setDigests([]));
+  }, []);
+
+  if (digests === null || digests.length === 0) return null;
+
+  return (
+    <>
+      <div className="gem-divider mb-3 text-sm">◆ DIGEST ARCHIVE ◆</div>
+      <p className="text-xs text-center mb-6" style={{ color: "var(--ink-muted)" }}>
+        Every daily and weekly digest we&apos;ve put out, in one place.
+      </p>
+      <div className="flex flex-col gap-2 mb-14 max-w-2xl mx-auto">
+        {digests.map((d) => (
+          <Link
+            key={d.period}
+            href={`/mayatara/pulse/digest/${d.period}`}
+            className="card px-4 py-3 flex items-center gap-3"
+            style={{ textDecoration: "none" }}
+          >
+            <span
+              className="text-xs font-typewriter tracking-wide px-2 py-0.5 flex-none"
+              style={{ background: "var(--bg-dark)", color: "var(--saffron)" }}
+            >
+              {d.periodType === "weekly" ? "WEEK" : "DAY"}
+            </span>
+            <span className="text-xs font-typewriter flex-none" style={{ color: "var(--ink-muted)" }}>
+              {d.period}
+            </span>
+            <span className="text-sm truncate" style={{ color: "var(--ink)" }}>
+              {d.summary}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </>
+  );
+}
+
 function HeadlineGroups({ headlines }: { headlines: Headline[] }) {
   const grouped = PULSE_CATEGORIES
     .map((c) => ({ ...c, items: headlines.filter((h) => h.category === c.category) }))
@@ -207,7 +261,7 @@ export default function PulsePage() {
           <>
             <div className="gem-divider mb-3 text-sm">◆ TODAY&apos;S POLICY FEED ◆</div>
             <p className="text-xs text-center mb-8" style={{ color: "var(--ink-muted)" }}>
-              Source: Press Information Bureau, Government of India
+              Straight from official government and regulatory feeds — India&apos;s PIB/RBI/SEBI and the U.S.&apos;s Federal Register/SEC, nothing from a news outlet.
             </p>
             <HeadlineGroups headlines={government} />
           </>
@@ -228,6 +282,8 @@ export default function PulsePage() {
             </p>
           </div>
         )}
+
+        <DigestArchive />
 
         <p className="text-xs text-center mt-10 leading-relaxed" style={{ color: "var(--ink-muted)" }}>
           Every headline above links to the original source. No summarising, no AI — a plain keyword

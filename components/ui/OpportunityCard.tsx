@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { SaveButton } from '@/components/ui/SaveButton'
@@ -48,7 +49,7 @@ const ATTACHMENT_ICON: Record<string, string> = {
   resource: '📚',
   discussion: '💬',
   gathering: '📍',
-  chasing: '💘',
+  chasing: '🤗',
   policy: '📰',
 }
 
@@ -89,7 +90,19 @@ function AttachmentStrip({ oppId, extras }: { oppId: string; extras: CardExtras 
   )
 }
 
-export function OpportunityCard({ opp, extras }: { opp: Opportunity; extras?: CardExtras }) {
+/**
+ * Memoized deliberately: this card sits inside pages that re-render on a
+ * timer (the home page polls /api/stats every 15s) or on unrelated state
+ * changes elsewhere in the tree. Without memo, every one of those re-runs
+ * re-renders every card, and framer-motion's `layout` prop below (real and
+ * needed on /browse, where filtering actually removes/reorders cards)
+ * re-measures each one on every pass — visible as a "blink" across the
+ * whole grid every ~15 seconds, despite nothing about any card having
+ * actually changed. `opp`/`extras` are stable object references from
+ * parent state in every caller, so the default shallow-prop comparison
+ * correctly bails out here without a custom comparator.
+ */
+export const OpportunityCard = memo(function OpportunityCard({ opp, extras }: { opp: Opportunity; extras?: CardExtras }) {
   const tags = opp.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 3)
 
   return (
@@ -204,4 +217,4 @@ export function OpportunityCard({ opp, extras }: { opp: Opportunity; extras?: Ca
       </div>
     </motion.div>
   )
-}
+})

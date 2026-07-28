@@ -7,40 +7,25 @@ import { OpportunityCard, type CardExtras } from '@/components/ui/OpportunityCar
 import { PulseCard, type PulseDigest } from '@/components/ui/PulseCard'
 import { Wordmark } from '@/components/ui/Wordmark'
 import { ShareBar } from '@/components/ui/ShareBar'
-import { useCountUp } from '@/lib/hooks/useCountUp'
 import { DISCORD_INVITE_URL } from '@/lib/discord'
 import { SOCIAL_CHANNELS_ENABLED } from '@/lib/socialChannels'
 import { SITE_URL } from '@/lib/siteUrl'
 import { getStoredReferralCode } from '@/lib/clientReferral'
 import { interleave } from '@/lib/feed/interleave'
-import type { Opportunity, Stats } from '@/types'
+import type { Opportunity } from '@/types'
 
 // Same occasional cadence as /browse.
 const PULSE_EVERY = 9
 const AUTO_LOAD_CAP = 240
 
-/** Days since epoch (UTC) — the pick changes once a day and is identical
- * for every visitor within that day. No server-side state needed. The
- * scraper itself still runs hourly (real new listings show up all day
- * long) — this only governs which items the homepage's featured rotation
- * highlights. */
-function daySeed(): number {
-  return Math.floor(Date.now() / (24 * 60 * 60 * 1000))
-}
-
-/** Deterministic pick of `count` items from `pool`, stable for a given seed —
- * same picks for everyone today, different picks tomorrow. This is the
- * free tier's "keep checking back" hook: a real, honest, ever-changing
- * sample — not the whole board (that's the paid /browse search). */
-function pickDaily<T>(pool: T[], count: number): T[] {
-  let seed = daySeed()
-  const rand = () => {
-    seed = (seed * 9301 + 49297) % 233280
-    return seed / 233280
-  }
+/** A fresh, genuinely random pick of `count` items every time this runs —
+ * on every page load, not once a day. This is the free tier's "keep
+ * checking back" hook: a real, honest, ever-changing sample — not the
+ * whole board (that's the paid /browse search). */
+function pickRandom<T>(pool: T[], count: number): T[] {
   const shuffled = [...pool]
   for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1))
+    const j = Math.floor(Math.random() * (i + 1))
     ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
   }
   return shuffled.slice(0, count)
@@ -51,20 +36,6 @@ function Sparkle({ size = 22 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="var(--pin)" strokeWidth="1.2" opacity={0.55}>
       <path d="M12 2v6M12 16v6M2 12h6M16 12h6M5 5l4 4M15 15l4 4M19 5l-4 4M9 15l-4 4" strokeLinecap="round" />
     </svg>
-  )
-}
-
-function Counter({ value, label }: { value: number; label: string }) {
-  const shown = useCountUp(value)
-  return (
-    <div style={{ textAlign: 'center', padding: '0 18px' }}>
-      <div style={{ fontFamily: 'var(--font-display)', fontSize: 34, color: 'var(--ink)' }}>
-        {shown.toLocaleString()}
-      </div>
-      <div style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>
-        {label}
-      </div>
-    </div>
   )
 }
 
@@ -286,7 +257,6 @@ export default function Home() {
   // are curated" and "See all 0 opportunities" on every load, before the
   // client fetch below even resolves, which reads as the site having no
   // content at all.
-  const [stats, setStats] = useState<Stats | null>(null)
   const [featured, setFeatured] = useState<Opportunity[] | null>(null)
   const [featuredExtras, setFeaturedExtras] = useState<Record<string, CardExtras>>({})
   const [pulseDigests, setPulseDigests] = useState<PulseDigest[]>([])
@@ -308,16 +278,6 @@ export default function Home() {
   const sentinelRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    async function poll() {
-      const res = await fetch('/api/stats').catch(() => null)
-      if (res?.ok) setStats(await res.json())
-    }
-    poll()
-    const id = setInterval(poll, 15_000)
-    return () => clearInterval(id)
-  }, [])
-
-  useEffect(() => {
     fetch('/api/sponsor/active')
       .then(r => r.json())
       .then(data => setSponsor(data.sponsor))
@@ -328,7 +288,7 @@ export default function Home() {
     fetch('/api/opportunities?featured=true')
       .then(r => r.json())
       .then(data => {
-        const picks = pickDaily<Opportunity>(data.items ?? [], 10)
+        const picks = pickRandom<Opportunity>(data.items ?? [], 10)
         setFeatured(picks)
         setFeaturedExtras(data.extras ?? {})
         for (const p of picks) shownIds.current.add(p.id)
@@ -418,7 +378,7 @@ export default function Home() {
         padding: '7px 12px', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.12em',
         fontFamily: 'var(--font-mono)', textTransform: 'uppercase',
       }}>
-        ◆ {stats ? stats.opportunities.toLocaleString() : 'Every'} real opportunities, verified before they go up ◆ Free to search in full, right now ◆
+        ◆ Real opportunities, verified before they go up ◆ Free to search in full, right now ◆
       </div>
 
       {/* ── Header / hero — opportunities first, everything else lives in
@@ -431,6 +391,12 @@ export default function Home() {
               <Wordmark size={22} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+              <Link href="/saved" style={{
+                fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, color: 'var(--ink-2)',
+                textDecoration: 'none', letterSpacing: '0.02em',
+              }}>
+                ★ Saved
+              </Link>
               <Link href="/account" style={{
                 fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, color: 'var(--ink-2)',
                 textDecoration: 'none', letterSpacing: '0.02em',
@@ -449,42 +415,45 @@ export default function Home() {
           </div>
 
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 12 }}>
-            ◆ The board, not the maze
+            ◆ By the youth, for the youth
           </div>
           <h1 style={{
             fontFamily: 'var(--font-display)', fontSize: 'clamp(26px, 4.4vw, 40px)',
             lineHeight: 1.18, marginBottom: 12, maxWidth: 640,
           }}>
-            Every real internship, scholarship and grant — one honest board.
+            Find your next opportunity. Find your people.
           </h1>
-          <p style={{ color: 'var(--ink-2)', fontSize: 14.5, maxWidth: 560, marginBottom: 22, lineHeight: 1.7 }}>
+          <p style={{ color: 'var(--ink-2)', fontSize: 14.5, maxWidth: 560, marginBottom: 8, lineHeight: 1.7 }}>
             We verify every listing before it goes up. No inflated numbers, no dead links.
+          </p>
+          <p style={{ color: 'var(--ink-3)', fontSize: 12.5, maxWidth: 560, marginBottom: 22, lineHeight: 1.6 }}>
+            AI helps us write the daily policy digest from real headlines — everything else on the board is checked and added by hand.
           </p>
 
           <HeroSearch />
 
           {newSinceLastVisit !== null && (
             <div style={{
-              display: 'inline-block', marginBottom: 4, padding: '9px 14px', borderRadius: 2,
+              display: 'inline-block', marginBottom: 20, padding: '9px 14px', borderRadius: 2,
               background: 'var(--board)', border: '1px solid var(--line)',
               fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, color: 'var(--pin)',
             }}>
               ✦ {newSinceLastVisit.toLocaleString()} new opportunit{newSinceLastVisit === 1 ? 'y' : 'ies'} since your last visit — keep scrolling ↓
             </div>
           )}
+
+          <div className="card-box" style={{ padding: '16px 18px', maxWidth: 560, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+              A welcome note now, then the week&apos;s top 10 — ranked by genuine interest, not sponsorship — every Monday.
+            </div>
+            <SubscribeForm />
+          </div>
         </div>
       </header>
 
       <main style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px 80px' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
-          <Counter value={stats?.opportunities ?? 0} label="Opportunities" />
-        </div>
-        <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginBottom: 30 }}>
-          The board is constantly updated with new opportunities — this isn't a static list.
-        </div>
-
         <div className="divider" style={{ marginBottom: 10 }}>
-          <span>◆ Best opportunities right now — refreshed daily ◆</span>
+          <span>◆ Best opportunities right now — a fresh pick every visit ◆</span>
         </div>
         {featured === null ? (
           <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13, marginBottom: 20 }}>

@@ -1,6 +1,7 @@
 import type { Audience, Difficulty } from '@/types'
 import type { RawListing } from './types'
 import { inferGeo } from './geo'
+import { decodeEntities } from './util'
 
 export interface NormalizedListing {
   description: string
@@ -40,7 +41,7 @@ export function normalize(raw: RawListing): NormalizedListing {
   const text = `${raw.title} ${raw.rawDescription}`
   const geo = inferGeo(raw.location)
   return {
-    description: (raw.rawDescription || raw.title).slice(0, 600),
+    description: decodeEntities(raw.rawDescription || raw.title).slice(0, 600),
     eligibility: '',
     prepResources: '',
     difficulty: inferDifficulty(text, raw.audienceHint),

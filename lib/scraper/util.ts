@@ -4,7 +4,7 @@ const NAMED_ENTITIES: Record<string, string> = {
   mdash: '—', ndash: '–', hellip: '…',
 }
 
-function decodeEntities(text: string): string {
+export function decodeEntities(text: string): string {
   return text.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (match, code: string) => {
     if (code[0] === '#') {
       const codePoint = code[1] === 'x' || code[1] === 'X'

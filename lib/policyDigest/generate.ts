@@ -18,8 +18,12 @@ export interface DigestItem {
   category: string
   source: string
   // Absent on digests generated before supabase-schema-pulse-v5.sql ran —
-  // treated as 'IN' by every reader (lib/opportunityPulseMap.ts), since
-  // every row before that migration was India's.
+  // genuinely unknown then, NOT assumed to be 'IN'. Once this file started
+  // ingesting a second country (US), rows fetched before that migration
+  // are a real mix of both, not all India — every reader
+  // (lib/opportunityPulseMap.ts) treats a missing country as "don't filter
+  // by country for this item" rather than guessing wrong and hiding real
+  // matches for non-India opportunities.
   country?: string
 }
 
@@ -60,8 +64,14 @@ export async function generateDailyDigest(): Promise<{ period: string; itemCount
   // Selects `country` optimistically; falls back to the pre-v5 column set
   // if that migration (supabase-schema-pulse-v5.sql) hasn't run yet, same
   // "never let a not-yet-applied migration break something that worked
-  // yesterday" rule as the refresh cron.
+  // yesterday" rule as the refresh cron. `columnExists` tracks which case
+  // we're in — deliberately NOT defaulted to 'IN' when it's false, since
+  // this file now ingests a second country: a blanket 'IN' default would
+  // silently zero out every non-India opportunity's real, already-fetched
+  // matches until the migration lands, which is a worse regression than
+  // just leaving country unknown for everyone a little longer.
   let data: PulseHeadlineRow[] | null = null
+  let columnExists = true
   const withCountry = await supabaseAdmin
     .from('pulse_headlines')
     .select('title, url, category, source, source_type, fetched_at, country')
@@ -71,6 +81,7 @@ export async function generateDailyDigest(): Promise<{ period: string; itemCount
   if (!withCountry.error) {
     data = withCountry.data as PulseHeadlineRow[]
   } else {
+    columnExists = false
     const withoutCountry = await supabaseAdmin
       .from('pulse_headlines')
       .select('title, url, category, source, source_type, fetched_at')
@@ -82,7 +93,7 @@ export async function generateDailyDigest(): Promise<{ period: string; itemCount
 
   const items: DigestItem[] = (data ?? [])
     .filter(h => isEnglish(h.title))
-    .map(h => ({ title: h.title, url: h.url, category: h.category, source: h.source, country: h.country ?? 'IN' }))
+    .map(h => ({ title: h.title, url: h.url, category: h.category, source: h.source, country: columnExists ? h.country : undefined }))
 
   const period = todayDateString()
   const summary = summarize(items, 'today')

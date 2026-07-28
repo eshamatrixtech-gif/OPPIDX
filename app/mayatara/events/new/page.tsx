@@ -48,8 +48,8 @@ export default function NewEventPage() {
   }
 
   if (result) {
-    const manageUrl = `/events/${result.slug}/manage?token=${result.manageToken}`;
-    const publicUrl = `/events/${result.slug}`;
+    const manageUrl = `/mayatara/events/${result.slug}/manage?token=${result.manageToken}`;
+    const publicUrl = `/mayatara/events/${result.slug}`;
     return (
       <div className="mayatara-scope min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
         <header className="border-b-2 z-10 relative" style={{ borderColor: "var(--border)", background: "var(--card)" }}>

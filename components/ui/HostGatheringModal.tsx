@@ -55,7 +55,7 @@ export function HostGatheringModal({ opportunityTitle, onClose }: { opportunityT
   }
 
   if (state === 'done' && result) {
-    const manageUrl = `/events/${result.slug}/manage?token=${result.manageToken}`
+    const manageUrl = `/mayatara/events/${result.slug}/manage?token=${result.manageToken}`
     return (
       <Modal onClose={onClose}>
         <ModalHeader title="Your gathering is live." onClose={onClose} />
@@ -68,7 +68,7 @@ export function HostGatheringModal({ opportunityTitle, onClose }: { opportunityT
         </p>
         <div style={{ display: 'flex', gap: 10 }}>
           <Link href={manageUrl} onClick={onClose} style={{ flex: 1, textAlign: 'center', padding: '10px 16px', borderRadius: 2, background: 'var(--btn-bg)', color: 'var(--btn-text)', textDecoration: 'none', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5 }}>Guest list →</Link>
-          <Link href={`/events/${result.slug}`} onClick={onClose} style={{ flex: 1, textAlign: 'center', padding: '10px 16px', borderRadius: 2, border: '1.5px solid var(--line)', color: 'var(--ink)', textDecoration: 'none', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5 }}>View page →</Link>
+          <Link href={`/mayatara/events/${result.slug}`} onClick={onClose} style={{ flex: 1, textAlign: 'center', padding: '10px 16px', borderRadius: 2, border: '1.5px solid var(--line)', color: 'var(--ink)', textDecoration: 'none', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5 }}>View page →</Link>
         </div>
       </Modal>
     )

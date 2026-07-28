@@ -80,7 +80,11 @@ export function matchPolicyReadsFromPool(
   const out: PolicyRead[] = []
   for (const item of pool) {
     if (!categorySet.has(item.category) || seen.has(item.url)) continue
-    if (countryCode && (item.country ?? 'IN') !== countryCode) continue
+    // item.country is only absent for digests generated before
+    // supabase-schema-pulse-v5.sql ran (see generate.ts) — treated as
+    // "unknown, don't exclude" rather than assumed India, since this pool
+    // now genuinely mixes India and US content even pre-migration.
+    if (countryCode && item.country && item.country !== countryCode) continue
     seen.add(item.url)
     out.push(item)
     if (out.length >= 3) break

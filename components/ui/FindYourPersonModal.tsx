@@ -46,8 +46,14 @@ export function FindYourPersonModal({ opportunityTitle, onClose }: { opportunity
   const [lookingFor, setLookingFor] = useState('')
   const [about, setAbout] = useState('')
 
-  const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
+  const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error' | 'accountCreatedProfileFailed'>('idle')
+  const [retrying, setRetrying] = useState(false)
   const [error, setError] = useState('')
+  // Set once the account itself exists (either just-created, or an
+  // existing shared session) — kept around so a failed profile/save can be
+  // retried directly without re-submitting the whole form, which would
+  // otherwise hit "an account with this email already exists" on retry.
+  const [pendingAccessToken, setPendingAccessToken] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('https://ipapi.co/country/')
@@ -63,6 +69,38 @@ export function FindYourPersonModal({ opportunityTitle, onClose }: { opportunity
       }
     })
   }, [])
+
+  /** The second step alone — split out so a failed save can be retried
+   * directly with the access token we already have, without re-submitting
+   * the whole form (which would 409 on "account already exists" the
+   * moment an account was actually created). */
+  async function saveProfile(accessToken: string) {
+    setRetrying(true)
+    try {
+      const saveRes = await fetch('/api/mayatara/profile/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          lookingFor, contact, contactType,
+          profileJson: { about: about || `Found via OppIDX — chasing "${opportunityTitle}".` },
+        }),
+      })
+      const saveData = await saveRes.json()
+      if (!saveRes.ok) {
+        setPendingAccessToken(accessToken)
+        setError(saveData.error || 'Could not save your profile.')
+        setState('accountCreatedProfileFailed')
+        return
+      }
+      setState('done')
+    } catch {
+      setPendingAccessToken(accessToken)
+      setError('Something went wrong saving your profile. Try again.')
+      setState('accountCreatedProfileFailed')
+    } finally {
+      setRetrying(false)
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -88,25 +126,17 @@ export function FindYourPersonModal({ opportunityTitle, onClose }: { opportunity
       if (!sharedSession) {
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
         if (signInError || !signInData.session) {
-          setError('Account created, but we couldn’t log you in automatically — log in from The Mayatara directly.')
-          setState('error')
+          // The account is real at this point — steer them to a manual
+          // login instead of letting them hit "submit" again, which would
+          // now 409 on "account already exists".
+          setError('Account created, but we couldn’t log you in automatically.')
+          setState('accountCreatedProfileFailed')
           return
         }
         accessToken = signInData.session.access_token
       }
 
-      const saveRes = await fetch('/api/mayatara/profile/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({
-          lookingFor, contact, contactType,
-          profileJson: { about: about || `Found via OppIDX — chasing "${opportunityTitle}".` },
-        }),
-      })
-      const saveData = await saveRes.json()
-      if (!saveRes.ok) { setError(saveData.error || 'Could not save your profile.'); setState('error'); return }
-
-      setState('done')
+      await saveProfile(accessToken!)
     } catch {
       setError('Something went wrong. Try again.')
       setState('error')
@@ -139,6 +169,27 @@ export function FindYourPersonModal({ opportunityTitle, onClose }: { opportunity
             background: 'var(--btn-bg)', color: 'var(--btn-text)', textDecoration: 'none',
             fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13,
           }}>Go to your dashboard →</Link>
+        </>
+      ) : state === 'accountCreatedProfileFailed' ? (
+        <>
+          <ModalHeader title="Your account is set up." onClose={onClose} />
+          <ModalError>{error}</ModalError>
+          <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 18 }}>
+            {pendingAccessToken
+              ? 'Your account exists — just the last step (saving your profile) didn’t go through. Try again:'
+              : 'Log in and your dashboard will pick up right where this left off.'}
+          </p>
+          {pendingAccessToken ? (
+            <ModalSubmitButton type="button" disabled={retrying} onClick={() => saveProfile(pendingAccessToken)}>
+              {retrying ? 'Retrying…' : 'Retry saving your profile →'}
+            </ModalSubmitButton>
+          ) : (
+            <Link href="/mayatara/login" onClick={onClose} style={{
+              display: 'inline-block', padding: '10px 20px', borderRadius: 2,
+              background: 'var(--btn-bg)', color: 'var(--btn-text)', textDecoration: 'none',
+              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13,
+            }}>Log in to The Mayatara →</Link>
+          )}
         </>
       ) : (
         <form onSubmit={submit}>

@@ -14,6 +14,7 @@ import { Discussion } from '@/components/ui/Discussion'
 import { SafeImage } from '@/components/ui/SafeImage'
 import { VideoEmbed } from '@/components/ui/VideoEmbed'
 import { GeneratedBanner } from '@/components/ui/GeneratedBanner'
+import { EcosystemActions } from '@/components/ui/EcosystemActions'
 import type { Opportunity } from '@/types'
 
 const AUDIENCE_LABEL: Record<string, string> = {
@@ -27,22 +28,6 @@ const DIFFICULTY_COLOR: Record<string, string> = {
   Easy: 'var(--green)',
   Medium: 'var(--pin)',
   Hard: 'var(--danger)',
-}
-
-/** The empty-state counterpart to a populated related-edge box — same
- * "leave it blank rather than fake it" rule, just turned into an
- * invitation instead of nothing at all. Never claims anything exists. */
-function RelatedPrompt({ text, cta, href }: { text: string; cta: string; href: string }) {
-  return (
-    <div style={{
-      marginBottom: 20, padding: '12px 16px', borderRadius: 2,
-      border: '1px dashed var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      gap: 10, flexWrap: 'wrap',
-    }}>
-      <span style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>{text}</span>
-      <Link href={href} style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none', whiteSpace: 'nowrap' }}>{cta}</Link>
-    </div>
-  )
 }
 
 async function getOpportunity(id: string) {
@@ -206,7 +191,14 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
           )}
 
           <div id="related">
-            {relatedResources.length > 0 ? (
+            <EcosystemActions
+              opp={{ id: opp.id, title: opp.title, tags: opp.tags, audience: opp.audience }}
+              variant="full"
+              hasResources={relatedResources.length > 0}
+              hasGatherings={relatedGatherings.length > 0}
+            />
+
+            {relatedResources.length > 0 && (
               <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
                 <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 8 }}>
                   📚 Resources that might help
@@ -219,8 +211,6 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
                   ))}
                 </div>
               </div>
-            ) : (
-              <RelatedPrompt text="No guides linked to this one yet." cta="Wanna add a guide? →" href="/resources/submit" />
             )}
 
             {relatedPolicyReads.length > 0 && (
@@ -238,7 +228,7 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
               </div>
             )}
 
-            {relatedGatherings.length > 0 ? (
+            {relatedGatherings.length > 0 && (
               <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
                 <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--green)', marginBottom: 8 }}>
                   📍 Gatherings for people chasing this
@@ -251,8 +241,6 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
                   ))}
                 </div>
               </div>
-            ) : (
-              <RelatedPrompt text="No gathering for people chasing this — yet." cta="Wanna create one? →" href="/mayatara/events/new" />
             )}
 
             {chasingCount > 0 && (

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { SaveButton } from '@/components/ui/SaveButton'
 import { SafeImage } from '@/components/ui/SafeImage'
 import { GeneratedBanner } from '@/components/ui/GeneratedBanner'
+import { EcosystemActions } from '@/components/ui/EcosystemActions'
 import type { Opportunity } from '@/types'
 
 const AUDIENCE_LABEL: Record<string, string> = {
@@ -198,6 +199,8 @@ export function OpportunityCard({ opp, extras }: { opp: Opportunity; extras?: Ca
         </div>
 
         {extras && <AttachmentStrip oppId={opp.id} extras={extras} />}
+
+        <EcosystemActions opp={opp} variant="compact" />
       </div>
     </motion.div>
   )

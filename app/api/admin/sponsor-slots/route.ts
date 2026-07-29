@@ -29,19 +29,21 @@ export async function POST(req: NextRequest) {
   const sponsorName = typeof body.sponsorName === 'string' ? body.sponsorName.trim() : ''
   const sponsorUrl = typeof body.sponsorUrl === 'string' ? body.sponsorUrl.trim() : ''
   const tagline = typeof body.tagline === 'string' ? body.tagline.trim() : ''
+  const type = typeof body.type === 'string' ? body.type.trim() : 'sidebar'
   const startDate = typeof body.startDate === 'string' ? new Date(body.startDate) : null
   const endDate = typeof body.endDate === 'string' ? new Date(body.endDate) : null
 
   if (!sponsorName) return NextResponse.json({ error: 'Sponsor name is required.' }, { status: 400 })
   if (!/^https?:\/\//.test(sponsorUrl)) return NextResponse.json({ error: 'Sponsor URL must start with http:// or https://.' }, { status: 400 })
   if (!tagline) return NextResponse.json({ error: 'Tagline is required.' }, { status: 400 })
+  if (!['sidebar', 'feed_card'].includes(type)) return NextResponse.json({ error: 'Invalid ad type.' }, { status: 400 })
   if (!startDate || isNaN(startDate.getTime()) || !endDate || isNaN(endDate.getTime())) {
     return NextResponse.json({ error: 'Valid start and end dates are required.' }, { status: 400 })
   }
   if (endDate < startDate) return NextResponse.json({ error: 'End date must be on or after the start date.' }, { status: 400 })
 
   const slot = await prisma.sponsoredSlot.create({
-    data: { sponsorName, sponsorUrl, tagline, startDate, endDate },
+    data: { sponsorName, sponsorUrl, tagline, type, startDate, endDate },
   })
 
   return NextResponse.json({ ok: true, slot })

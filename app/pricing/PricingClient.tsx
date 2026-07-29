@@ -205,7 +205,7 @@ export default function PricingClient() {
 
           <div style={{ textAlign: 'center', marginTop: 22, paddingTop: 18, borderTop: '1px solid var(--line)' }}>
             <span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
-              Have an opportunity to list instead? <Link href="/advertise" style={{ color: 'var(--pin)' }}>Get in touch →</Link>
+              Have an opportunity to list instead? <Link href="/submit" style={{ color: 'var(--pin)' }}>Submit it — free →</Link>
             </span>
           </div>
 

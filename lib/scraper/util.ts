@@ -16,6 +16,15 @@ export function decodeEntities(text: string): string {
   })
 }
 
+/** Trims and drops a trailing slash so the same listing re-fetched with an
+ * incidental URL variant (whitespace, trailing "/") still matches the
+ * dedup check in run.ts against what's already stored — deliberately NOT
+ * lowercased, since some servers do treat path case as significant and a
+ * blanket lowercase could hide a genuinely different real path. */
+export function normalizeUrl(url: string): string {
+  return url.trim().replace(/\/+$/, '')
+}
+
 /** Strips tags from API-supplied HTML down to plain text. Some sources (e.g.
  * Greenhouse) return HTML that's itself entity-encoded — tags appear as
  * "&lt;div&gt;" rather than "<div>" — so entities are decoded before AND

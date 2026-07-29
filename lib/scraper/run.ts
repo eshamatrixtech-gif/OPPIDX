@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import { SOURCES } from './sources'
 import { normalize } from './normalize'
+import { normalizeUrl } from './util'
 import { fetchOgMedia } from '@/lib/ogImage'
 
 interface SourceStats {
@@ -30,17 +31,18 @@ export async function runScrapePass(): Promise<RunResult> {
       stats.fetched = listings.length
 
       for (const raw of listings) {
-        const exists = await prisma.opportunity.findFirst({ where: { url: raw.url }, select: { id: true } })
+        const url = normalizeUrl(raw.url)
+        const exists = await prisma.opportunity.findFirst({ where: { url }, select: { id: true } })
         if (exists) continue
 
         const normalized = normalize(raw)
-        const { imageUrl, videoUrl } = await fetchOgMedia(raw.url)
+        const { imageUrl, videoUrl } = await fetchOgMedia(url)
 
         await prisma.opportunity.create({
           data: {
             title: raw.title.trim(),
             description: normalized.description,
-            url: raw.url,
+            url,
             org: raw.org ?? null,
             audience: normalized.audience,
             eligibility: normalized.eligibility,

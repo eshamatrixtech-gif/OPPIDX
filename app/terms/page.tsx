@@ -58,10 +58,9 @@ export default function TermsPage() {
           </Section>
 
           <Section title="Submitting a listing">
-            Anyone with an opportunity to list can reach us at /advertise. There is no fixed rate card — pricing
-            depends on what you're listing and what you need, and we work that out directly with you. We reply
-            within 24 hours. Every listing, however it's priced, must still meet the content standards above
-            before it goes live.
+            Anyone can submit a listing at /submit, free — OppIDX never charges for a listing itself, only for
+            advertisements (see /advertise). A human reviews every submission against the content standards
+            above before it goes live; nothing is published automatically.
             <br /><br />
             A listing that's live can still be removed later if it turns out to be false, stale, or in
             violation of these terms.

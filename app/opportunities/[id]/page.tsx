@@ -92,7 +92,53 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title: `${opp.title} — OppIDX`,
     description: opp.description.slice(0, 160),
+    alternates: { canonical: `${SITE_URL}/opportunities/${opp.id}` },
   }
+}
+
+// Google's JobPosting rich result is for actual employment listings —
+// applying it to a scholarship, grant, or competition would be structured-
+// data misuse (and risks a manual action against the whole site), so this
+// only fires for listings whose tags don't carry one of those non-job
+// signals. No fabricated fields: baseSalary/validThrough are omitted
+// entirely rather than guessed, since the data genuinely isn't tracked.
+const NON_JOB_TAGS = ['scholarship', 'fellowship', 'grant', 'hackathon', 'competition', 'contest', 'award']
+
+function jobPostingJsonLd(opp: NonNullable<Awaited<ReturnType<typeof getOpportunity>>>, pageUrl: string): string | null {
+  const tags = opp.tags.toLowerCase()
+  if (NON_JOB_TAGS.some(k => tags.includes(k))) return null
+
+  const isRemote = /\bremote\b/i.test(opp.location ?? '') || /\bremote\b/i.test(opp.region ?? '')
+
+  const jsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'JobPosting',
+    title: opp.title,
+    description: opp.description,
+    datePosted: opp.addedAt.toISOString(),
+    hiringOrganization: opp.org ? { '@type': 'Organization', name: opp.org } : undefined,
+    employmentType: tags.includes('internship') || tags.includes('intern') ? 'INTERN' : undefined,
+    directApply: false,
+    url: pageUrl,
+  }
+
+  if (isRemote) {
+    jsonLd.jobLocationType = 'TELECOMMUTE'
+    jsonLd.applicantLocationRequirements = opp.country ? { '@type': 'Country', name: opp.country } : undefined
+  } else if (opp.location || opp.country) {
+    jsonLd.jobLocation = {
+      '@type': 'Place',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: opp.location || undefined,
+        addressCountry: opp.country || undefined,
+      },
+    }
+  }
+
+  // Escaping "<" stops a "</script>" inside a scraped description from
+  // closing the script tag early — standard JSON-LD embedding safeguard.
+  return JSON.stringify(jsonLd).replace(/</g, '\\u003c')
 }
 
 export default async function OpportunityPage({ params }: { params: Promise<{ id: string }> }) {
@@ -107,9 +153,11 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
   const relatedPolicyReads = await getRelatedPolicyReads(opp)
   const chasingCount = await chasingCohortSize(opp.id)
   const pageUrl = `${SITE_URL}/opportunities/${opp.id}`
+  const jobLd = jobPostingJsonLd(opp, pageUrl)
 
   return (
     <div style={{ minHeight: '100vh', padding: '40px 20px 80px' }}>
+      {jobLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jobLd }} />}
       <ViewTracker id={opp.id} />
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
         <Link href="/" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>

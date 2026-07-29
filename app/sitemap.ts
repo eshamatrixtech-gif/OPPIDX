@@ -9,19 +9,30 @@ const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitema
   { path: '/collections/students', changeFrequency: 'hourly', priority: 0.85 },
   { path: '/collections/founders', changeFrequency: 'hourly', priority: 0.85 },
   { path: '/newsletter', changeFrequency: 'daily', priority: 0.8 },
+  { path: '/resources', changeFrequency: 'daily', priority: 0.8 },
+  { path: '/mayatara/pulse', changeFrequency: 'daily', priority: 0.7 },
   { path: '/philosophy', changeFrequency: 'monthly', priority: 0.5 },
   ...(PAYWALL_ENABLED ? [{ path: '/pricing', changeFrequency: 'monthly' as const, priority: 0.5 }] : []),
-  { path: '/submit', changeFrequency: 'monthly', priority: 0.4 },
+  { path: '/advertise', changeFrequency: 'monthly', priority: 0.4 },
   { path: '/widget', changeFrequency: 'monthly', priority: 0.3 },
   { path: '/terms', changeFrequency: 'yearly', priority: 0.2 },
 ]
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const opportunities = await prisma.opportunity.findMany({
-    where: { verified: true, deletedAt: null },
-    select: { id: true, addedAt: true },
-    orderBy: { addedAt: 'desc' },
-  })
+  const [opportunities, resources, newsletters, pulseDigests] = await Promise.all([
+    prisma.opportunity.findMany({
+      where: { verified: true, deletedAt: null },
+      select: { id: true, addedAt: true },
+      orderBy: { addedAt: 'desc' },
+    }),
+    prisma.resource.findMany({
+      where: { verified: true, deletedAt: null },
+      select: { id: true, addedAt: true },
+      orderBy: { addedAt: 'desc' },
+    }),
+    prisma.dailyDigest.findMany({ select: { date: true, createdAt: true } }),
+    prisma.policyDigest.findMany({ select: { period: true, createdAt: true } }),
+  ])
 
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map(r => ({
     url: `${SITE_URL}${r.path}`,
@@ -37,5 +48,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }))
 
-  return [...staticEntries, ...opportunityEntries]
+  const resourceEntries: MetadataRoute.Sitemap = resources.map(r => ({
+    url: `${SITE_URL}/resources/${r.id}`,
+    lastModified: r.addedAt,
+    changeFrequency: 'monthly',
+    priority: 0.6,
+  }))
+
+  const newsletterEntries: MetadataRoute.Sitemap = newsletters.map(n => ({
+    url: `${SITE_URL}/newsletter/${n.date}`,
+    lastModified: n.createdAt,
+    changeFrequency: 'yearly',
+    priority: 0.5,
+  }))
+
+  const pulseDigestEntries: MetadataRoute.Sitemap = pulseDigests.map(p => ({
+    url: `${SITE_URL}/mayatara/pulse/digest/${p.period}`,
+    lastModified: p.createdAt,
+    changeFrequency: 'yearly',
+    priority: 0.5,
+  }))
+
+  return [...staticEntries, ...opportunityEntries, ...resourceEntries, ...newsletterEntries, ...pulseDigestEntries]
 }

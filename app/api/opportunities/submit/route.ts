@@ -2,26 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { rateLimit } from '@/lib/rateLimit'
 import { getClientIp } from '@/lib/ip'
-import { razorpay, getSubmissionFeePaise } from '@/lib/billing/razorpay'
 import { validateSubmission, type SubmissionInput } from '@/lib/submissions/validate'
+import { inferGeo } from '@/lib/scraper/geo'
 
 /**
- * POST /api/opportunities/submit — public. "Enlist your opportunity."
+ * POST /api/opportunities/submit — public, free. "Enlist your opportunity."
  *
- * Takes a listing + payment together, but never creates an Opportunity here.
- * It validates content, opens a Razorpay order for the tiered submission fee
- * (computed server-side from listingType + wantsFeatured — never trust a
- * client-supplied amount), and stores the payload against that order. Only
- * the webhook — once Razorpay confirms the payment actually happened —
- * creates the (unverified) Opportunity, and even then it still has to clear
- * the human review queue like every other hand-submitted listing. Paying
- * buys a review, not a spot.
+ * Opportunity listings are free — OppIDX only charges for advertisements
+ * (see /advertise), never for a listing itself. This creates the
+ * Opportunity directly as unverified, landing in the same admin "Needs
+ * review" queue every other hand-submitted listing already goes through —
+ * no payment, no Razorpay order, nothing published until a human approves it.
  */
 export async function POST(req: NextRequest) {
-  if (!razorpay) {
-    return NextResponse.json({ error: 'Billing is not set up yet.' }, { status: 503 })
-  }
-
   const rl = rateLimit(`submit-opp:${getClientIp(req)}`, 60_000, 5)
   if (!rl.ok) {
     return NextResponse.json({ error: 'Slow down.' }, { status: 429 })
@@ -45,8 +38,11 @@ export async function POST(req: NextRequest) {
     location: typeof body.location === 'string' ? body.location.trim() : '',
     compType: typeof body.compType === 'string' ? body.compType.trim() : '',
     submitterEmail: typeof body.submitterEmail === 'string' ? body.submitterEmail.trim().toLowerCase() : '',
+    // Not fee-tiering anymore (submission is free either way) — kept as a
+    // simple category so the admin queue still shows what kind of listing
+    // this is at a glance.
     listingType: typeof body.listingType === 'string' ? body.listingType.trim() : '',
-    wantsFeatured: body.wantsFeatured === true,
+    wantsFeatured: false,
   }
 
   const { ok, errors } = validateSubmission(input)
@@ -54,32 +50,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: errors[0], errors }, { status: 400 })
   }
 
-  try {
-    const order = await razorpay.orders.create({
-      amount: getSubmissionFeePaise(input.listingType!, input.wantsFeatured === true),
-      currency: 'INR',
-      receipt: `submission_${Date.now()}`,
-      notes: { title: input.title!, submitterEmail: input.submitterEmail! },
-    })
+  const geo = inferGeo(input.location)
 
-    await prisma.opportunitySubmission.create({
+  try {
+    const opp = await prisma.opportunity.create({
       data: {
-        razorpayOrderId: order.id,
-        status: 'pending',
-        submitterEmail: input.submitterEmail!,
-        payload: JSON.stringify(input),
+        title: input.title!,
+        description: input.description!,
+        url: input.url!,
+        org: input.org || null,
+        audience: input.audience!,
+        eligibility: input.eligibility!,
+        prepResources: input.prepResources || '',
+        difficulty: input.difficulty || 'Medium',
+        tags: input.tags || '',
+        location: input.location || null,
+        region: geo.region,
+        country: geo.country,
+        compType: input.compType || null,
+        verified: false,
+        featured: false,
+        source: 'user-provided',
+        sourceUrl: null,
+        submitterEmail: input.submitterEmail || null,
       },
     })
 
-    return NextResponse.json({
-      ok: true,
-      orderId: order.id,
-      amount: order.amount,
-      currency: order.currency,
-      keyId: process.env.RAZORPAY_KEY_ID,
-    })
+    return NextResponse.json({ ok: true, id: opp.id })
   } catch (err) {
-    console.error('[submit] failed to create order:', err)
-    return NextResponse.json({ error: 'Could not start checkout. Please try again.' }, { status: 500 })
+    console.error('[submit] failed to create opportunity:', err)
+    return NextResponse.json({ error: 'Could not submit. Please try again.' }, { status: 500 })
   }
 }

@@ -52,6 +52,10 @@ model Opportunity {
   featuredUntil DateTime? // set only for paid "Featured" upsells — the hourly scrape cron unsets `featured` once this passes
   source        String    @default("user-provided")
   sourceUrl     String?
+  // Only set for source: "user-provided" via the free public submission
+  // form — kept for admin accountability/abuse-tracking, same pattern as
+  // Resource.submitterEmail. Never rendered on any public page.
+  submitterEmail String?
   addedAt       DateTime  @default(now())
   deletedAt     DateTime?
 
@@ -194,6 +198,13 @@ model SponsoredSlot {
   sponsorName String
   sponsorUrl  String
   tagline     String   // short line shown alongside the sponsor name, e.g. "Hiring backend engineers"
+  // "sidebar" — the homepage sidebar credit line (the original, only
+  // placement this model was built for). "feed_card" — a single card
+  // rendered near the top of the home board feed, a more prominent
+  // placement for a bigger deal. Every placement shares the same
+  // date-range visibility and admin book/cancel flow; only where it
+  // renders differs.
+  type        String   @default("sidebar")
   startDate   DateTime
   endDate     DateTime
   createdAt   DateTime @default(now())

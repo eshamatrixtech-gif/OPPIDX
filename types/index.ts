@@ -79,6 +79,7 @@ export interface SponsoredSlot {
   sponsorName: string
   sponsorUrl: string
   tagline: string
+  type: 'sidebar' | 'feed_card'
   startDate: string
   endDate: string
   createdAt: string

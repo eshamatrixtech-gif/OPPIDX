@@ -1,14 +1,18 @@
-import { NextResponse } from 'next/server'
-import { getActiveSponsorSlot } from '@/lib/sponsor'
+import { NextRequest, NextResponse } from 'next/server'
+import { getActiveSponsorSlot, type SponsorSlotType } from '@/lib/sponsor'
 
 /**
- * GET /api/sponsor/active — public. Whichever SponsoredSlot (if any) covers
- * today, for the homepage credit line. This is the same data the daily
- * Telegram/Discord digest already credits — the first time it's actually
- * visible on the website itself rather than only in those messages.
+ * GET /api/sponsor/active?type=sidebar|feed_card — public. Whichever
+ * SponsoredSlot (if any) of that type covers today. Defaults to "sidebar"
+ * — the original, only placement this endpoint was built for — so the
+ * homepage credit line keeps working unchanged; the feed card is the new
+ * type opting into a different, more prominent placement.
  */
-export async function GET() {
-  const sponsor = await getActiveSponsorSlot()
+export async function GET(req: NextRequest) {
+  const typeParam = req.nextUrl.searchParams.get('type')
+  const type: SponsorSlotType = typeParam === 'feed_card' ? 'feed_card' : 'sidebar'
+
+  const sponsor = await getActiveSponsorSlot(type)
   if (!sponsor) return NextResponse.json({ sponsor: null })
   return NextResponse.json({
     sponsor: { sponsorName: sponsor.sponsorName, sponsorUrl: sponsor.sponsorUrl, tagline: sponsor.tagline },

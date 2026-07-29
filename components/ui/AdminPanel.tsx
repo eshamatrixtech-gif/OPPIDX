@@ -824,7 +824,11 @@ function SubscribersPanel() {
   )
 }
 
-const EMPTY_SPONSOR_FORM = { sponsorName: '', sponsorUrl: '', tagline: '', startDate: '', endDate: '' }
+const EMPTY_SPONSOR_FORM = { sponsorName: '', sponsorUrl: '', tagline: '', type: 'sidebar', startDate: '', endDate: '' }
+const SPONSOR_TYPE_LABEL: Record<string, string> = {
+  sidebar: 'Sidebar credit (homepage sidebar, low-key)',
+  feed_card: 'Feed card (prominent card near the top of the home feed)',
+}
 
 function SponsorPanel() {
   const [slots, setSlots] = useState<SponsoredSlot[]>([])
@@ -888,6 +892,9 @@ function SponsorPanel() {
         <input style={inputStyle()} placeholder="Sponsor name" required value={form.sponsorName} onChange={e => set('sponsorName', e.target.value)} />
         <input style={inputStyle()} placeholder="Sponsor URL (https://…)" required value={form.sponsorUrl} onChange={e => set('sponsorUrl', e.target.value)} />
         <input style={inputStyle()} placeholder="Tagline (e.g. Hiring backend engineers)" required value={form.tagline} onChange={e => set('tagline', e.target.value)} />
+        <select style={inputStyle()} value={form.type} onChange={e => set('type', e.target.value)}>
+          {Object.entries(SPONSOR_TYPE_LABEL).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
         <div style={{ display: 'flex', gap: 10 }}>
           <input style={inputStyle()} type="date" required value={form.startDate} onChange={e => set('startDate', e.target.value)} />
           <input style={inputStyle()} type="date" required value={form.endDate} onChange={e => set('endDate', e.target.value)} />
@@ -917,7 +924,7 @@ function SponsorPanel() {
                 {slot.sponsorName} — {slot.tagline}
               </div>
               <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
-                {new Date(slot.startDate).toLocaleDateString()} – {new Date(slot.endDate).toLocaleDateString()}
+                {slot.type === 'feed_card' ? 'Feed card' : 'Sidebar credit'} · {new Date(slot.startDate).toLocaleDateString()} – {new Date(slot.endDate).toLocaleDateString()}
               </div>
             </div>
             <button onClick={() => remove(slot.id)} style={btnStyle('var(--danger)')}>Cancel</button>

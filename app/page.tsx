@@ -229,7 +229,7 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
           </div>
           <div>
             <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 4 }}>Have an opportunity to list?</div>
-            <p style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.6 }}>No fixed price — tell us about it. <Link href="/advertise" style={{ color: 'var(--pin)' }}>Get in touch →</Link></p>
+            <p style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.6 }}>Free, hand-reviewed. <Link href="/submit" style={{ color: 'var(--pin)' }}>Submit it →</Link></p>
           </div>
         </div>
 
@@ -237,7 +237,7 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 12.5 }}>
           <Link href="/philosophy" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Our philosophy</Link>
           <Link href="/saved" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Saved</Link>
-          <Link href="/advertise" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Enlist your opportunity</Link>
+          <Link href="/submit" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Enlist your opportunity (free)</Link>
           <Link href="/account" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Manage subscription</Link>
           <Link href="/widget" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Embed our widget</Link>
           <Link href="/advertise" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Advertise with us</Link>
@@ -262,6 +262,7 @@ export default function Home() {
   const [pulseDigests, setPulseDigests] = useState<PulseDigest[]>([])
   const [newSinceLastVisit, setNewSinceLastVisit] = useState<number | null>(null)
   const [sponsor, setSponsor] = useState<{ sponsorName: string; sponsorUrl: string; tagline: string } | null>(null)
+  const [feedSponsor, setFeedSponsor] = useState<{ sponsorName: string; sponsorUrl: string; tagline: string } | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // ── The full board, as one continuous infinite-scroll feed below the
@@ -281,6 +282,10 @@ export default function Home() {
     fetch('/api/sponsor/active')
       .then(r => r.json())
       .then(data => setSponsor(data.sponsor))
+      .catch(() => {})
+    fetch('/api/sponsor/active?type=feed_card')
+      .then(r => r.json())
+      .then(data => setFeedSponsor(data.sponsor))
       .catch(() => {})
   }, [])
 
@@ -470,6 +475,28 @@ export default function Home() {
           }}>
             {featured.map(item => <OpportunityCard key={item.id} opp={item} extras={featuredExtras[item.id]} />)}
           </div>
+        )}
+
+        {feedSponsor && (
+          <a
+            href={feedSponsor.sponsorUrl} target="_blank" rel="noopener noreferrer"
+            className="card-box"
+            style={{
+              display: 'block', padding: '20px 22px', marginBottom: 40, textDecoration: 'none',
+              border: '1.5px solid var(--pin)',
+            }}
+          >
+            <div style={{
+              fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+              textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 8,
+            }}>
+              Sponsored
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, color: 'var(--ink)', marginBottom: 4 }}>
+              {feedSponsor.sponsorName}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>{feedSponsor.tagline}</div>
+          </a>
         )}
 
         {/* ── The full board — keep scrolling, no separate tab ── */}

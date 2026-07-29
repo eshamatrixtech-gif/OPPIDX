@@ -58,17 +58,13 @@ export default function TermsPage() {
           </Section>
 
           <Section title="Submitting a listing">
-            Anyone can submit a listing at /submit. The moment you submit, an automated check runs against the
-            content standards above — fail it and you're denied on the spot, before you're charged anything.
-            Pass it, pay the review fee, and your listing is live on the board immediately: no queue, no
-            waiting. The fee is ₹1,000 for scholarships, fellowships, grants, and competitions/hackathons, and
-            ₹3,000 for company-posted jobs or internships, since the latter is commercial hiring activity
-            rather than the kind of opportunity this board exists to surface for free for students. An
-            optional "Featured" add-on (+₹750) puts the listing in the homepage's daily featured-picks pool
-            for 7 days from the moment it goes live.
+            Anyone with an opportunity to list can reach us at /advertise. There is no fixed rate card — pricing
+            depends on what you're listing and what you need, and we work that out directly with you. We reply
+            within 24 hours. Every listing, however it's priced, must still meet the content standards above
+            before it goes live.
             <br /><br />
             A listing that's live can still be removed later if it turns out to be false, stale, or in
-            violation of these terms — automated screening catches obvious problems, not everything.
+            violation of these terms.
           </Section>
 
           <Section title="Subscriptions, billing, and cancellation">

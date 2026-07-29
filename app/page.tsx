@@ -229,7 +229,7 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
           </div>
           <div>
             <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 4 }}>Have an opportunity to list?</div>
-            <p style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.6 }}>We hand-review every public submission. <Link href="/submit" style={{ color: 'var(--pin)' }}>Submit it →</Link></p>
+            <p style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.6 }}>No fixed price — tell us about it. <Link href="/advertise" style={{ color: 'var(--pin)' }}>Get in touch →</Link></p>
           </div>
         </div>
 
@@ -237,7 +237,7 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 12.5 }}>
           <Link href="/philosophy" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Our philosophy</Link>
           <Link href="/saved" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Saved</Link>
-          <Link href="/submit" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Enlist your opportunity (from ₹1,000)</Link>
+          <Link href="/advertise" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Enlist your opportunity</Link>
           <Link href="/account" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Manage subscription</Link>
           <Link href="/widget" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Embed our widget</Link>
           <Link href="/advertise" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Advertise with us</Link>

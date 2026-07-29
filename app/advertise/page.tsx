@@ -49,7 +49,7 @@ export default function AdvertisePage() {
             Got it.
           </h1>
           <p style={{ color: 'var(--ink-2)', fontSize: 13.5, marginBottom: 20, lineHeight: 1.6 }}>
-            We&apos;ll reach out at the email you gave us.
+            We&apos;ll reach out at the email you gave us within 24 hours.
           </p>
           <Link href="/" style={{
             display: 'inline-block', padding: '11px 22px', borderRadius: 2,
@@ -76,7 +76,7 @@ export default function AdvertisePage() {
           Advertise on OppIDX
         </h1>
         <p style={{ color: 'var(--ink-2)', fontSize: 13.5, marginBottom: 24, lineHeight: 1.6 }}>
-          No self-serve checkout — tell us about your company and what you have in mind, and we&apos;ll follow up directly.
+          No fixed price, no self-serve checkout — tell us about your company and what you have in mind, we&apos;ll work out a deal that fits, and we&apos;ll get back to you within 24 hours.
         </p>
 
         <form onSubmit={submit}>

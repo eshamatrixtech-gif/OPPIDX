@@ -939,6 +939,7 @@ export function AdminPanel({ adminName }: { adminName: string }) {
   const router = useRouter()
   const [items, setItems] = useState<Opportunity[]>([])
   const [tab, setTab] = useState<'stats' | 'add' | 'queue' | 'all' | 'resources' | 'scraper' | 'subscribers' | 'sponsor' | 'ads'>('stats')
+  const [newAdCount, setNewAdCount] = useState(0)
 
   async function refresh() {
     if (tab === 'stats' || tab === 'add' || tab === 'resources' || tab === 'scraper' || tab === 'subscribers' || tab === 'sponsor' || tab === 'ads') return
@@ -948,7 +949,18 @@ export function AdminPanel({ adminName }: { adminName: string }) {
     setItems(data.items ?? [])
   }
 
+  async function refreshAdCount() {
+    const res = await fetch('/api/advertise')
+    const data = await res.json()
+    const inquiries = (data.inquiries ?? []) as { status: string }[]
+    setNewAdCount(inquiries.filter(i => i.status === 'new').length)
+  }
+
   useEffect(() => { refresh() }, [tab])
+  // Independent of the active tab, so a new inquiry shows up on the badge
+  // the moment the admin opens /admin — not only after they click into "Ad
+  // inquiries" — and clears itself as soon as they mark it contacted/closed.
+  useEffect(() => { refreshAdCount() }, [tab])
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -976,6 +988,13 @@ export function AdminPanel({ adminName }: { adminName: string }) {
               color: tab === t ? 'var(--btn-text)' : 'var(--ink)',
             }}>
               {t === 'stats' ? 'Stats' : t === 'queue' ? 'Needs review' : t === 'add' ? 'Add new' : t === 'all' ? 'All opportunities' : t === 'resources' ? 'Resources' : t === 'scraper' ? 'Scraper' : t === 'subscribers' ? 'Subscribers' : t === 'sponsor' ? 'Sponsor slots' : 'Ad inquiries'}
+              {t === 'ads' && newAdCount > 0 && (
+                <span style={{
+                  marginLeft: 6, padding: '1px 6px', borderRadius: 10,
+                  background: tab === t ? 'rgba(255,255,255,0.25)' : 'var(--danger)',
+                  color: tab === t ? 'var(--btn-text)' : 'white', fontSize: 11,
+                }}>{newAdCount}</span>
+              )}
             </button>
           ))}
         </div>

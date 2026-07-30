@@ -1,14 +1,13 @@
 /**
- * Content rules for paid public submissions ("enlist your opportunity").
+ * Content rules for free public submissions ("enlist your opportunity").
  *
  * This is deliberately stricter than the admin AddForm: submissions come
- * from arbitrary third parties who paid to be reviewed, not from a fixed
- * list of pre-vetted sources like the scraper, so nothing here is trusted
- * until a human approves it in the admin queue. These checks are a
- * best-effort first filter (they reject obviously non-compliant text) —
- * they are NOT a substitute for the human review, especially for judgment
- * calls like "illegal or suggestive." No AI is used to make that call either;
- * a person makes it.
+ * from arbitrary third parties, not from a fixed list of pre-vetted sources
+ * like the scraper, so nothing here is trusted until a human approves it in
+ * the admin queue. These checks are a best-effort first filter (they reject
+ * obviously non-compliant text) — they are NOT a substitute for the human
+ * review, especially for judgment calls like "illegal or suggestive." No AI
+ * is used to make that call either; a person makes it.
  */
 
 export interface SubmissionInput {
@@ -24,12 +23,12 @@ export interface SubmissionInput {
   location: string
   compType: string
   submitterEmail: string
-  // Drives the tiered review fee (see lib/billing/razorpay.ts) — a company
-  // hiring for a paid role is charged differently than a free scholarship
-  // or competition listing.
+  // Not fee-tiering (submission is free) — kept as a simple category so the
+  // admin review queue shows what kind of listing this is at a glance.
   listingType: string
-  // Optional paid upsell: guaranteed inclusion in the homepage's featured
-  // rotation pool for a fixed window after approval, not forever.
+  // Always false from the public /submit form — featuring a listing is an
+  // admin-only action (see AdminPanel's sponsor/feature controls), not
+  // something a submitter can request or pay for.
   wantsFeatured: boolean
 }
 

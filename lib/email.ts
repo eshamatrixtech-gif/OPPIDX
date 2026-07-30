@@ -49,6 +49,18 @@ function weeklyDigestHtml(digest: WeeklyDigestEmailData, unsubscribeUrl: string)
       </div>
     </div>
 
+    <!-- Launch-week Product Hunt promo — remove this block once the launch
+         push is over, since weeklyDigestHtml fires on every future send and
+         this would otherwise keep announcing a "live today" launch forever. -->
+    <div style="margin-bottom:22px;padding:16px;background:#faf6ee;border:1px solid #c0432a;text-align:center;">
+      <img src="https://ph-files.imgix.net/7f6b2119-bdc3-4ff3-a9d5-4699a2a9903d.png?auto=compress,format&codec=mozjpeg&cs=strip&fit=crop&h=80&w=80" alt="OppIDX" width="48" height="48" style="border-radius:8px;display:block;margin:0 auto 8px;">
+      <div style="color:#2b2620;font-size:14px;font-weight:bold;margin-bottom:4px;">We're live on Product Hunt today</div>
+      <div style="color:#5b5346;font-size:12px;margin-bottom:12px;">If OppIDX has been useful, an upvote helps more students find it.</div>
+      <a href="https://www.producthunt.com/products/oppidx?embed=true&utm_source=embed&utm_medium=post_embed" style="display:inline-block;padding:8px 16px;background:#ff6154;color:#ffffff;text-decoration:none;border-radius:4px;font-size:12.5px;font-weight:bold;">
+        Check it out on Product Hunt →
+      </a>
+    </div>
+
     ${picksHtml}
 
     <a href="${SITE_URL}/browse" style="display:inline-block;margin-top:8px;padding:11px 20px;background:#c0432a;color:#faf6ee;text-decoration:none;font-weight:bold;font-size:13px;">

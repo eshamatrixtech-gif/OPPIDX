@@ -217,6 +217,12 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
           </div>
         )}
 
+        <div style={{ marginBottom: 26 }}>
+          <a href="https://www.producthunt.com/products/oppidx?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-oppidx" target="_blank" rel="noopener noreferrer">
+            <img alt="OppIDX - Find your next opportunity. Find your people. | Product Hunt" width={250} height={54} src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1210507&theme=light&t=1785401051186" />
+          </a>
+        </div>
+
         <div className="divider" style={{ marginBottom: 16 }}><span>◆ About OppIDX ◆</span></div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 26 }}>
           <div>

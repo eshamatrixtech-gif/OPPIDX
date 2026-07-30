@@ -15,6 +15,7 @@ import { SafeImage } from '@/components/ui/SafeImage'
 import { VideoEmbed } from '@/components/ui/VideoEmbed'
 import { GeneratedBanner } from '@/components/ui/GeneratedBanner'
 import { EcosystemActions } from '@/components/ui/EcosystemActions'
+import { FEED_URL as JOBICY_SOURCE_URL } from '@/lib/scraper/sources/jobicy'
 import type { Opportunity } from '@/types'
 
 const AUDIENCE_LABEL: Record<string, string> = {
@@ -333,12 +334,20 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
             </div>
           )}
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10, fontFamily: 'var(--font-mono)', fontSize: 13, marginBottom: 24 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10, fontFamily: 'var(--font-mono)', fontSize: 13, marginBottom: 8 }}>
             <a href={opp.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--pin)', fontWeight: 700, textDecoration: 'none' }}>
               Apply → {opp.url}
             </a>
             <SaveButton opportunityId={opp.id} />
           </div>
+
+          {/* Jobicy's API terms require this listing to credit them with a direct
+              link — keyed off the exact sourceUrl lib/scraper/sources/jobicy.ts stores. */}
+          {opp.sourceUrl === JOBICY_SOURCE_URL && (
+            <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginBottom: 16 }}>
+              Found via <a href="https://jobicy.com/remote-jobs" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-3)' }}>Jobicy</a>
+            </div>
+          )}
 
           <div>
             <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8 }}>

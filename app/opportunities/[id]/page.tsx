@@ -102,11 +102,20 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 // only fires for listings whose tags don't carry one of those non-job
 // signals. No fabricated fields: baseSalary/validThrough are omitted
 // entirely rather than guessed, since the data genuinely isn't tracked.
+//
+// hiringOrganization and a location signal (jobLocation, or jobLocationType
+// "TELECOMMUTE" + applicantLocationRequirements) are both REQUIRED by
+// Google's spec, not just recommended — a JobPosting missing either is
+// invalid and won't qualify for the Google Jobs experience at all. Every
+// branch below returns null rather than emit a script tag with one of
+// those missing, since a page with no JobPosting markup is strictly better
+// than one with structured data Google rejects.
 const NON_JOB_TAGS = ['scholarship', 'fellowship', 'grant', 'hackathon', 'competition', 'contest', 'award']
 
 function jobPostingJsonLd(opp: NonNullable<Awaited<ReturnType<typeof getOpportunity>>>, pageUrl: string): string | null {
   const tags = opp.tags.toLowerCase()
   if (NON_JOB_TAGS.some(k => tags.includes(k))) return null
+  if (!opp.org) return null // hiringOrganization.name is required — never guess it
 
   const isRemote = /\bremote\b/i.test(opp.location ?? '') || /\bremote\b/i.test(opp.region ?? '')
 
@@ -116,15 +125,20 @@ function jobPostingJsonLd(opp: NonNullable<Awaited<ReturnType<typeof getOpportun
     title: opp.title,
     description: opp.description,
     datePosted: opp.addedAt.toISOString(),
-    hiringOrganization: opp.org ? { '@type': 'Organization', name: opp.org } : undefined,
+    hiringOrganization: { '@type': 'Organization', name: opp.org },
     employmentType: tags.includes('internship') || tags.includes('intern') ? 'INTERN' : undefined,
     directApply: false,
     url: pageUrl,
   }
 
-  if (isRemote) {
+  // applicantLocationRequirements is required whenever jobLocationType is
+  // TELECOMMUTE — a remote listing whose country we don't know can't
+  // honestly satisfy that, so it falls through to the physical-location
+  // branch instead (using its own location text, e.g. "Remote", verbatim)
+  // rather than emit a TELECOMMUTE job with no applicantLocationRequirements.
+  if (isRemote && opp.country) {
     jsonLd.jobLocationType = 'TELECOMMUTE'
-    jsonLd.applicantLocationRequirements = opp.country ? { '@type': 'Country', name: opp.country } : undefined
+    jsonLd.applicantLocationRequirements = { '@type': 'Country', name: opp.country }
   } else if (opp.location || opp.country) {
     jsonLd.jobLocation = {
       '@type': 'Place',
@@ -134,6 +148,8 @@ function jobPostingJsonLd(opp: NonNullable<Awaited<ReturnType<typeof getOpportun
         addressCountry: opp.country || undefined,
       },
     }
+  } else {
+    return null // no location signal at all — required property can't be satisfied
   }
 
   // Escaping "<" stops a "</script>" inside a scraped description from

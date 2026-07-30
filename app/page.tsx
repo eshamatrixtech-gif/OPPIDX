@@ -79,8 +79,9 @@ function HeroSearch() {
 }
 
 function SubscribeForm() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
-  const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
+  const [state, setState] = useState<'idle' | 'sending' | 'error'>('idle')
   const [msg, setMsg] = useState('')
 
   async function submit(e: React.FormEvent) {
@@ -94,15 +95,14 @@ function SubscribeForm() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Something went wrong.')
-      setState('done')
+      // A real, dedicated URL rather than inline state — see app/subscribed
+      // for why (Google Ads conversion tracking needs an actual page to
+      // detect, not a client-side state change on the same page).
+      router.push('/subscribed')
     } catch (err: any) {
       setMsg(err.message)
       setState('error')
     }
-  }
-
-  if (state === 'done') {
-    return <div style={{ fontSize: 13, color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>✓ You're on the list — check your inbox for a welcome note now, then the week's top 10 every Monday.</div>
   }
 
   return (

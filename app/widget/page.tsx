@@ -5,7 +5,16 @@ import Link from 'next/link'
 import { SITE_URL } from '@/lib/siteUrl'
 
 const EMBED_URL = `${SITE_URL}/embed/opportunity-of-the-day`
-const SNIPPET = `<iframe src="${EMBED_URL}" width="340" height="190" style="border:none;" title="Opportunity of the Day — OppIDX" loading="lazy"></iframe>`
+// The iframe itself carries zero SEO weight for the embedder — a
+// cross-origin <iframe> doesn't count as an outbound link on their page as
+// far as a crawler's link graph is concerned, only same-page <a> tags do.
+// The real link right below it, in the embedder's own HTML, is what
+// actually credits them for linking to OppIDX (and is the whole reason
+// anyone would want this widget rather than just a screenshot).
+const SNIPPET = `<div>
+  <iframe src="${EMBED_URL}" width="340" height="190" style="border:none;" title="Opportunity of the Day — OppIDX" loading="lazy"></iframe>
+  <div style="font-family:monospace;font-size:11px;margin-top:4px;">Powered by <a href="${SITE_URL}" target="_blank" rel="noopener">OppIDX</a></div>
+</div>`
 
 export default function WidgetPage() {
   const [copied, setCopied] = useState(false)
@@ -35,7 +44,7 @@ export default function WidgetPage() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
             <iframe
               src={EMBED_URL}
               width={340}
@@ -43,6 +52,9 @@ export default function WidgetPage() {
               style={{ border: 'none' }}
               title="Opportunity of the Day — OppIDX preview"
             />
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', marginTop: 4, width: 340 }}>
+              Powered by <Link href="/" style={{ color: 'var(--ink-2)' }}>OppIDX</Link>
+            </div>
           </div>
 
           <div style={{

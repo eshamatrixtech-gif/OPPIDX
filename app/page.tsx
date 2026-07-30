@@ -415,6 +415,14 @@ export default function Home() {
               }}>
                 Log in →
               </Link>
+              <Link href="/submit" style={{
+                display: 'flex', alignItems: 'center', padding: '7px 14px', borderRadius: 2,
+                background: 'var(--btn-bg)', color: 'var(--btn-text)', textDecoration: 'none',
+                fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, letterSpacing: '0.02em',
+                boxShadow: '3px 3px 0 var(--shadow)',
+              }}>
+                + Enlist your opportunity
+              </Link>
               <button onClick={() => setSidebarOpen(true)} style={{
                 display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 2,
                 border: '1.5px solid var(--line)', background: 'var(--card)', cursor: 'pointer',

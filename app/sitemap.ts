@@ -3,6 +3,15 @@ import { prisma } from '@/lib/db'
 import { SITE_URL } from '@/lib/siteUrl'
 import { PAYWALL_ENABLED } from '@/lib/limits'
 
+// Without this, sitemap.ts has no request-time API and no dynamic config,
+// so Next prerenders it once at build time and freezes it there — new
+// opportunities added by the hourly scraper (a DB write, not a deploy)
+// would never appear until the next actual code push. Matches the
+// scraper's own cadence (lib/scraper/scheduler.ts), so a new listing
+// shows up in the sitemap within the hour, not "whenever someone next
+// changes code."
+export const revalidate = 3600
+
 const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency']; priority: number }> = [
   { path: '', changeFrequency: 'hourly', priority: 1 },
   { path: '/browse', changeFrequency: 'hourly', priority: 0.9 },

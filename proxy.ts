@@ -10,7 +10,9 @@ const MAX_AGE = 60 * 60 * 24 * 30 * 1000  // 30 days
    /admin route (session-gated below); only WordPress/PHP-scanner-style
    admin paths are blocked. */
 const BLOCKED_PATH_PATTERNS = [
-  /\.(php|asp|aspx|jsp|cgi|env|git|sql|bak|config|xml|yaml|yml|ini|log|sh|bash)$/i,
+  // NOT .xml — that's a legitimate extension the site itself serves
+  // (sitemap.xml, feed.xml), and this pattern was silently 404ing both.
+  /\.(php|asp|aspx|jsp|cgi|env|git|sql|bak|config|yaml|yml|ini|log|sh|bash)$/i,
   /\/(wp-admin|wp-login|phpmyadmin|manager|console|shell|cmd|eval)/i,
   /\/(\.env|\.git|\.htaccess|\.well-known\/acme-challenge)/i,
   /\/(etc\/passwd|proc\/self|windows\/win\.ini)/i,

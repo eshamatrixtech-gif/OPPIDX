@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { OpportunityCard, type CardExtras } from '@/components/ui/OpportunityCard'
 import { PulseCard, type PulseDigest } from '@/components/ui/PulseCard'
 import { Wordmark } from '@/components/ui/Wordmark'
+import { FloatingActions } from '@/components/ui/FloatingActions'
 import { ShareBar } from '@/components/ui/ShareBar'
 import { DISCORD_INVITE_URL } from '@/lib/discord'
 import { SOCIAL_CHANNELS_ENABLED } from '@/lib/socialChannels'
@@ -572,6 +573,7 @@ export default function Home() {
       </footer>
 
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} sponsor={sponsor} />
+      <FloatingActions onOpenMore={() => setSidebarOpen(true)} />
     </div>
   )
 }

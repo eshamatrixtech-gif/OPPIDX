@@ -170,6 +170,30 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
         </div>
 
         <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 10 }}>
+          Browse by audience
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 26 }}>
+          <Link href="/collections/students" onClick={onClose} style={{
+            padding: '7px 14px', borderRadius: 2, border: '1.5px solid var(--line)', background: 'var(--board)',
+            textDecoration: 'none', color: 'var(--ink)', fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700,
+          }}>
+            Students
+          </Link>
+          <Link href="/collections/early-career" onClick={onClose} style={{
+            padding: '7px 14px', borderRadius: 2, border: '1.5px solid var(--line)', background: 'var(--board)',
+            textDecoration: 'none', color: 'var(--ink)', fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700,
+          }}>
+            Early career
+          </Link>
+          <Link href="/collections/founders" onClick={onClose} style={{
+            padding: '7px 14px', borderRadius: 2, border: '1.5px solid var(--line)', background: 'var(--board)',
+            textDecoration: 'none', color: 'var(--ink)', fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700,
+          }}>
+            Founders
+          </Link>
+        </div>
+
+        <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 10 }}>
           Also from OppIDX
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 26 }}>

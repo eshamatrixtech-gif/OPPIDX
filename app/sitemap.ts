@@ -17,6 +17,7 @@ const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitema
   { path: '/browse', changeFrequency: 'hourly', priority: 0.9 },
   { path: '/collections/students', changeFrequency: 'hourly', priority: 0.85 },
   { path: '/collections/founders', changeFrequency: 'hourly', priority: 0.85 },
+  { path: '/collections/early-career', changeFrequency: 'hourly', priority: 0.85 },
   { path: '/newsletter', changeFrequency: 'daily', priority: 0.8 },
   { path: '/resources', changeFrequency: 'daily', priority: 0.8 },
   { path: '/mayatara/pulse', changeFrequency: 'daily', priority: 0.7 },

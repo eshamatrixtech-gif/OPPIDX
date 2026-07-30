@@ -55,7 +55,7 @@ export function DigestBody({ items }: { items: DigestItem[] }) {
             <div key={g.category}>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-lg" style={{ color: "var(--saffron)" }}>{g.sym}</span>
-                <h3 className="font-typewriter text-sm tracking-widest" style={{ color: "var(--ink)" }}>{g.category.toUpperCase()}</h3>
+                <h2 className="font-typewriter text-sm tracking-widest" style={{ color: "var(--ink)" }}>{g.category.toUpperCase()}</h2>
               </div>
               {g.whyItMatters && (
                 <p className="text-xs mb-3" style={{ color: "var(--ink-muted)" }}>{g.whyItMatters}</p>

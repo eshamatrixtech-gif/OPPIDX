@@ -125,7 +125,7 @@ function HeadlineGroups({ headlines }: { headlines: Headline[] }) {
         <div key={g.category}>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-lg" style={{ color: "var(--saffron)" }}>{g.sym}</span>
-            <h3 className="font-typewriter text-sm tracking-widest" style={{ color: "var(--ink)" }}>{g.category.toUpperCase()}</h3>
+            <h2 className="font-typewriter text-sm tracking-widest" style={{ color: "var(--ink)" }}>{g.category.toUpperCase()}</h2>
           </div>
           {g.whyItMatters && (
             <p className="text-xs mb-3" style={{ color: "var(--ink-muted)" }}>{g.whyItMatters}</p>
@@ -232,7 +232,7 @@ export default function PulsePage() {
                   <span className="text-xs font-typewriter px-2 py-0.5" style={{ background: "var(--bg-dark)", color: "var(--saffron)" }}>
                     {d.category.toUpperCase()}
                   </span>
-                  <h3 className="font-typewriter text-base mt-2 mb-1" style={{ color: "var(--ink)" }}>{d.label}</h3>
+                  <h2 className="font-typewriter text-base mt-2 mb-1" style={{ color: "var(--ink)" }}>{d.label}</h2>
                   <div className="font-typewriter text-2xl mb-1" style={{ color: "var(--saffron)" }}>{d.value} <span className="text-sm" style={{ color: "var(--ink-muted)" }}>{d.unit}</span></div>
                   <p className="text-xs" style={{ color: "var(--ink-muted)" }}>
                     As of {d.as_of} · <a href={d.source_url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--saffron)", textDecoration: "underline" }}>{d.source_name}</a>

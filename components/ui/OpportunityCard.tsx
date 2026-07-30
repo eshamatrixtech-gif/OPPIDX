@@ -153,12 +153,12 @@ export const OpportunityCard = memo(function OpportunityCard({ opp, extras }: { 
             )}
           </div>
 
-          <h3 style={{
+          <h2 style={{
             fontFamily: 'var(--font-display)', fontSize: 16.5, lineHeight: 1.35,
             color: 'var(--ink)', marginBottom: 6,
           }}>
             {opp.title}
-          </h3>
+          </h2>
 
           {opp.org && (
             <div style={{ fontSize: 12.5, color: 'var(--ink-2)', marginBottom: 10 }}>{opp.org}</div>

@@ -7,8 +7,13 @@
   --card:        #fbf3df;   /* card fill — lighter cream */
 
   --ink:         #2b2620;   /* primary text */
-  --ink-2:       rgba(43,38,32,0.62);
-  --ink-3:       rgba(43,38,32,0.4);
+  /* 0.62/0.4 measured at 4.05:1 / 2.28:1 against --board — both fail WCAG
+     AA's 4.5:1 for normal text (Lighthouse flagged it). Raised to clear
+     4.5:1 against both --board and the lighter --card with margin, while
+     keeping ink-2 visibly darker than ink-3 so the two-tier hierarchy
+     (secondary vs. muted-meta text) still reads correctly. */
+  --ink-2:       rgba(43,38,32,0.72);
+  --ink-3:       rgba(43,38,32,0.68);
 
   --line:        rgba(43,38,32,0.22);   /* card borders */
   --shadow:      rgba(43,38,32,0.16);   /* hard offset shadow */

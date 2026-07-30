@@ -36,12 +36,12 @@ export const PulseCard = memo(function PulseCard({ digest }: { digest: PulseDige
           }}>
             ◈ Pulse · {periodLabel(digest.period)}
           </div>
-          <h3 style={{
+          <h2 style={{
             fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14, lineHeight: 1.4, color: 'var(--ink)', marginBottom: 10,
             display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden',
           }}>
             {digest.summary}
-          </h3>
+          </h2>
           <Link
             href={`/mayatara/pulse/digest/${digest.period}`}
             style={{

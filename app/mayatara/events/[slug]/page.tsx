@@ -219,9 +219,9 @@ export default function EventDetailPage() {
               </div>
             ) : (
               <div className="card p-7">
-                <h3 className="font-typewriter text-lg mb-4" style={{ color: "var(--ink)" }}>
+                <h2 className="font-typewriter text-lg mb-4" style={{ color: "var(--ink)" }}>
                   ◆ RSVP {event.isFull && <span className="text-xs" style={{ color: "var(--maroon)" }}>— FULL, JOIN WAITLIST</span>}
-                </h3>
+                </h2>
                 <form onSubmit={submitRsvp} className="flex flex-col gap-4">
                   <div>
                     <label className="text-xs font-typewriter tracking-widest block mb-1" style={{ color: "var(--ink-muted)" }}>YOUR NAME</label>

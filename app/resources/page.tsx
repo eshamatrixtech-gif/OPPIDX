@@ -36,9 +36,9 @@ function LearnCard({ item }: { item: Resource }) {
       padding: 18, textDecoration: 'none', display: 'block', background: 'var(--card)',
       borderColor: 'var(--pin)',
     }}>
-      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: 'var(--ink)', marginBottom: 6, lineHeight: 1.3 }}>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: 'var(--ink)', marginBottom: 6, lineHeight: 1.3 }}>
         {item.title}
-      </h3>
+      </h2>
       <p style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>
         {item.description}
       </p>
@@ -114,9 +114,9 @@ function ResourceRow({ item }: { item: Resource }) {
             {item.audience.replace('_', ' ')}
           </span>
         </div>
-        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, color: 'var(--ink)', marginBottom: 6 }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 17, color: 'var(--ink)', marginBottom: 6 }}>
           {item.title}
-        </h3>
+        </h2>
         <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6 }}>
           {item.description}
         </p>

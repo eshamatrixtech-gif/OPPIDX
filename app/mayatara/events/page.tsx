@@ -79,7 +79,7 @@ export default function EventsPage() {
                     {e.rsvpCount}{e.capacity ? ` / ${e.capacity}` : ""} going
                   </span>
                 </div>
-                <h3 className="font-typewriter text-lg mb-1" style={{ color: "var(--ink)" }}>{e.title}</h3>
+                <h2 className="font-typewriter text-lg mb-1" style={{ color: "var(--ink)" }}>{e.title}</h2>
                 <p className="text-xs mb-2" style={{ color: "var(--ink-muted)" }}>
                   {formatWhen(e.event_time)} · {e.location} · hosted by {e.host_name}
                 </p>

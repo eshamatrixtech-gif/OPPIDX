@@ -41,12 +41,13 @@ export default async function CollectionsIndexPage() {
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 12 }}>
                 By {group.toLowerCase()}
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '4px 16px' }}>
                 {groupDefs.map(c => (
-                  <Link key={c.slug} href={`/collections/${c.slug}`} className="card-box" style={{
-                    padding: '10px 16px', textDecoration: 'none', color: 'var(--ink)',
-                    fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700,
+                  <Link key={c.slug} href={`/collections/${c.slug}`} style={{
+                    display: 'flex', alignItems: 'center', gap: 9, padding: '7px 4px',
+                    textDecoration: 'none', color: 'var(--ink-2)', fontFamily: 'var(--font-mono)', fontSize: 13,
                   }}>
+                    <span style={{ fontSize: 14, width: 18, textAlign: 'center', flexShrink: 0 }}>{c.icon}</span>
                     {c.title}
                   </Link>
                 ))}

@@ -19,6 +19,7 @@ export interface CollectionDef {
   pageTitle: string       // <title> tag
   description: string     // meta description + subhead copy
   group: 'Audience' | 'Topic' | 'Location' | 'Compensation' | 'Combo'
+  icon?: string          // single emoji/symbol shown on the /collections index grid — single-dimension defs only
   // Plain strings, not the app's narrowed Audience/Difficulty unions — this
   // runs against raw Prisma rows before they're cast to the shared type.
   match: (opp: MatchInput) => boolean
@@ -43,6 +44,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   // ── By audience (existing three, now data-driven like everything else) ──
   {
     slug: 'students',
+    icon: '🎒',
     title: 'For students',
     pageTitle: 'Internships, Scholarships & Fellowships for Students — OppIDX',
     description: 'Internships, scholarships, and fellowships — hand-checked, not scraped junk.',
@@ -51,6 +53,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'early-career',
+    icon: '💼',
     title: 'For early career',
     pageTitle: 'Early Career Jobs, Internships & Programs — OppIDX',
     description: 'New-grad jobs, early-career programs, and internships — hand-checked, not scraped junk.',
@@ -59,6 +62,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'founders',
+    icon: '🧭',
     title: 'For founders',
     pageTitle: 'Grants, Fellowships & Competitions for Founders — OppIDX',
     description: 'Grants, fellowships, and competitions for founders — hand-checked, not scraped junk.',
@@ -69,6 +73,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   // ── By topic (real tag data, ~1,800 verified listings checked) ──
   {
     slug: 'software-engineering',
+    icon: '💻',
     title: 'Software engineering opportunities',
     pageTitle: 'Software Engineering Jobs & Internships — OppIDX',
     description: 'Software engineering roles and internships, real and verified — the single largest category on the board.',
@@ -77,6 +82,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'ai-and-machine-learning',
+    icon: '🤖',
     title: 'AI & machine learning opportunities',
     pageTitle: 'AI & Machine Learning Jobs, Internships & Fellowships — OppIDX',
     description: 'Real AI and machine learning roles, internships, and research positions — verified, not scraped junk.',
@@ -85,6 +91,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'data-science',
+    icon: '📊',
     title: 'Data science opportunities',
     pageTitle: 'Data Science Jobs & Internships — OppIDX',
     description: 'Real data science and analytics roles — verified, not scraped junk.',
@@ -93,6 +100,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'scholarships',
+    icon: '🎓',
     title: 'Scholarships',
     pageTitle: 'Scholarships — Real, Verified, Free to Search — OppIDX',
     description: 'Real scholarships, hand-checked before they go up — no dead links, no bait.',
@@ -101,6 +109,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'fellowships',
+    icon: '📜',
     title: 'Fellowships',
     pageTitle: 'Fellowships — Real, Verified, Free to Search — OppIDX',
     description: 'Real fellowships across research, policy, and industry — hand-checked before they go up.',
@@ -109,6 +118,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'grants-and-funding',
+    icon: '💰',
     title: 'Grants & funding',
     pageTitle: 'Grants & Funding Opportunities — OppIDX',
     description: 'Real grants and funding opportunities for founders, researchers, and students.',
@@ -117,6 +127,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'government',
+    icon: '🏛',
     title: 'Government opportunities',
     pageTitle: 'Government Jobs & Internships — OppIDX',
     description: 'Real government roles, internships, and public-sector programs.',
@@ -125,6 +136,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'competitions',
+    icon: '🏆',
     title: 'Competitions & hackathons',
     pageTitle: 'Competitions & Hackathons — OppIDX',
     description: 'Real competitions and hackathons worth your time — hand-checked before they go up.',
@@ -133,6 +145,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'startups',
+    icon: '🚀',
     title: 'Startup opportunities',
     pageTitle: 'Startup Jobs, Internships & Programs — OppIDX',
     description: 'Real roles and programs at startups — verified, not scraped junk.',
@@ -141,6 +154,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'infrastructure-and-sre',
+    icon: '🛠',
     title: 'Infrastructure & SRE opportunities',
     pageTitle: 'Infrastructure & SRE Jobs — OppIDX',
     description: 'Real infrastructure, DevOps, and site-reliability roles.',
@@ -149,6 +163,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'research',
+    icon: '🔬',
     title: 'Research opportunities',
     pageTitle: 'Research Jobs, Internships & Fellowships — OppIDX',
     description: 'Real research roles, internships, and fellowships across fields.',
@@ -157,6 +172,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'customer-support',
+    icon: '🎧',
     title: 'Customer support opportunities',
     pageTitle: 'Customer Support Jobs — OppIDX',
     description: 'Real customer support and customer success roles.',
@@ -165,6 +181,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'design',
+    icon: '🎨',
     title: 'Design opportunities',
     pageTitle: 'Design Jobs & Internships — OppIDX',
     description: 'Real design roles and internships — product, graphic, and UX.',
@@ -173,6 +190,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'marketing',
+    icon: '📣',
     title: 'Marketing opportunities',
     pageTitle: 'Marketing Jobs & Internships — OppIDX',
     description: 'Real marketing roles and internships — hand-checked before they go up.',
@@ -181,6 +199,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'security-engineering',
+    icon: '🔒',
     title: 'Security engineering opportunities',
     pageTitle: 'Security Engineering Jobs — OppIDX',
     description: 'Real security and infosec engineering roles.',
@@ -189,6 +208,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'hardware-and-robotics',
+    icon: '⚙️',
     title: 'Hardware & robotics opportunities',
     pageTitle: 'Hardware & Robotics Jobs & Internships — OppIDX',
     description: 'Real hardware, robotics, and mechanical-adjacent engineering roles.',
@@ -197,6 +217,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'beginner-friendly',
+    icon: '🌱',
     title: 'Beginner-friendly opportunities',
     pageTitle: 'Beginner-Friendly Jobs & Internships — OppIDX',
     description: 'Real opportunities that don’t assume years of experience — a genuine way in.',
@@ -209,6 +230,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   // Germany 18, Switzerland 15 — the next country down drops to 7) ──
   {
     slug: 'remote',
+    icon: '🌍',
     title: 'Remote opportunities',
     pageTitle: 'Remote Jobs & Internships — OppIDX',
     description: 'Real remote roles and internships — work from anywhere, verified before they go up.',
@@ -217,6 +239,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'united-states',
+    icon: '🇺🇸',
     title: 'Opportunities in the United States',
     pageTitle: 'Jobs & Internships in the United States — OppIDX',
     description: 'Real opportunities based in the United States — verified, not scraped junk.',
@@ -225,6 +248,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'india',
+    icon: '🇮🇳',
     title: 'Opportunities in India',
     pageTitle: 'Jobs & Internships in India — OppIDX',
     description: 'Real opportunities based in India — verified, not scraped junk.',
@@ -233,6 +257,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'canada',
+    icon: '🇨🇦',
     title: 'Opportunities in Canada',
     pageTitle: 'Jobs & Internships in Canada — OppIDX',
     description: 'Real opportunities based in Canada — verified, not scraped junk.',
@@ -241,6 +266,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'united-kingdom',
+    icon: '🇬🇧',
     title: 'Opportunities in the United Kingdom',
     pageTitle: 'Jobs & Internships in the United Kingdom — OppIDX',
     description: 'Real opportunities based in the United Kingdom — verified, not scraped junk.',
@@ -249,6 +275,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'germany',
+    icon: '🇩🇪',
     title: 'Opportunities in Germany',
     pageTitle: 'Jobs & Internships in Germany — OppIDX',
     description: 'Real opportunities based in Germany — verified, not scraped junk.',
@@ -257,6 +284,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'switzerland',
+    icon: '🇨🇭',
     title: 'Opportunities in Switzerland',
     pageTitle: 'Jobs & Internships in Switzerland — OppIDX',
     description: 'Real opportunities based in Switzerland — verified, not scraped junk.',
@@ -267,6 +295,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   // ── By compensation (real compType field: Paid 497, Stipend 91, Equity 51) ──
   {
     slug: 'paid',
+    icon: '💵',
     title: 'Paid opportunities',
     pageTitle: 'Paid Jobs & Internships — OppIDX',
     description: 'Real, paid opportunities — verified before they go up, no unpaid bait.',
@@ -275,6 +304,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'stipend',
+    icon: '🎫',
     title: 'Stipend opportunities',
     pageTitle: 'Stipend Jobs & Internships — OppIDX',
     description: 'Real opportunities that pay a stipend — verified before they go up.',
@@ -283,6 +313,7 @@ export const COLLECTION_DEFS: CollectionDef[] = [
   },
   {
     slug: 'equity',
+    icon: '📈',
     title: 'Equity opportunities',
     pageTitle: 'Equity-Based Opportunities — OppIDX',
     description: 'Real startup and founder-track opportunities offering equity.',

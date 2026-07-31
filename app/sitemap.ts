@@ -2,6 +2,8 @@ import type { MetadataRoute } from 'next'
 import { prisma } from '@/lib/db'
 import { SITE_URL } from '@/lib/siteUrl'
 import { PAYWALL_ENABLED } from '@/lib/limits'
+import { COLLECTION_DEFS } from '@/lib/collectionDefs'
+import { getCompanyList } from '@/lib/companies'
 
 // Without this, sitemap.ts has no request-time API and no dynamic config,
 // so Next prerenders it once at build time and freezes it there — new
@@ -15,9 +17,8 @@ export const revalidate = 3600
 const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency']; priority: number }> = [
   { path: '', changeFrequency: 'hourly', priority: 1 },
   { path: '/browse', changeFrequency: 'hourly', priority: 0.9 },
-  { path: '/collections/students', changeFrequency: 'hourly', priority: 0.85 },
-  { path: '/collections/founders', changeFrequency: 'hourly', priority: 0.85 },
-  { path: '/collections/early-career', changeFrequency: 'hourly', priority: 0.85 },
+  { path: '/collections', changeFrequency: 'daily', priority: 0.8 },
+  { path: '/companies', changeFrequency: 'daily', priority: 0.8 },
   { path: '/newsletter', changeFrequency: 'daily', priority: 0.8 },
   { path: '/resources', changeFrequency: 'daily', priority: 0.8 },
   { path: '/mayatara/pulse', changeFrequency: 'daily', priority: 0.7 },
@@ -29,7 +30,7 @@ const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitema
 ]
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [opportunities, resources, newsletters, pulseDigests] = await Promise.all([
+  const [opportunities, resources, newsletters, pulseDigests, companies] = await Promise.all([
     prisma.opportunity.findMany({
       where: { verified: true, deletedAt: null },
       select: { id: true, addedAt: true },
@@ -42,6 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
     prisma.dailyDigest.findMany({ select: { date: true, createdAt: true } }),
     prisma.policyDigest.findMany({ select: { period: true, createdAt: true } }),
+    getCompanyList(),
   ])
 
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map(r => ({
@@ -79,5 +81,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }))
 
-  return [...staticEntries, ...opportunityEntries, ...resourceEntries, ...newsletterEntries, ...pulseDigestEntries]
+  const collectionEntries: MetadataRoute.Sitemap = COLLECTION_DEFS.map(c => ({
+    url: `${SITE_URL}/collections/${c.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'hourly',
+    priority: 0.85,
+  }))
+
+  const companyEntries: MetadataRoute.Sitemap = companies.map(c => ({
+    url: `${SITE_URL}/companies/${c.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily',
+    priority: 0.65,
+  }))
+
+  return [
+    ...staticEntries, ...opportunityEntries, ...resourceEntries, ...newsletterEntries,
+    ...pulseDigestEntries, ...collectionEntries, ...companyEntries,
+  ]
 }

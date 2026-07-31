@@ -1,14 +1,26 @@
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { getCollectionOpportunities } from '@/lib/collections'
+import { COLLECTION_DEFS, getCollectionDef } from '@/lib/collectionDefs'
 
-export const metadata = {
-  title: 'Early Career Jobs, Internships & Programs — OppIDX',
-  description: 'A hand-curated, constantly updated board of real early-career jobs, new-grad programs, and internships — no scraped junk, no bait, every listing checked before it goes up.',
+export function generateStaticParams() {
+  return COLLECTION_DEFS.map(c => ({ slug: c.slug }))
 }
 
-export default async function EarlyCareerCollectionPage() {
-  const { items, total, restricted } = await getCollectionOpportunities('EARLY_CAREER')
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const def = getCollectionDef(slug)
+  if (!def) return { title: 'Not found — OppIDX' }
+  return { title: def.pageTitle, description: def.description }
+}
+
+export default async function CollectionPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const def = getCollectionDef(slug)
+  if (!def) notFound()
+
+  const { items, total, restricted } = await getCollectionOpportunities(def)
 
   return (
     <div style={{ minHeight: '100vh' }}>
@@ -18,10 +30,10 @@ export default async function EarlyCareerCollectionPage() {
             ← OppIDX
           </Link>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(26px, 4.5vw, 38px)', color: 'var(--ink)', marginTop: 14, textTransform: 'uppercase' }}>
-            For early career
+            {def.title}
           </h1>
           <p style={{ fontSize: 14, color: 'var(--ink-2)', marginTop: 10, maxWidth: 640, lineHeight: 1.65 }}>
-            New-grad jobs, early-career programs, and internships — hand-checked, not scraped junk. {total.toLocaleString()} real opportunities for early career right now.
+            {def.description} {total.toLocaleString()} real opportunities right now.
           </p>
         </div>
       </header>
@@ -40,7 +52,7 @@ export default async function EarlyCareerCollectionPage() {
         {restricted && (
           <div className="card-box" style={{ textAlign: 'center', padding: '26px 24px' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13.5, color: 'var(--ink)', marginBottom: 12 }}>
-              {(total - items.length).toLocaleString()} more early-career opportunities are subscriber-only.
+              {(total - items.length).toLocaleString()} more are subscriber-only.
             </div>
             <Link href="/pricing" style={{
               display: 'inline-block', padding: '11px 24px', borderRadius: 2,
@@ -53,8 +65,8 @@ export default async function EarlyCareerCollectionPage() {
         )}
 
         <div style={{ textAlign: 'center', marginTop: 30 }}>
-          <Link href="/browse?audience=EARLY_CAREER" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none' }}>
-            Search all early-career opportunities →
+          <Link href="/collections" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none' }}>
+            See all collections →
           </Link>
         </div>
       </main>

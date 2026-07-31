@@ -192,6 +192,14 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
             Founders
           </Link>
         </div>
+        <div style={{ display: 'flex', gap: 14, marginBottom: 26, fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+          <Link href="/collections" onClick={onClose} style={{ color: 'var(--pin)', textDecoration: 'none', fontWeight: 700 }}>
+            All collections →
+          </Link>
+          <Link href="/companies" onClick={onClose} style={{ color: 'var(--pin)', textDecoration: 'none', fontWeight: 700 }}>
+            By company →
+          </Link>
+        </div>
 
         <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 10 }}>
           Also from OppIDX

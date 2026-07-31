@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { getCompanyList, getCompanyOpportunities } from '@/lib/companies'
+import { SITE_URL } from '@/lib/siteUrl'
 
 export async function generateStaticParams() {
   const companies = await getCompanyList()
@@ -15,6 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `${result.org} Jobs & Internships — OppIDX`,
     description: `${result.total.toLocaleString()} real, verified opportunities at ${result.org} — hand-checked before they go up.`,
+    alternates: { canonical: `${SITE_URL}/companies/${slug}` },
   }
 }
 

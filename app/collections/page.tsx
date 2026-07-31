@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import { getAllCollectionDefs } from '@/lib/collections'
+import { SITE_URL } from '@/lib/siteUrl'
 
 export const metadata = {
   title: 'Browse by Audience & Topic — OppIDX',
   description: 'Every real, verified opportunity on OppIDX, organized by audience, topic, location, and compensation.',
+  alternates: { canonical: `${SITE_URL}/collections` },
 }
 
 export const revalidate = 3600

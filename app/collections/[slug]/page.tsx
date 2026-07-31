@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { getCollectionOpportunities, getAllCollectionDefs, resolveCollectionDef } from '@/lib/collections'
+import { SITE_URL } from '@/lib/siteUrl'
 
 export async function generateStaticParams() {
   const defs = await getAllCollectionDefs()
@@ -12,7 +13,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const def = await resolveCollectionDef(slug)
   if (!def) return { title: 'Not found — OppIDX' }
-  return { title: def.pageTitle, description: def.description }
+  return {
+    title: def.pageTitle,
+    description: def.description,
+    alternates: { canonical: `${SITE_URL}/collections/${slug}` },
+  }
 }
 
 export default async function CollectionPage({ params }: { params: Promise<{ slug: string }> }) {

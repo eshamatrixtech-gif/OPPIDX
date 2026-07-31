@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import { getCompanyList } from '@/lib/companies'
+import { SITE_URL } from '@/lib/siteUrl'
 
 export const metadata = {
   title: 'Browse Opportunities by Company — OppIDX',
   description: 'Real internships, jobs, and programs at real companies — verified, not scraped junk.',
+  alternates: { canonical: `${SITE_URL}/companies` },
 }
 
 export const revalidate = 3600

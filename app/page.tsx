@@ -435,6 +435,12 @@ export default function Home() {
               <Wordmark size={22} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+              <Link href="/collections" style={{
+                fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, color: 'var(--ink-2)',
+                textDecoration: 'none', letterSpacing: '0.02em',
+              }}>
+                ◈ Collections
+              </Link>
               <Link href="/saved" style={{
                 fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, color: 'var(--ink-2)',
                 textDecoration: 'none', letterSpacing: '0.02em',

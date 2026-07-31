@@ -29,19 +29,27 @@ export async function getCompanyList(): Promise<{ org: string; slug: string; cou
 
 /** Resolves a URL slug back to the real org name it was derived from — slugs
  * are computed on the fly (no stored column), so this re-slugifies every
- * distinct org and finds the match, same approach as the getCompanyList sort. */
+ * distinct org and finds the match, same approach as the getCompanyList sort.
+ *
+ * Two distinct org names can slugify to the same string (slugifyCompany
+ * strips all non-alphanumerics, so "AT&T" and "At-T" both become "at-t") —
+ * rather than letting `.find()` pick one arbitrarily and silently swallow
+ * the other org's listings, every org sharing the slug is merged into one
+ * page. Collisions are rare (not triggered by the current dataset) but
+ * "one company vanishes with no error" is worse than "two rare namesakes
+ * share a page", so this fails toward visibility. */
 export async function getCompanyOpportunities(slug: string) {
   const distinctOrgs = await prisma.opportunity.findMany({
     where: { verified: true, deletedAt: null, org: { not: null } },
     distinct: ['org'],
     select: { org: true },
   })
-  const match = distinctOrgs.find(r => r.org && slugifyCompany(r.org) === slug)
-  if (!match?.org) return null
+  const matches = distinctOrgs.filter(r => r.org && slugifyCompany(r.org) === slug).map(r => r.org!)
+  if (matches.length === 0) return null
 
   const paidSubscriber = PAYWALL_ENABLED ? await getCurrentPaidSubscriber() : true
   const rows = await prisma.opportunity.findMany({
-    where: { verified: true, deletedAt: null, org: match.org },
+    where: { verified: true, deletedAt: null, org: { in: matches } },
     orderBy: { addedAt: 'desc' },
   })
   if (rows.length < MIN_LISTINGS_FOR_PAGE) return null
@@ -51,5 +59,10 @@ export async function getCompanyOpportunities(slug: string) {
   const items = capped.map(r => ({ ...r, addedAt: r.addedAt.toISOString() })) as unknown as Opportunity[]
   const restricted = !paidSubscriber && total > items.length
 
-  return { org: match.org, items, total, restricted }
+  // Display name: the org with the most listings among those sharing this
+  // slug — arbitrary among ties, but deterministic and reasonable.
+  const displayOrg = matches.length === 1 ? matches[0]
+    : matches.reduce((best, org) => rows.filter(r => r.org === org).length > rows.filter(r => r.org === best).length ? org : best)
+
+  return { org: displayOrg, items, total, restricted }
 }

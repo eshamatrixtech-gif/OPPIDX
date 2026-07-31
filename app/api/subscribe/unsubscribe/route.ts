@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     data: { unsubscribedFromDigest: true },
   }).catch(() => null)
 
-  return new NextResponse(page("You're unsubscribed from the daily digest. You won't get another one — everything else about your account stays the same."), {
+  return new NextResponse(page("You're unsubscribed from the weekly digest. You won't get another one — everything else about your account stays the same."), {
     headers: { 'Content-Type': 'text/html' },
   })
 }

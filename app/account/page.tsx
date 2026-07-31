@@ -5,7 +5,9 @@ import Link from 'next/link'
 import { supabase } from '@/lib/authSupabase'
 import { PAYWALL_ENABLED } from '@/lib/limits'
 import { ShareBar } from '@/components/ui/ShareBar'
+import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { SITE_URL } from '@/lib/siteUrl'
+import type { Opportunity } from '@/types'
 
 type Status = {
   found: boolean
@@ -18,6 +20,15 @@ type Status = {
   institutionVerified?: boolean
   referralCode?: string | null
   referralCount?: number
+  subscribedToDigest?: boolean
+}
+
+type Submission = { id: string; title: string; addedAt: string; status: 'live' | 'pending' | 'rejected' }
+
+const SUBMISSION_STATUS_LABEL: Record<Submission['status'], { label: string; color: string }> = {
+  live: { label: '● Live', color: 'var(--green)' },
+  pending: { label: '◐ In review', color: 'var(--ink-3)' },
+  rejected: { label: '✗ Not approved', color: 'var(--danger)' },
 }
 
 const STATUS_MESSAGE: Record<string, { label: string; tone: 'ok' | 'warn' | 'off' }> = {
@@ -62,6 +73,18 @@ export default function AccountPage() {
   const [verifyState, setVerifyState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [verifyError, setVerifyError] = useState('')
 
+  const [saved, setSaved] = useState<Opportunity[]>([])
+  const [submissions, setSubmissions] = useState<Submission[]>([])
+  const [digestToggling, setDigestToggling] = useState(false)
+  // True only after a real session cookie exists (login, signup, or an
+  // already-active cookie on load) — the passwordless email lookup() below
+  // never mints one (see /api/account/status's own comment: "strictly less
+  // powerful than restore-access"), so saved/submissions/digest-toggle
+  // would silently 401 or return empty for that path. Gates those three
+  // sections instead of showing an empty-looking "nothing saved yet" that
+  // actually just means "we never checked."
+  const [hasSession, setHasSession] = useState(false)
+
   async function requestVerification(e: React.FormEvent) {
     e.preventDefault()
     setVerifyState('sending')
@@ -82,11 +105,33 @@ export default function AccountPage() {
   }
 
   const refreshStatus = () =>
-    fetch('/api/account/status').then(r => r.json()).then(setStatus)
+    fetch('/api/account/status').then(r => r.json()).then(async (s: Status) => {
+      setStatus(s)
+      setHasSession(s.found)
+      if (s.found) {
+        const [savedRes, submissionsRes] = await Promise.all([
+          fetch('/api/saved').then(r => r.json()),
+          fetch('/api/account/submissions').then(r => r.json()),
+        ])
+        setSaved(savedRes.items ?? [])
+        setSubmissions(submissionsRes.items ?? [])
+      }
+    })
 
   useEffect(() => {
     refreshStatus().finally(() => setLoading(false))
   }, [])
+
+  async function toggleDigest() {
+    setDigestToggling(true)
+    try {
+      const res = await fetch('/api/account/newsletter', { method: 'POST' })
+      const data = await res.json()
+      setStatus(s => s ? { ...s, subscribedToDigest: data.subscribedToDigest } : s)
+    } finally {
+      setDigestToggling(false)
+    }
+  }
 
   async function lookup(e: React.FormEvent) {
     e.preventDefault()
@@ -99,6 +144,7 @@ export default function AccountPage() {
       })
       if (!res.ok) { setLookupState('error'); return }
       setStatus(await res.json())
+      setHasSession(false)
       setLookupState('idle')
     } catch {
       setLookupState('error')
@@ -149,6 +195,9 @@ export default function AccountPage() {
     await supabase.auth.signOut()
     await fetch('/api/account/logout', { method: 'POST' })
     setStatus({ found: false })
+    setHasSession(false)
+    setSaved([])
+    setSubmissions([])
   }
 
   async function cancelSubscription() {
@@ -393,6 +442,80 @@ export default function AccountPage() {
                   <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
                     {SITE_URL}/?ref={status.referralCode}
                   </div>
+                </div>
+              )}
+
+              {hasSession ? (
+                <>
+                  <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16, marginTop: 20 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)' }}>
+                        Weekly digest email
+                      </div>
+                      <button onClick={toggleDigest} disabled={digestToggling} style={{
+                        padding: '5px 12px', borderRadius: 2, border: '1.5px solid var(--line)', cursor: 'pointer',
+                        background: 'var(--card)', color: 'var(--ink-2)', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700,
+                        opacity: digestToggling ? 0.6 : 1,
+                      }}>
+                        {status.subscribedToDigest ? 'Unsubscribe' : 'Resubscribe'}
+                      </button>
+                    </div>
+                    <p style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>
+                      {status.subscribedToDigest
+                        ? "You're getting the weekly top-10 digest at this email."
+                        : "You've unsubscribed from the weekly digest — everything else about your account stays the same."}
+                    </p>
+                  </div>
+
+                  <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16, marginTop: 20 }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 10 }}>
+                      Saved opportunities {saved.length > 0 && `(${saved.length})`}
+                    </div>
+                    {saved.length === 0 ? (
+                      <p style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>
+                        Nothing saved yet. <Link href="/browse" style={{ color: 'var(--pin)' }}>Browse the board →</Link>
+                      </p>
+                    ) : (
+                      <>
+                        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', marginBottom: 10 }}>
+                          {saved.slice(0, 4).map(o => <OpportunityCard key={o.id} opp={o} />)}
+                        </div>
+                        <Link href="/saved" style={{ fontSize: 12.5, color: 'var(--pin)', fontFamily: 'var(--font-mono)', fontWeight: 700, textDecoration: 'none' }}>
+                          See all saved →
+                        </Link>
+                      </>
+                    )}
+                  </div>
+
+                  <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16, marginTop: 20 }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 10 }}>
+                      Your submissions {submissions.length > 0 && `(${submissions.length})`}
+                    </div>
+                    {submissions.length === 0 ? (
+                      <p style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>
+                        Nothing submitted yet. <Link href="/submit" style={{ color: 'var(--pin)' }}>Enlist an opportunity →</Link>
+                      </p>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {submissions.map(s => (
+                          <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12.5 }}>
+                            <span style={{ color: 'var(--ink)' }}>
+                              {s.status === 'live' ? <Link href={`/opportunities/${s.id}`} style={{ color: 'var(--ink)' }}>{s.title}</Link> : s.title}
+                            </span>
+                            <span style={{ color: SUBMISSION_STATUS_LABEL[s.status].color, fontFamily: 'var(--font-mono)', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                              {SUBMISSION_STATUS_LABEL[s.status].label}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16, marginTop: 20 }}>
+                  <p style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.6 }}>
+                    This is a read-only lookup by email. Log out and sign in with a password instead to also see saved opportunities, your submissions, and manage your digest preference here.
+                  </p>
                 </div>
               )}
 

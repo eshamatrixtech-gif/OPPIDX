@@ -250,12 +250,6 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
           </div>
         )}
 
-        <div style={{ marginBottom: 26 }}>
-          <a href="https://www.producthunt.com/products/oppidx?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-oppidx" target="_blank" rel="noopener noreferrer">
-            <img alt="OppIDX - Find your next opportunity. Find your people. | Product Hunt" width={250} height={54} src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1210507&theme=light&t=1785401051186" />
-          </a>
-        </div>
-
         <div className="divider" style={{ marginBottom: 16 }}><span>◆ About OppIDX ◆</span></div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 26 }}>
           <div>
@@ -277,7 +271,7 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
           <Link href="/philosophy" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Our philosophy</Link>
           <Link href="/saved" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Saved</Link>
           <Link href="/submit" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Enlist your opportunity (free)</Link>
-          <Link href="/account" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Manage subscription</Link>
+          <Link href="/account" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Your dashboard</Link>
           <Link href="/widget" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Embed our widget</Link>
           <Link href="/advertise" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Advertise with us</Link>
           <Link href="/terms" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Terms &amp; privacy</Link>

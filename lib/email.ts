@@ -17,15 +17,20 @@ export interface WeeklyDigestEmailData {
   weekRangeLabel: string
   totalOpportunities: number
   newLast7Days: number
-  topPicks: { title: string; org: string | null; id: string }[]
+  topPicks: { title: string; org: string | null; id: string; description: string }[]
 }
 
 function weeklyDigestHtml(digest: WeeklyDigestEmailData, unsubscribeUrl: string): string {
+  // A pick with just a title and no snippet gives a reader nothing to act
+  // on without clicking blind — this is the one line of actual context
+  // that makes "top 10 this week" worth opening instead of just a list of
+  // links. Truncated short: this is a teaser, not the full listing.
   const picksHtml = digest.topPicks.map((p, i) => `
     <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #e0d6c4;">
       <span style="color:#5b5346;font-size:12px;font-weight:bold;">${i + 1}.</span>
       <a href="${SITE_URL}/opportunities/${p.id}" style="color:#c0432a;font-weight:bold;font-size:14px;text-decoration:none;">${p.title}</a>
       ${p.org ? `<div style="color:#5b5346;font-size:12.5px;margin-top:2px;margin-left:16px;">${p.org}</div>` : ''}
+      ${p.description ? `<div style="color:#2b2620;font-size:12.5px;margin-top:5px;margin-left:16px;line-height:1.5;">${p.description.slice(0, 110)}${p.description.length > 110 ? '…' : ''}</div>` : ''}
     </div>`).join('')
 
   return `
@@ -47,18 +52,6 @@ function weeklyDigestHtml(digest: WeeklyDigestEmailData, unsubscribeUrl: string)
         <div style="color:#c0432a;font-size:22px;font-weight:bold;">${digest.newLast7Days}</div>
         <div style="color:#5b5346;font-size:10.5px;text-transform:uppercase;">Added this week</div>
       </div>
-    </div>
-
-    <!-- Launch-week Product Hunt promo — remove this block once the launch
-         push is over, since weeklyDigestHtml fires on every future send and
-         this would otherwise keep announcing a "live today" launch forever. -->
-    <div style="margin-bottom:22px;padding:16px;background:#faf6ee;border:1px solid #c0432a;text-align:center;">
-      <img src="https://ph-files.imgix.net/7f6b2119-bdc3-4ff3-a9d5-4699a2a9903d.png?auto=compress,format&codec=mozjpeg&cs=strip&fit=crop&h=80&w=80" alt="OppIDX" width="48" height="48" style="border-radius:8px;display:block;margin:0 auto 8px;">
-      <div style="color:#2b2620;font-size:14px;font-weight:bold;margin-bottom:4px;">We're live on Product Hunt today</div>
-      <div style="color:#5b5346;font-size:12px;margin-bottom:12px;">If OppIDX has been useful, an upvote helps more students find it.</div>
-      <a href="https://www.producthunt.com/products/oppidx?embed=true&utm_source=embed&utm_medium=post_embed" style="display:inline-block;padding:8px 16px;background:#ff6154;color:#ffffff;text-decoration:none;border-radius:4px;font-size:12.5px;font-weight:bold;">
-        Check it out on Product Hunt →
-      </a>
     </div>
 
     ${picksHtml}

@@ -4,6 +4,7 @@ import { getDigestByDate } from '@/lib/dailyDigest'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { ShareBar } from '@/components/ui/ShareBar'
 import { SITE_URL } from '@/lib/siteUrl'
+import { pageMetadata } from '@/lib/pageMetadata'
 
 function formatDate(date: string) {
   return new Date(`${date}T00:00:00Z`).toLocaleDateString('en-IN', {
@@ -15,10 +16,11 @@ export async function generateMetadata({ params }: { params: Promise<{ date: str
   const { date } = await params
   const digest = await getDigestByDate(date)
   if (!digest) return { title: 'Not found — OppIDX' }
-  return {
+  return pageMetadata({
     title: `Daily digest — ${formatDate(date)} — OppIDX`,
     description: `${digest.totalOpportunities.toLocaleString()} real opportunities on the board, ${digest.newLast24h} added in the last 24 hours. Today's picks, hand-verified.`,
-  }
+    canonical: `${SITE_URL}/newsletter/${date}`,
+  })
 }
 
 function Stat({ value, label }: { value: number; label: string }) {

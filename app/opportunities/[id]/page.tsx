@@ -6,6 +6,7 @@ import { ShareBar } from '@/components/ui/ShareBar'
 import { SaveButton } from '@/components/ui/SaveButton'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { SITE_URL } from '@/lib/siteUrl'
+import { pageMetadata } from '@/lib/pageMetadata'
 import { relatedResourceCategories } from '@/lib/opportunityResourceMap'
 import { fetchUpcomingGatheringsPool, matchGatheringsFromPool } from '@/lib/opportunityGatheringMap'
 import { chasingCohortSize } from '@/lib/chasingCohort'
@@ -91,11 +92,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params
   const opp = await getOpportunity(id)
   if (!opp) return { title: 'Not found — OppIDX' }
-  return {
+  return pageMetadata({
     title: `${opp.title} — OppIDX`,
     description: opp.description.slice(0, 160),
-    alternates: { canonical: `${SITE_URL}/opportunities/${opp.id}` },
-  }
+    canonical: `${SITE_URL}/opportunities/${opp.id}`,
+  })
 }
 
 // Google's JobPosting rich result is for actual employment listings —

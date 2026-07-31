@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { getCompanyList, getCompanyOpportunities } from '@/lib/companies'
 import { SITE_URL } from '@/lib/siteUrl'
+import { pageMetadata } from '@/lib/pageMetadata'
 
 export async function generateStaticParams() {
   const companies = await getCompanyList()
@@ -13,11 +14,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const result = await getCompanyOpportunities(slug)
   if (!result) return { title: 'Not found — OppIDX' }
-  return {
+  return pageMetadata({
     title: `${result.org} Jobs & Internships — OppIDX`,
     description: `${result.total.toLocaleString()} real, verified opportunities at ${result.org} — hand-checked before they go up.`,
-    alternates: { canonical: `${SITE_URL}/companies/${slug}` },
-  }
+    canonical: `${SITE_URL}/companies/${slug}`,
+  })
 }
 
 export default async function CompanyPage({ params }: { params: Promise<{ slug: string }> }) {

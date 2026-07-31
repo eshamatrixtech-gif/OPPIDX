@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import { ShareBar } from '@/components/ui/ShareBar'
 import { SITE_URL } from '@/lib/siteUrl'
+import { pageMetadata } from '@/lib/pageMetadata'
 
 async function getResource(id: string) {
   const item = await prisma.resource.findUnique({ where: { id } })
@@ -26,10 +27,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params
   const item = await getResource(id)
   if (!item) return { title: 'Not found — OppIDX' }
-  return {
+  return pageMetadata({
     title: `${item.title} — OppIDX Resources`,
     description: item.description.slice(0, 160),
-  }
+    canonical: `${SITE_URL}/resources/${item.id}`,
+  })
 }
 
 export default async function ResourcePage({ params }: { params: Promise<{ id: string }> }) {

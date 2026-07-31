@@ -5,9 +5,15 @@ import Link from "next/link";
 
 const CATEGORIES = ["Party", "Meetup", "Workshop", "Talk", "Gathering", "Sport", "Other"];
 
+// <input type="datetime-local"> interprets its value/min as local wall-clock
+// time, not UTC — subtracting the timezone offset before slicing (same fix
+// already applied in .../[slug]/manage/page.tsx's toDatetimeLocal()) is
+// required so the enforced minimum actually matches "one hour from now" in
+// the host's own timezone, not UTC.
 function minDateTime() {
   const d = new Date(Date.now() + 60 * 60_000);
   d.setSeconds(0, 0);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   return d.toISOString().slice(0, 16);
 }
 

@@ -14,6 +14,7 @@ function isPlausibleEmail(s: string): boolean {
 async function shape(subscriber: {
   id: string; plan: string; subscriptionStatus: string | null; currentPeriodEnd: Date | null; email: string
   institutionEmail?: string | null; institutionVerified?: boolean; referralCode?: string | null
+  unsubscribedFromDigest?: boolean
 }) {
   let referralCode = subscriber.referralCode ?? null
   let referralCount = 0
@@ -48,6 +49,7 @@ async function shape(subscriber: {
     institutionVerified: subscriber.institutionVerified ?? false,
     referralCode,
     referralCount,
+    subscribedToDigest: !(subscriber.unsubscribedFromDigest ?? false),
   }
 }
 

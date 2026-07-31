@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { ShareBar } from "@/components/ui/ShareBar";
 import { SITE_URL } from "@/lib/siteUrl";
+import { pageMetadata } from "@/lib/pageMetadata";
 import { DigestBody } from "./DigestBody";
 import type { DigestItem } from "@/lib/policyDigest/generate";
 
@@ -22,10 +23,11 @@ export async function generateMetadata({ params }: { params: Promise<{ period: s
   const { period } = await params;
   const digest = await getDigest(period);
   if (!digest) return { title: "Not found — Mayatara Pulse" };
-  return {
+  return pageMetadata({
     title: `Policy digest — ${periodLabel(period, digest.periodType)} — Mayatara Pulse`,
     description: digest.summary,
-  };
+    canonical: `${SITE_URL}/mayatara/pulse/digest/${period}`,
+  });
 }
 
 export default async function DigestPage({ params }: { params: Promise<{ period: string }> }) {

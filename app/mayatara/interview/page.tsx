@@ -70,6 +70,18 @@ interface Answer { question: string; answer: string }
 
 interface PendingSignup { userId: string; contact: string; contactType: string; prefs: Record<string, string> }
 
+const CONTACT_TYPES = [
+  { value: "phone", label: "Phone number" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "instagram", label: "Instagram handle" },
+  { value: "telegram", label: "Telegram username" },
+  { value: "snapchat", label: "Snapchat username" },
+  { value: "twitter", label: "X / Twitter handle" },
+  { value: "linkedin", label: "LinkedIn profile URL" },
+  { value: "email", label: "Email address" },
+  { value: "letterpost", label: "Letter post (address) 📮" },
+];
+
 function InterviewInner() {
   const params = useSearchParams();
   const initialType = params.get("type") || "";
@@ -100,6 +112,26 @@ function InterviewInner() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // A logged-in user with no `pending` sessionStorage payload (new tab,
+  // returned via the dashboard's "finish your interview" link after the
+  // original registration tab is long gone, sessionStorage cleared, etc.)
+  // used to land on a dead end here — told "you're not registered" and sent
+  // back to /register, even though they already have an account. This
+  // checks the real auth session so that case can recover instead: if
+  // they're genuinely logged in, ask for the one missing piece (contact
+  // info) again rather than discarding a completed interview.
+  const [hasAuthSession, setHasAuthSession] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (pending) { setHasAuthSession(true); return; }
+    import("@/lib/mayatara/supabase").then(({ supabase }) =>
+      supabase.auth.getSession().then(({ data: { session } }) => setHasAuthSession(!!session))
+    );
+  }, [pending]);
+
+  const [recoveryContact, setRecoveryContact] = useState("");
+  const [recoveryContactType, setRecoveryContactType] = useState("whatsapp");
+  const [recoverySaved, setRecoverySaved] = useState(false);
+
   const questions = QUESTIONS[relationshipType] || QUESTIONS["Still Figuring Out"];
   const steps = TYPE_STEPS[relationshipType] || TYPE_STEPS["Still Figuring Out"];
   const step = done ? 4 : stepForIndex(questions.length, questionIndex);
@@ -118,6 +150,35 @@ function InterviewInner() {
     setStarted(true);
   }
 
+  async function saveProfile(finalAnswers: Answer[], contact: string, contactType: string, prefs: Record<string, string>) {
+    setSaving(true);
+    setSaveFailed(false);
+    const profileJson: Record<string, string> = {};
+    finalAnswers.forEach((a, i) => { profileJson[`q${i + 1}`] = a.answer; });
+    Object.assign(profileJson, prefs || {});
+    try {
+      const { supabase } = await import("@/lib/mayatara/supabase");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("no-session");
+      const res = await fetch("/api/mayatara/profile/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ lookingFor: relationshipType, profileJson, contact, contactType }),
+      });
+      if (!res.ok) throw new Error("save-failed");
+      try { sessionStorage.removeItem("mayatara_pending_signup"); } catch { /* ignore */ }
+      return true;
+    } catch {
+      setSaveFailed(true);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function send() {
     const text = input.trim();
     if (!text) return;
@@ -126,38 +187,19 @@ function InterviewInner() {
     setInput("");
     if (questionIndex + 1 >= questions.length) {
       if (pending?.contact) {
-        setSaving(true);
-        setSaveFailed(false);
-        const profileJson: Record<string, string> = {};
-        newAnswers.forEach((a, i) => { profileJson[`q${i + 1}`] = a.answer; });
-        Object.assign(profileJson, pending.prefs || {});
-        try {
-          const { supabase } = await import("@/lib/mayatara/supabase");
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session) throw new Error("no-session");
-          const res = await fetch("/api/mayatara/profile/save", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({
-              lookingFor: relationshipType, profileJson,
-              contact: pending.contact, contactType: pending.contactType,
-            }),
-          });
-          if (!res.ok) throw new Error("save-failed");
-          try { sessionStorage.removeItem("mayatara_pending_signup"); } catch { /* ignore */ }
-        } catch {
-          setSaveFailed(true);
-        } finally {
-          setSaving(false);
-        }
+        await saveProfile(newAnswers, pending.contact, pending.contactType, pending.prefs || {});
       }
       setDone(true);
     } else {
       setQuestionIndex(questionIndex + 1);
     }
+  }
+
+  async function submitRecovery(e: React.FormEvent) {
+    e.preventDefault();
+    if (!recoveryContact.trim()) return;
+    const ok = await saveProfile(answers, recoveryContact.trim(), recoveryContactType, {});
+    if (ok) setRecoverySaved(true);
   }
 
   function handleKey(e: React.KeyboardEvent) {
@@ -272,7 +314,7 @@ function InterviewInner() {
             </div>
           )}
 
-          {done && pending && !saveFailed && (
+          {done && (pending || recoverySaved) && !saveFailed && (
             <div className="card p-8 text-center" style={{ borderColor: "var(--saffron)", boxShadow: "5px 5px 0 var(--saffron)" }}>
               <div className="text-4xl mb-4" style={{ color: "var(--saffron)" }}>◆</div>
               <h3 className="font-typewriter text-xl mb-3" style={{ color: "var(--saffron)" }}>YOU&apos;RE IN THE POOL.</h3>
@@ -305,7 +347,7 @@ function InterviewInner() {
             </div>
           )}
 
-          {done && pending && saveFailed && (
+          {done && saveFailed && (
             <div className="card p-8 text-center" style={{ borderColor: "var(--maroon)", boxShadow: "5px 5px 0 var(--maroon)" }}>
               <div className="text-4xl mb-4" style={{ color: "var(--maroon)" }}>◆</div>
               <h3 className="font-typewriter text-xl mb-3" style={{ color: "var(--maroon)" }}>YOUR ANSWERS WEREN&apos;T SAVED.</h3>
@@ -319,7 +361,35 @@ function InterviewInner() {
             </div>
           )}
 
-          {done && !pending && (
+          {/* Logged in (real session, not just a completed sessionStorage
+              handoff) but the pending contact info from registration is
+              gone — ask for it again instead of discarding a finished
+              interview and wrongly telling an existing user to re-register. */}
+          {done && !pending && !saveFailed && !recoverySaved && hasAuthSession === true && (
+            <div className="card p-8" style={{ borderColor: "var(--saffron)", boxShadow: "5px 5px 0 var(--saffron)" }}>
+              <div className="text-4xl mb-4 text-center" style={{ color: "var(--saffron)" }}>◆</div>
+              <h3 className="font-typewriter text-xl mb-3 text-center" style={{ color: "var(--saffron)" }}>ONE LAST THING.</h3>
+              <p className="text-sm leading-relaxed mb-6 text-center" style={{ color: "var(--ink)" }}>
+                Your answers are ready, but we lost the contact info from when you registered
+                (a new tab, a cleared session — it happens). How should a match reach you?
+              </p>
+              <form onSubmit={submitRecovery} className="flex flex-col gap-3">
+                <select className="select-maytara" value={recoveryContactType}
+                  onChange={(e) => setRecoveryContactType(e.target.value)}>
+                  {CONTACT_TYPES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+                <input className="input-maytara" required value={recoveryContact}
+                  onChange={(e) => setRecoveryContact(e.target.value)}
+                  placeholder="Your contact info" />
+                <button type="submit" disabled={saving || !recoveryContact.trim()} className="btn-primary py-3"
+                  style={{ opacity: saving || !recoveryContact.trim() ? 0.5 : 1 }}>
+                  {saving ? "Saving…" : "◆  Join the Pool"}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {done && !pending && hasAuthSession === false && (
             <div className="card p-8 text-center" style={{ borderColor: "var(--saffron)", boxShadow: "5px 5px 0 var(--saffron)" }}>
               <div className="text-4xl mb-4" style={{ color: "var(--saffron)" }}>◆</div>
               <h3 className="font-typewriter text-xl mb-3" style={{ color: "var(--saffron)" }}>THAT&apos;S THE INTERVIEW.</h3>
@@ -336,6 +406,12 @@ function InterviewInner() {
                   ✦ Or check compatibility with someone you know
                 </Link>
               </div>
+            </div>
+          )}
+
+          {done && !pending && hasAuthSession === null && (
+            <div className="card p-8 text-center" style={{ borderColor: "var(--border)" }}>
+              <div className="text-2xl animate-pulse" style={{ color: "var(--saffron)" }}>◆</div>
             </div>
           )}
 

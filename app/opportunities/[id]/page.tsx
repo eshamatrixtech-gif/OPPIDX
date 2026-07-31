@@ -16,6 +16,7 @@ import { VideoEmbed } from '@/components/ui/VideoEmbed'
 import { GeneratedBanner } from '@/components/ui/GeneratedBanner'
 import { EcosystemActions } from '@/components/ui/EcosystemActions'
 import { FEED_URL as JOBICY_SOURCE_URL } from '@/lib/scraper/sources/jobicy'
+import { SOURCE_URL as ADZUNA_SOURCE_URL } from '@/lib/scraper/sources/adzuna'
 import type { Opportunity } from '@/types'
 
 const AUDIENCE_LABEL: Record<string, string> = {
@@ -346,6 +347,14 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
           {opp.sourceUrl === JOBICY_SOURCE_URL && (
             <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginBottom: 16 }}>
               Found via <a href="https://jobicy.com/remote-jobs" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-3)' }}>Jobicy</a>
+            </div>
+          )}
+
+          {/* Same on-page credit convention as Jobicy above — keyed off the
+              exact sourceUrl lib/scraper/sources/adzuna.ts stores. */}
+          {opp.sourceUrl === ADZUNA_SOURCE_URL && (
+            <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginBottom: 16 }}>
+              Found via <a href="https://www.adzuna.com/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-3)' }}>Adzuna</a>
             </div>
           )}
 

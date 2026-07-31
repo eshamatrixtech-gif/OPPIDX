@@ -87,7 +87,14 @@ export const COLLECTION_DEFS: CollectionDef[] = [
     pageTitle: 'AI & Machine Learning Jobs, Internships & Fellowships — OppIDX',
     description: 'Real AI and machine learning roles, internships, and research positions — verified, not scraped junk.',
     group: 'Topic',
-    match: tagIncludes('machine learning', 'artificial intelligence', ' ai ', 'ai &', 'ai/', 'ai-'),
+    // "ai" needs a word-boundary check, not tagIncludes' plain substring match —
+    // tags are comma-joined with no padding ("internship,ai,paid"), so a bare
+    // substring test for " ai " (or "ai-"/"ai/") never matches a real row; \b
+    // still matches at the comma boundaries since "," is a non-word character.
+    match: opp => {
+      const tags = opp.tags.toLowerCase()
+      return tags.includes('machine learning') || tags.includes('artificial intelligence') || /\bai\b/.test(tags)
+    },
   },
   {
     slug: 'data-science',

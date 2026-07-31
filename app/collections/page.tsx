@@ -1,14 +1,19 @@
 import Link from 'next/link'
-import { COLLECTION_DEFS } from '@/lib/collectionDefs'
+import { getAllCollectionDefs } from '@/lib/collections'
 
 export const metadata = {
   title: 'Browse by Audience & Topic — OppIDX',
-  description: 'Every real, verified opportunity on OppIDX, organized by audience, topic, and location.',
+  description: 'Every real, verified opportunity on OppIDX, organized by audience, topic, location, and compensation.',
 }
 
-const GROUPS = ['Audience', 'Topic', 'Location'] as const
+export const revalidate = 3600
 
-export default function CollectionsIndexPage() {
+const GROUPS = ['Audience', 'Topic', 'Location', 'Compensation'] as const
+
+export default async function CollectionsIndexPage() {
+  const defs = await getAllCollectionDefs()
+  const combos = defs.filter(c => c.group === 'Combo')
+
   return (
     <div style={{ minHeight: '100vh' }}>
       <header style={{ padding: '40px 24px 24px', borderBottom: '1px solid var(--line)' }}>
@@ -20,22 +25,22 @@ export default function CollectionsIndexPage() {
             Browse the board
           </h1>
           <p style={{ fontSize: 14, color: 'var(--ink-2)', marginTop: 10, maxWidth: 640, lineHeight: 1.65 }}>
-            Every real, verified opportunity — organized by who it's for, what it is, and where it is.
+            Every real, verified opportunity — organized by who it's for, what it is, where it is, and how it pays.
           </p>
         </div>
       </header>
 
       <main style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px 80px' }}>
         {GROUPS.map(group => {
-          const defs = COLLECTION_DEFS.filter(c => c.group === group)
-          if (defs.length === 0) return null
+          const groupDefs = defs.filter(c => c.group === group)
+          if (groupDefs.length === 0) return null
           return (
             <div key={group} style={{ marginBottom: 34 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 12 }}>
                 By {group.toLowerCase()}
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                {defs.map(c => (
+                {groupDefs.map(c => (
                   <Link key={c.slug} href={`/collections/${c.slug}`} className="card-box" style={{
                     padding: '10px 16px', textDecoration: 'none', color: 'var(--ink)',
                     fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700,
@@ -47,6 +52,27 @@ export default function CollectionsIndexPage() {
             </div>
           )
         })}
+
+        {combos.length > 0 && (
+          <div style={{ marginBottom: 34 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 4 }}>
+              Combinations
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 12 }}>
+              {combos.length} more, generated from the categories above — each one only exists here because it has real, verified listings behind it.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {combos.map(c => (
+                <Link key={c.slug} href={`/collections/${c.slug}`} style={{
+                  padding: '6px 12px', borderRadius: 980, border: '1px solid var(--line)',
+                  textDecoration: 'none', color: 'var(--ink-2)', fontFamily: 'var(--font-mono)', fontSize: 12,
+                }}>
+                  {c.title}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div style={{ marginTop: 20 }}>
           <Link href="/companies" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none' }}>

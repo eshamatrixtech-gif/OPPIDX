@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 import { prisma } from '@/lib/db'
 import { SITE_URL } from '@/lib/siteUrl'
 import { PAYWALL_ENABLED } from '@/lib/limits'
-import { COLLECTION_DEFS } from '@/lib/collectionDefs'
+import { getAllCollectionDefs } from '@/lib/collections'
 import { getCompanyList } from '@/lib/companies'
 
 // Without this, sitemap.ts has no request-time API and no dynamic config,
@@ -30,7 +30,7 @@ const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitema
 ]
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [opportunities, resources, newsletters, pulseDigests, companies] = await Promise.all([
+  const [opportunities, resources, newsletters, pulseDigests, companies, collections] = await Promise.all([
     prisma.opportunity.findMany({
       where: { verified: true, deletedAt: null },
       select: { id: true, addedAt: true },
@@ -44,6 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     prisma.dailyDigest.findMany({ select: { date: true, createdAt: true } }),
     prisma.policyDigest.findMany({ select: { period: true, createdAt: true } }),
     getCompanyList(),
+    getAllCollectionDefs(),
   ])
 
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map(r => ({
@@ -81,11 +82,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }))
 
-  const collectionEntries: MetadataRoute.Sitemap = COLLECTION_DEFS.map(c => ({
+  const collectionEntries: MetadataRoute.Sitemap = collections.map(c => ({
     url: `${SITE_URL}/collections/${c.slug}`,
     lastModified: new Date(),
     changeFrequency: 'hourly',
-    priority: 0.85,
+    priority: c.group === 'Combo' ? 0.6 : 0.85,
   }))
 
   const companyEntries: MetadataRoute.Sitemap = companies.map(c => ({

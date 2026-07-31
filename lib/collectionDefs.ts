@@ -18,10 +18,20 @@ export interface CollectionDef {
   title: string          // H1 on the page
   pageTitle: string       // <title> tag
   description: string     // meta description + subhead copy
-  group: 'Audience' | 'Topic' | 'Location'
+  group: 'Audience' | 'Topic' | 'Location' | 'Compensation' | 'Combo'
   // Plain strings, not the app's narrowed Audience/Difficulty unions — this
   // runs against raw Prisma rows before they're cast to the shared type.
-  match: (opp: { audience: string; tags: string; difficulty: string; location: string | null; region: string }) => boolean
+  match: (opp: MatchInput) => boolean
+}
+
+export interface MatchInput {
+  audience: string
+  tags: string
+  difficulty: string
+  location: string | null
+  region: string
+  country: string
+  compType: string | null
 }
 
 const tagIncludes = (...keywords: string[]) => (opp: { tags: string }) => {
@@ -194,7 +204,9 @@ export const COLLECTION_DEFS: CollectionDef[] = [
     match: opp => opp.difficulty === 'Easy' || tagIncludes('beginner friendly')(opp),
   },
 
-  // ── By location ──
+  // ── By location — remote plus every country with real, non-thin depth
+  // (checked against the live DB: US 852, India 287, Canada 51, UK 36,
+  // Germany 18, Switzerland 15 — the next country down drops to 7) ──
   {
     slug: 'remote',
     title: 'Remote opportunities',
@@ -202,6 +214,80 @@ export const COLLECTION_DEFS: CollectionDef[] = [
     description: 'Real remote roles and internships — work from anywhere, verified before they go up.',
     group: 'Location',
     match: opp => /\bremote\b/i.test(opp.location ?? '') || /\bremote\b/i.test(opp.region ?? ''),
+  },
+  {
+    slug: 'united-states',
+    title: 'Opportunities in the United States',
+    pageTitle: 'Jobs & Internships in the United States — OppIDX',
+    description: 'Real opportunities based in the United States — verified, not scraped junk.',
+    group: 'Location',
+    match: opp => opp.country === 'United States',
+  },
+  {
+    slug: 'india',
+    title: 'Opportunities in India',
+    pageTitle: 'Jobs & Internships in India — OppIDX',
+    description: 'Real opportunities based in India — verified, not scraped junk.',
+    group: 'Location',
+    match: opp => opp.country === 'India',
+  },
+  {
+    slug: 'canada',
+    title: 'Opportunities in Canada',
+    pageTitle: 'Jobs & Internships in Canada — OppIDX',
+    description: 'Real opportunities based in Canada — verified, not scraped junk.',
+    group: 'Location',
+    match: opp => opp.country === 'Canada',
+  },
+  {
+    slug: 'united-kingdom',
+    title: 'Opportunities in the United Kingdom',
+    pageTitle: 'Jobs & Internships in the United Kingdom — OppIDX',
+    description: 'Real opportunities based in the United Kingdom — verified, not scraped junk.',
+    group: 'Location',
+    match: opp => opp.country === 'United Kingdom',
+  },
+  {
+    slug: 'germany',
+    title: 'Opportunities in Germany',
+    pageTitle: 'Jobs & Internships in Germany — OppIDX',
+    description: 'Real opportunities based in Germany — verified, not scraped junk.',
+    group: 'Location',
+    match: opp => opp.country === 'Germany',
+  },
+  {
+    slug: 'switzerland',
+    title: 'Opportunities in Switzerland',
+    pageTitle: 'Jobs & Internships in Switzerland — OppIDX',
+    description: 'Real opportunities based in Switzerland — verified, not scraped junk.',
+    group: 'Location',
+    match: opp => opp.country === 'Switzerland',
+  },
+
+  // ── By compensation (real compType field: Paid 497, Stipend 91, Equity 51) ──
+  {
+    slug: 'paid',
+    title: 'Paid opportunities',
+    pageTitle: 'Paid Jobs & Internships — OppIDX',
+    description: 'Real, paid opportunities — verified before they go up, no unpaid bait.',
+    group: 'Compensation',
+    match: opp => opp.compType === 'Paid',
+  },
+  {
+    slug: 'stipend',
+    title: 'Stipend opportunities',
+    pageTitle: 'Stipend Jobs & Internships — OppIDX',
+    description: 'Real opportunities that pay a stipend — verified before they go up.',
+    group: 'Compensation',
+    match: opp => opp.compType === 'Stipend',
+  },
+  {
+    slug: 'equity',
+    title: 'Equity opportunities',
+    pageTitle: 'Equity-Based Opportunities — OppIDX',
+    description: 'Real startup and founder-track opportunities offering equity.',
+    group: 'Compensation',
+    match: opp => opp.compType === 'Equity',
   },
 ]
 

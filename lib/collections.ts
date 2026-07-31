@@ -1,8 +1,23 @@
 import { prisma } from '@/lib/db'
 import { getCurrentPaidSubscriber } from '@/lib/subscriberSession'
 import { FREE_SEARCH_LIMIT, PAYWALL_ENABLED } from '@/lib/limits'
-import type { CollectionDef } from '@/lib/collectionDefs'
+import { COLLECTION_DEFS, getCollectionDef, type CollectionDef } from '@/lib/collectionDefs'
+import { getGeneratedCombos } from '@/lib/collectionCombos'
 import type { Opportunity } from '@/types'
+
+/** Single-dimension defs plus every generated combo that cleared the real
+ * listing-count threshold — the full, current set of collection pages. */
+export async function getAllCollectionDefs(): Promise<CollectionDef[]> {
+  const combos = await getGeneratedCombos()
+  return [...COLLECTION_DEFS, ...combos]
+}
+
+/** Looks up a slug across both the static defs and the generated combos —
+ * a combo slug (e.g. "remote-ai-and-machine-learning") only exists here,
+ * not in the static list, so the plain getCollectionDef() lookup misses it. */
+export async function resolveCollectionDef(slug: string): Promise<CollectionDef | undefined> {
+  return getCollectionDef(slug) ?? (await getGeneratedCombos()).find(c => c.slug === slug)
+}
 
 /**
  * Shared fetch for /collections/[slug] pages — same free-tier cap as

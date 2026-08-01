@@ -23,7 +23,18 @@ interface OppRef {
   audience: string
 }
 
-function IconButton({ icon, label, onClick }: { icon: string; label: string; onClick: () => void }) {
+// A `title` attribute (native hover tooltip) is invisible on touch devices,
+// which is most of this traffic — a bare icon row asks a first-time mobile
+// visitor to tap blind to find out what each one does. A tiny caption under
+// each icon costs a little height but makes every action self-explanatory
+// with no interaction required, on any device.
+const iconCaptionStyle: React.CSSProperties = {
+  display: 'block', fontSize: 8.5, fontFamily: 'var(--font-mono)', fontWeight: 700,
+  letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--ink-3)', marginTop: 2,
+  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+}
+
+function IconButton({ icon, caption, label, onClick }: { icon: string; caption: string; label: string; onClick: () => void }) {
   return (
     <button
       type="button"
@@ -31,25 +42,26 @@ function IconButton({ icon, label, onClick }: { icon: string; label: string; onC
       aria-label={label}
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClick() }}
       style={{
-        flex: 1, padding: '7px 4px', border: 'none', background: 'none', cursor: 'pointer',
-        fontSize: 15, borderRadius: 2, lineHeight: 1,
+        flex: 1, padding: '7px 2px 6px', border: 'none', background: 'none', cursor: 'pointer',
+        fontSize: 15, borderRadius: 2, lineHeight: 1, textAlign: 'center',
       }}
       onMouseEnter={e => (e.currentTarget.style.background = 'rgba(43,38,32,0.06)')}
       onMouseLeave={e => (e.currentTarget.style.background = 'none')}
     >
       {icon}
+      <span style={iconCaptionStyle}>{caption}</span>
     </button>
   )
 }
 
-function IconLink({ icon, label, href }: { icon: string; label: string; href: string }) {
+function IconLink({ icon, caption, label, href }: { icon: string; caption: string; label: string; href: string }) {
   return (
     <Link
       href={href}
       title={label}
       aria-label={label}
       style={{
-        flex: 1, padding: '7px 4px', border: 'none', background: 'none', cursor: 'pointer',
+        flex: 1, padding: '7px 2px 6px', border: 'none', background: 'none', cursor: 'pointer',
         fontSize: 15, borderRadius: 2, lineHeight: 1, textAlign: 'center', textDecoration: 'none',
         display: 'block',
       }}
@@ -57,6 +69,7 @@ function IconLink({ icon, label, href }: { icon: string; label: string; href: st
       onMouseLeave={e => (e.currentTarget.style.background = 'none')}
     >
       {icon}
+      <span style={iconCaptionStyle}>{caption}</span>
     </Link>
   )
 }
@@ -119,11 +132,11 @@ export function EcosystemActions({ opp, variant = 'compact', hasResources = fals
     <>
       {variant === 'compact' ? (
         <div style={{ display: 'flex', borderTop: '1px solid var(--line)' }}>
-          <IconButton icon="🫂" label="Find your person" onClick={() => setOpen('match')} />
-          <IconButton icon="📍" label="Host a gathering" onClick={() => setOpen('event')} />
-          <IconButton icon="📚" label="Add a guide" onClick={() => setOpen('resource')} />
-          <IconButton icon="📰" label="Policy reads" onClick={() => setOpen('policy')} />
-          <IconLink icon="✦" label="Check compatibility" href="/match/compatibility" />
+          <IconButton icon="🫂" caption="Match" label="Find your person" onClick={() => setOpen('match')} />
+          <IconButton icon="📍" caption="Event" label="Host a gathering" onClick={() => setOpen('event')} />
+          <IconButton icon="📚" caption="Guide" label="Add a guide" onClick={() => setOpen('resource')} />
+          <IconButton icon="📰" caption="Policy" label="Policy reads" onClick={() => setOpen('policy')} />
+          <IconLink icon="✦" caption="Fit check" label="Check compatibility" href="/match/compatibility" />
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>

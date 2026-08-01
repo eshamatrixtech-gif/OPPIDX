@@ -33,7 +33,10 @@ async function fetchCountry(country: string, appId: string, appKey: string): Pro
   if (!res.ok) throw new Error(`Adzuna (${country}) responded ${res.status}`)
 
   const data = (await res.json()) as { results?: AdzunaJob[] }
-  const jobs = data.results ?? []
+  // `??` only catches null/undefined, not "present but not an array" — see
+  // lib/scraper/sources/arbeitnow.ts for the exact bug class this guards
+  // against; `.filter()` below would throw and take down this whole source.
+  const jobs = Array.isArray(data.results) ? data.results : []
 
   return jobs
     .filter(j => j.id && j.title && j.redirect_url)

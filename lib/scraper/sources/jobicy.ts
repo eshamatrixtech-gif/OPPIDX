@@ -23,6 +23,15 @@ interface JobicyJob {
   jobIndustry?: string[]
 }
 
+// `??` only catches null/undefined — an external, unversioned API can send
+// a field typed as an array in our own interface but shaped as something
+// else at runtime (this exact class of bug took down the Arbeitnow source:
+// see lib/scraper/sources/arbeitnow.ts). Coercing by actual type, not
+// nullishness, keeps one malformed listing from aborting the whole pass.
+function tagArray(tags: unknown): string[] {
+  return Array.isArray(tags) ? tags : []
+}
+
 export async function fetchJobicy(): Promise<RawListing[]> {
   const res = await fetch(FEED_URL, {
     headers: { 'User-Agent': 'Mozilla/5.0 (compatible; OppIDXScraper/1.0)' },
@@ -42,7 +51,7 @@ export async function fetchJobicy(): Promise<RawListing[]> {
       rawDescription: stripHtml(j.jobDescription || j.jobExcerpt || ''),
       location: j.jobGeo === 'Anywhere' ? 'Remote' : (j.jobGeo || 'Remote'),
       audienceHint: 'EARLY_CAREER',
-      tags: (j.jobIndustry ?? []).slice(0, 5).join(','),
+      tags: tagArray(j.jobIndustry).slice(0, 5).join(','),
       sourceLabel: 'Jobicy',
       sourceUrl: FEED_URL,
     }))

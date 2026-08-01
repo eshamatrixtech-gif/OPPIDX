@@ -19,7 +19,10 @@ export async function fetchGrantsGov(): Promise<RawListing[]> {
   if (!res.ok) throw new Error(`Grants.gov responded ${res.status}`)
 
   const data = await res.json()
-  const hits = (data?.data?.oppHits ?? []) as GrantHit[]
+  // `??` only catches null/undefined, not "present but not an array" — see
+  // lib/scraper/sources/arbeitnow.ts for the exact bug class this guards
+  // against; `.filter()` below would throw and take down this whole source.
+  const hits = (Array.isArray(data?.data?.oppHits) ? data.data.oppHits : []) as GrantHit[]
 
   return hits
     .filter(g => g.id && g.title)

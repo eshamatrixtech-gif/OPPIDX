@@ -33,7 +33,10 @@ export async function fetchUsaJobs(): Promise<RawListing[]> {
   if (!res.ok) throw new Error(`USAJobs responded ${res.status}`)
 
   const data = (await res.json()) as { SearchResult?: { SearchResultItems?: UsaJobsPosition[] } }
-  const items = data.SearchResult?.SearchResultItems ?? []
+  // `??` only catches null/undefined, not "present but not an array" — see
+  // lib/scraper/sources/arbeitnow.ts for the exact bug class this guards
+  // against; `.map()` below would throw and take down this whole source.
+  const items = Array.isArray(data.SearchResult?.SearchResultItems) ? data.SearchResult.SearchResultItems : []
 
   return items
     .map(i => i.MatchedObjectDescriptor)

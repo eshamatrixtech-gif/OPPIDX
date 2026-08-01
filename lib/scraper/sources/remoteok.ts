@@ -14,6 +14,15 @@ interface RemoteOkJob {
   tags?: string[]
 }
 
+// `??` only catches null/undefined — an external, unversioned API can send
+// a field typed as an array in our own interface but shaped as something
+// else at runtime (this exact class of bug took down the Arbeitnow source:
+// see lib/scraper/sources/arbeitnow.ts). Coercing by actual type, not
+// nullishness, keeps one malformed listing from aborting the whole pass.
+function tagArray(tags: unknown): string[] {
+  return Array.isArray(tags) ? tags : []
+}
+
 export async function fetchRemoteOK(): Promise<RawListing[]> {
   const res = await fetch(FEED_URL, {
     headers: { 'User-Agent': 'Mozilla/5.0 (compatible; OppIDXScraper/1.0)' },
@@ -25,7 +34,7 @@ export async function fetchRemoteOK(): Promise<RawListing[]> {
   const jobs = Array.isArray(rows) ? rows.slice(1) : []
 
   return jobs
-    .filter(j => j.id && j.position && ENTRY_LEVEL.test(`${j.position} ${(j.tags ?? []).join(' ')}`))
+    .filter(j => j.id && j.position && ENTRY_LEVEL.test(`${j.position} ${tagArray(j.tags).join(' ')}`))
     .slice(0, 15)
     .map((j): RawListing => ({
       title: j.position!,
@@ -34,7 +43,7 @@ export async function fetchRemoteOK(): Promise<RawListing[]> {
       rawDescription: stripHtml(j.description ?? ''),
       location: 'Remote',
       audienceHint: 'EARLY_CAREER',
-      tags: (j.tags ?? []).slice(0, 5).join(','),
+      tags: tagArray(j.tags).slice(0, 5).join(','),
       sourceLabel: 'RemoteOK',
       sourceUrl: FEED_URL,
     }))

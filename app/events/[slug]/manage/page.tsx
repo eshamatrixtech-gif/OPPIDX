@@ -176,7 +176,7 @@ function ManageInner() {
                 {waitlisted.length > 0 ? ` · ${waitlisted.length} waitlisted` : ""}
               </p>
               <p className="text-xs mt-1" style={{ color: "var(--ink-muted)" }}>
-                {event.is_listed ? "◈ Public — listed on /events for anyone to discover" : "◈ Unlisted — findable by direct link only"}
+                {event.is_listed ? "◈ Public — listed on Resources for anyone to discover" : "◈ Unlisted — findable by direct link only"}
               </p>
               {!event.is_cancelled && (
                 <div className="flex gap-3 mt-4">
@@ -281,7 +281,7 @@ function ManageInner() {
               <label className="flex items-start gap-2 text-xs" style={{ color: "var(--ink-muted)" }}>
                 <input type="checkbox" checked={editForm.isListed} className="mt-0.5"
                   onChange={e => setEditForm(f => f && { ...f, isListed: e.target.checked })} />
-                <span>List this event publicly on /events so anyone can discover it.</span>
+                <span>List this event publicly on Resources so anyone can discover it.</span>
               </label>
               {editError && (
                 <div className="p-3 text-sm font-typewriter" style={{ background: "#FFF0F0", border: "2px solid var(--maroon)", color: "var(--maroon)" }}>

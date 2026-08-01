@@ -7,7 +7,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   async redirects() {
     return [
-      { source: "/mayatara/events", destination: "/events", permanent: true },
+      { source: "/mayatara/events", destination: "/resources", permanent: true },
       { source: "/mayatara/events/new", destination: "/events/new", permanent: true },
       { source: "/mayatara/events/:slug/manage", destination: "/events/:slug/manage", permanent: true },
       { source: "/mayatara/events/:slug", destination: "/events/:slug", permanent: true },
@@ -44,6 +44,12 @@ const nextConfig: NextConfig = {
       // pages (see EcosystemActions). Not `permanent` — this is a product
       // decision, not a URL rename, and easier to reverse if it changes.
       { source: "/match", destination: "/", permanent: false },
+
+      // Same reasoning for Events: no standalone browse page (often just an
+      // empty calendar) — gatherings now live inside /resources. Individual
+      // event pages (/events/[slug], /events/new, /events/[slug]/manage)
+      // are unaffected, only the bare index redirects.
+      { source: "/events", destination: "/resources", permanent: false },
     ];
   },
 };

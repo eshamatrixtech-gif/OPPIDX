@@ -140,10 +140,12 @@ function SubscribeForm() {
 // chasingCohort's "N others chasing this"); the only front-end surface is
 // the "Find your person" action already embedded on every opportunity card
 // (see EcosystemActions), not a place anyone navigates to separately.
+// Events isn't listed separately either — gatherings live inside
+// /resources now (see its "Gatherings" section) rather than a standalone
+// browse page that's often just an empty calendar.
 const SIDEBAR_LINKS = [
-  { href: '/resources', icon: '❖', label: 'Resources', desc: 'Prep guides, tools and communities.' },
+  { href: '/resources', icon: '❖', label: 'Resources', desc: 'Prep guides, tools, communities and gatherings.' },
   { href: '/pulse', icon: '◈', label: 'Pulse', desc: 'A daily, apolitical read on the country.' },
-  { href: '/events', icon: '📍', label: 'Events', desc: 'Real, upcoming gatherings.' },
 ]
 
 /** Everything that isn't the feed itself — cross-product nav, newsletter,
@@ -231,7 +233,7 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
 
         <div className="divider" style={{ marginBottom: 16 }}><span>◆ Newsletter ◆</span></div>
         <p style={{ color: 'var(--ink-2)', fontSize: 13, marginBottom: 12, lineHeight: 1.6 }}>
-          A welcome note now, then the week&apos;s top 10 — ranked by genuine interest, not sponsorship — every Monday.
+          Weekly newsletter. Best opportunities. Best communities.
         </p>
         <div style={{ marginBottom: 10 }}><SubscribeForm /></div>
         <p style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginBottom: 26 }}>
@@ -273,13 +275,22 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
         </div>
 
         <div className="divider" style={{ marginBottom: 16 }}><span>◆ More ◆</span></div>
+        <Link href="/advertise" onClick={onClose} className="card-box" style={{
+          display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px',
+          textDecoration: 'none', marginBottom: 14, borderColor: 'var(--terracotta)',
+        }}>
+          <span style={{ fontSize: 16, color: 'var(--terracotta)' }}>◆</span>
+          <span>
+            <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, color: 'var(--ink)', textTransform: 'uppercase' }}>Advertise with us</span>
+            <span style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-2)', lineHeight: 1.4 }}>Reach students, early-career talent, and founders actively looking.</span>
+          </span>
+        </Link>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 12.5 }}>
           <Link href="/philosophy" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Our philosophy</Link>
           <Link href="/saved" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Saved</Link>
           <Link href="/submit" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Enlist your opportunity (free)</Link>
           <Link href="/account" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Your dashboard</Link>
           <Link href="/widget" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Embed our widget</Link>
-          <Link href="/advertise" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Advertise with us</Link>
           <Link href="/terms" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Terms &amp; privacy</Link>
         </div>
       </div>
@@ -452,11 +463,11 @@ export default function Home() {
               }}>
                 ◈ Collections
               </Link>
-              <Link href="/events" style={{
+              <Link href="/resources" style={{
                 fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, color: 'var(--ink-2)',
                 textDecoration: 'none', letterSpacing: '0.02em',
               }}>
-                📍 Events
+                ❖ Resources
               </Link>
               <Link href="/pulse" style={{
                 fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, color: 'var(--ink-2)',
@@ -525,7 +536,7 @@ export default function Home() {
 
           <div className="card-box" style={{ padding: '16px 18px', maxWidth: 560, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5 }}>
-              A welcome note now, then the week&apos;s top 10 — ranked by genuine interest, not sponsorship — every Monday.
+              Weekly newsletter. Best opportunities. Best communities.
             </div>
             <SubscribeForm />
           </div>
@@ -533,6 +544,43 @@ export default function Home() {
       </header>
 
       <main style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px 80px' }}>
+        <div className="divider" style={{ marginBottom: 14 }}>
+          <span>◆ Browse by who you are ◆</span>
+        </div>
+        <div style={{
+          display: 'grid', gap: 14, marginBottom: 40,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        }}>
+          <Link href="/collections/students" className="card-box" style={{ padding: '16px 18px', textDecoration: 'none', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 22 }}>🎒</span>
+            <span>
+              <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Students</span>
+              <span style={{ display: 'block', fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.5 }}>Internships, scholarships, fellowships.</span>
+            </span>
+          </Link>
+          <Link href="/collections/early-career" className="card-box" style={{ padding: '16px 18px', textDecoration: 'none', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 22 }}>💼</span>
+            <span>
+              <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Early career</span>
+              <span style={{ display: 'block', fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.5 }}>New-grad jobs and early-career programs.</span>
+            </span>
+          </Link>
+          <Link href="/collections/founders" className="card-box" style={{ padding: '16px 18px', textDecoration: 'none', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 22 }}>🧭</span>
+            <span>
+              <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Founders</span>
+              <span style={{ display: 'block', fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.5 }}>Grants, fellowships, competitions.</span>
+            </span>
+          </Link>
+          <Link href="/collections" className="card-box" style={{ padding: '16px 18px', textDecoration: 'none', display: 'flex', gap: 12, alignItems: 'flex-start', borderColor: 'var(--pin)' }}>
+            <span style={{ fontSize: 22 }}>◈</span>
+            <span>
+              <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, color: 'var(--pin)' }}>All collections →</span>
+              <span style={{ display: 'block', fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.5 }}>By location, comp type, and more.</span>
+            </span>
+          </Link>
+        </div>
+
         <div className="divider" style={{ marginBottom: 10 }}>
           <span>◆ Best opportunities right now — a fresh pick every visit ◆</span>
         </div>

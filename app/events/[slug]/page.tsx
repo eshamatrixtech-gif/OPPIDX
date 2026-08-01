@@ -137,7 +137,7 @@ export default function EventDetailPage() {
       <header className="border-b-2 z-10 relative" style={{ borderColor: "var(--border)", background: "var(--card)" }}>
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link href="/" className="font-typewriter text-xl tracking-wider" style={{ color: "var(--pin)" }}>← OppIDX</Link>
-          <Link href="/events" className="text-xs font-typewriter" style={{ color: "var(--ink-muted)" }}>← All events</Link>
+          <Link href="/resources" className="text-xs font-typewriter" style={{ color: "var(--ink-muted)" }}>← All gatherings</Link>
         </div>
       </header>
 

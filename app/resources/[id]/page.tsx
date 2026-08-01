@@ -91,6 +91,18 @@ export default async function ResourcePage({ params }: { params: Promise<{ id: s
             </div>
             <ShareBar title={item.title} url={`${SITE_URL}/resources/${item.id}`} />
           </div>
+
+          <div style={{
+            marginTop: 20, padding: '12px 16px', borderRadius: 2, display: 'flex',
+            alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap',
+            border: '1px dashed var(--line)',
+          }}>
+            <span style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>Ready to put this into practice?</span>
+            <Link href="/browse" style={{
+              fontSize: 12.5, fontWeight: 700, color: 'var(--pin)', fontFamily: 'var(--font-mono)',
+              textDecoration: 'none',
+            }}>Browse real opportunities →</Link>
+          </div>
         </div>
 
         {similar.length > 0 && (

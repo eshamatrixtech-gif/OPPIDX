@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { LoveCouple, LotusBlossom } from "@/components/ui/SculptureAnim";
 
 const RELATIONSHIP_TYPES = ["Dating", "Friendship", "Co-founder", "Wedding", "Still Figuring Out"];
 
@@ -147,8 +148,14 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
 // ─── MODE SELECT ──────────────────────────────────────────────
 function ModeSelect({ onSelect }: { onSelect: (m: Mode) => void }) {
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="text-center mb-10">
+    <div className="max-w-3xl mx-auto relative overflow-hidden">
+      <div className="absolute -left-6 top-2 pointer-events-none select-none hidden md:block" style={{ opacity: 0.1 }}>
+        <LoveCouple style={{ height: 140, color: "var(--saffron)" }} />
+      </div>
+      <div className="absolute -right-4 bottom-0 pointer-events-none select-none hidden md:block" style={{ opacity: 0.1 }}>
+        <LotusBlossom style={{ height: 90, color: "var(--border)" }} />
+      </div>
+      <div className="text-center mb-10 relative">
         <div className="text-4xl mb-3" style={{ color: "var(--saffron)" }}>✦</div>
         <h2 className="font-typewriter text-3xl mb-3" style={{ color: "var(--ink)" }}>COMPATIBILITY CHECK</h2>
         <p className="text-sm leading-relaxed max-w-xl mx-auto" style={{ color: "var(--ink-muted)" }}>

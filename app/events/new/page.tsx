@@ -94,7 +94,7 @@ export default function NewEventPage() {
       <header className="border-b-2 z-10 relative" style={{ borderColor: "var(--border)", background: "var(--card)" }}>
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link href="/" className="font-typewriter text-xl tracking-wider" style={{ color: "var(--pin)" }}>← OppIDX</Link>
-          <Link href="/events" className="text-xs font-typewriter" style={{ color: "var(--ink-muted)" }}>← All events</Link>
+          <Link href="/resources" className="text-xs font-typewriter" style={{ color: "var(--ink-muted)" }}>← All gatherings</Link>
         </div>
       </header>
 
@@ -152,7 +152,7 @@ export default function NewEventPage() {
             <label className="flex items-start gap-2 text-xs" style={{ color: "var(--ink-muted)" }}>
               <input type="checkbox" checked={isListed} onChange={e => setIsListed(e.target.checked)} className="mt-0.5" />
               <span>
-                List this event publicly on <strong>/events</strong> so anyone can discover it.
+                List this event publicly on <strong>Resources</strong> so anyone can discover it.
                 {" "}Off by default — unchecked, only people with the direct link can find or RSVP to it.
               </span>
             </label>

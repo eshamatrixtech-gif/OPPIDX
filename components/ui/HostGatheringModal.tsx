@@ -14,9 +14,12 @@ function minDateTime() {
 
 /** A direct port of /events/new into a popup — same fields, same
  * unauthenticated /api/events/create endpoint, same "no account,
- * live in seconds" model. Only difference is where it's triggered from. */
-export function HostGatheringModal({ opportunityTitle, onClose }: { opportunityTitle: string; onClose: () => void }) {
-  const [title, setTitle] = useState(`${opportunityTitle} — meetup`)
+ * live in seconds" model. Only difference is where it's triggered from —
+ * opportunityTitle is omitted when opened from a non-opportunity context
+ * (e.g. the Resources page's own "Host a gathering" button), in which case
+ * the title field just starts blank instead of prefilled. */
+export function HostGatheringModal({ opportunityTitle, onClose }: { opportunityTitle?: string; onClose: () => void }) {
+  const [title, setTitle] = useState(opportunityTitle ? `${opportunityTitle} — meetup` : '')
   const [category, setCategory] = useState('Gathering')
   const [description, setDescription] = useState('')
   const [location, setLocation] = useState('')
@@ -92,7 +95,7 @@ export function HostGatheringModal({ opportunityTitle, onClose }: { opportunityT
 
         <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 11.5, color: 'var(--ink-2)', marginBottom: 14, lineHeight: 1.5 }}>
           <input type="checkbox" checked={isListed} onChange={e => setIsListed(e.target.checked)} style={{ marginTop: 2 }} />
-          List this publicly on /events so anyone can discover it. Off — only people with the direct link can find it.
+          List this publicly on Resources so anyone can discover it. Off — only people with the direct link can find it.
         </label>
 
         <div style={{ display: 'flex', gap: 10 }}>

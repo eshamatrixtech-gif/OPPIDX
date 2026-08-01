@@ -2,8 +2,12 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { VALID_CATEGORIES } from '@/lib/resources/validate'
 import type { Resource } from '@/types'
+import type { UpcomingEvent } from '@/components/ui/EventCard'
+
+const HostGatheringModal = dynamic(() => import('@/components/ui/HostGatheringModal').then(m => m.HostGatheringModal), { ssr: false })
 
 const AUDIENCE_TABS = [
   { id: 'STUDENT', label: 'Students' },
@@ -95,6 +99,68 @@ function LearnSection() {
           {(spiritual ?? []).map(item => <LearnCard key={item.id} item={item} />)}
         </div>
       </div>
+    </div>
+  )
+}
+
+function whenLabel(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
+}
+
+/** Real gatherings, folded into Resources rather than living behind their
+ * own browse page — a dedicated /events index was often just an empty
+ * calendar between gatherings, which read as a dead corner of the site.
+ * Individual event pages (/events/[slug]) and hosting/managing one are
+ * unchanged — this is only where discovering one lives now. */
+function GatheringsSection() {
+  const [events, setEvents] = useState<UpcomingEvent[] | null>(null)
+  const [hostOpen, setHostOpen] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/events/list')
+      .then(r => r.json())
+      .then(data => setEvents((data.events ?? []).slice(0, 6)))
+      .catch(() => setEvents([]))
+  }, [])
+
+  return (
+    <div style={{ borderBottom: '1px solid var(--line)', padding: '32px 24px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <div className="divider" style={{ marginBottom: 6 }}>
+          <span>◆ Gatherings ◆</span>
+        </div>
+        <p style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginBottom: 20 }}>
+          Real, upcoming meetups hosted by real people — RSVP, get your QR, walk in.{' '}
+          <button onClick={() => setHostOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--pin)', fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, textDecoration: 'underline' }}>
+            Host one →
+          </button>
+        </p>
+
+        {events === null ? null : events.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '20px', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+            Nothing on the calendar yet.{' '}
+            <button onClick={() => setHostOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--pin)', fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700 }}>
+              Be the first to host →
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+            {events.map(e => (
+              <Link key={e.slug} href={`/events/${e.slug}`} className="card-box" style={{ padding: 16, textDecoration: 'none', display: 'block' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 6, fontFamily: 'var(--font-mono)' }}>
+                  📍 {whenLabel(e.event_time)}
+                </div>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 15, color: 'var(--ink)', marginBottom: 4, lineHeight: 1.3 }}>{e.title}</h2>
+                <p style={{ fontSize: 12, color: 'var(--ink-2)' }}>{e.location}{e.rsvpCount > 0 ? ` · ${e.rsvpCount} going` : ''}</p>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {hostOpen && <HostGatheringModal onClose={() => setHostOpen(false)} />}
     </div>
   )
 }
@@ -192,7 +258,7 @@ function ResourcesInner() {
             Resources
           </h1>
           <p style={{ color: 'var(--ink-2)', fontSize: 14, marginBottom: 24, maxWidth: 620, lineHeight: 1.6 }}>
-            Prep guides, tools, financial-aid explainers, mentorship and communities — verified, growing every day. <Link href="/resources/submit" style={{ color: 'var(--pin)' }}>Submit one →</Link>
+            Prep guides, tools, financial-aid explainers, mentorship, communities, and real gatherings — verified, growing every day. <Link href="/resources/submit" style={{ color: 'var(--pin)' }}>Submit one →</Link>
           </p>
 
           <input
@@ -220,6 +286,7 @@ function ResourcesInner() {
         </div>
       </header>
 
+      <GatheringsSection />
       <LearnSection />
 
       <main style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px 80px' }}>

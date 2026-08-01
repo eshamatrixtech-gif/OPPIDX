@@ -156,7 +156,7 @@ export function FindYourPersonModal({ opportunityTitle, onClose }: { opportunity
           <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 20 }}>
             You can still explore the app and check compatibility.
           </p>
-          <Link href="/match" onClick={onClose} style={{ fontSize: 13, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none' }}>Explore OppIDX Match →</Link>
+          <Link href="/match/compatibility" onClick={onClose} style={{ fontSize: 13, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none' }}>Check compatibility →</Link>
         </>
       ) : state === 'done' ? (
         <>

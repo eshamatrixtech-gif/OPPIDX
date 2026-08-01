@@ -316,8 +316,8 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
                   🫂 {chasingCount} others also chasing this
                 </div>
                 <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.6 }}>
-                  No browsable list here — that would out who's applying to what. If you're linked with{' '}
-                  <Link href="/match" style={{ color: 'var(--pin)' }}>Match</Link>, a real match within this group (if there's a good one) reveals itself the usual way, this Friday.
+                  No browsable list here — that would out who&apos;s applying to what. If you&apos;ve used{' '}
+                  <em>Find your person</em> above, a real match within this group (if there&apos;s a good one) reveals itself the usual way, this Friday.
                 </div>
               </div>
             )}

@@ -101,7 +101,7 @@ export default function PhilosophyPage() {
           <div className="text-2xl mb-6" style={{ color: "var(--saffron)" }}>◆ ✦ ◆</div>
           <Link href="/account/register" className="btn-primary text-base px-8 py-3">◆ Start your interview</Link>
           <div className="mt-4">
-            <Link href="/match" className="text-xs font-typewriter" style={{ color: "var(--ink-muted)" }}>← Back to OppIDX Match</Link>
+            <Link href="/" className="text-xs font-typewriter" style={{ color: "var(--ink-muted)" }}>← Back to OppIDX</Link>
           </div>
         </div>
       </div>

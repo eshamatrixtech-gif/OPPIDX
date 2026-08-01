@@ -86,7 +86,7 @@ export default function DashboardPage() {
 
   async function logout() {
     await supabase.auth.signOut();
-    router.push("/match");
+    router.push("/");
   }
 
   async function sendFeedback(notifId: string, liked: boolean) {

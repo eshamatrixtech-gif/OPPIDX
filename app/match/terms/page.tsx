@@ -99,7 +99,7 @@ export default function TermsPage() {
           All disputes are subject to the exclusive jurisdiction of courts in Hyderabad, India.<br />
           Indian law governs this platform and all interactions arising from it.<br /><br />
           Last updated: July 2026 · OppIDX Match is free, forever.<br />
-          <Link href="/match" style={{ color: "var(--saffron)" }}>← Back to OppIDX Match</Link>
+          <Link href="/" style={{ color: "var(--saffron)" }}>← Back to OppIDX</Link>
         </div>
       </div>
     </div>

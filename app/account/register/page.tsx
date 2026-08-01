@@ -177,7 +177,7 @@ export default function RegisterPage() {
                 Join the waiting list and we&apos;ll let you know when we open your region.
               </p>
               <div className="flex gap-3 justify-center flex-wrap">
-                <Link href="/match" className="btn-secondary text-sm">← Explore the App</Link>
+                <Link href="/" className="btn-secondary text-sm">← Explore the App</Link>
                 <Link href="/match/compatibility" className="btn-primary text-sm">✦ Try Compatibility Check</Link>
               </div>
             </div>

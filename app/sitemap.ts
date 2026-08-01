@@ -23,7 +23,6 @@ const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitema
   { path: '/resources', changeFrequency: 'daily', priority: 0.8 },
   { path: '/events', changeFrequency: 'hourly', priority: 0.7 },
   { path: '/pulse', changeFrequency: 'daily', priority: 0.7 },
-  { path: '/match', changeFrequency: 'weekly', priority: 0.6 },
   { path: '/philosophy', changeFrequency: 'monthly', priority: 0.5 },
   ...(PAYWALL_ENABLED ? [{ path: '/pricing', changeFrequency: 'monthly' as const, priority: 0.5 }] : []),
   { path: '/advertise', changeFrequency: 'monthly', priority: 0.4 },

@@ -135,11 +135,15 @@ function SubscribeForm() {
   )
 }
 
+// Match isn't listed here on purpose — it has no browsable "come explore
+// it" destination. Matching runs automatically (Friday cron +
+// chasingCohort's "N others chasing this"); the only front-end surface is
+// the "Find your person" action already embedded on every opportunity card
+// (see EcosystemActions), not a place anyone navigates to separately.
 const SIDEBAR_LINKS = [
   { href: '/resources', icon: '❖', label: 'Resources', desc: 'Prep guides, tools and communities.' },
   { href: '/pulse', icon: '◈', label: 'Pulse', desc: 'A daily, apolitical read on the country.' },
   { href: '/events', icon: '📍', label: 'Events', desc: 'Real, upcoming gatherings.' },
-  { href: '/match', icon: '◆', label: 'Find your person', desc: 'One honest match, every Friday.' },
 ]
 
 /** Everything that isn't the feed itself — cross-product nav, newsletter,

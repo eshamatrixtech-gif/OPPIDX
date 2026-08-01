@@ -17,11 +17,11 @@ const nextConfig: NextConfig = {
       { source: "/mayatara/compatibility", destination: "/match/compatibility", permanent: true },
       { source: "/mayatara/philosophy", destination: "/match/philosophy", permanent: true },
       { source: "/mayatara/terms", destination: "/match/terms", permanent: true },
-      { source: "/mayatara/match", destination: "/match", permanent: true },
+      { source: "/mayatara/match", destination: "/", permanent: true },
       { source: "/mayatara/login", destination: "/account", permanent: true },
       { source: "/mayatara/register", destination: "/account/register", permanent: true },
       { source: "/mayatara/dashboard", destination: "/account/dashboard", permanent: true },
-      { source: "/mayatara", destination: "/match", permanent: true },
+      { source: "/mayatara", destination: "/", permanent: true },
 
       // API-path redirects — defense in depth for any external caller of the
       // old endpoints this diff didn't already fix directly (e.g. the two
@@ -37,6 +37,13 @@ const nextConfig: NextConfig = {
       { source: "/api/mayatara/profile/:path*", destination: "/api/match/profile/:path*", permanent: true },
       { source: "/api/mayatara/feedback", destination: "/api/match/feedback", permanent: true },
       { source: "/api/mayatara/report/:path*", destination: "/api/match/report/:path*", permanent: true },
+
+      // Match has no standalone "come explore it" hub — matching runs
+      // automatically (Friday cron + chasingCohort) and the only front-end
+      // surface is the "Find your person" action embedded on opportunity
+      // pages (see EcosystemActions). Not `permanent` — this is a product
+      // decision, not a URL rename, and easier to reverse if it changes.
+      { source: "/match", destination: "/", permanent: false },
     ];
   },
 };

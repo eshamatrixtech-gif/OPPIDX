@@ -19,6 +19,16 @@ interface ArbeitnowJob {
   location?: string
 }
 
+// `??` only catches null/undefined — Arbeitnow's live API has been
+// observed sending `tags` as a non-array (e.g. a string) on some listings,
+// which `(j.tags ?? []).join(...)` doesn't guard against and throws on.
+// This is the actual cause of the recurring "source Arbeitnow failed:
+// ...join is not a function" scrape errors; coercing explicitly by type
+// fixes it regardless of what shape the API sends next.
+function tagArray(tags: unknown): string[] {
+  return Array.isArray(tags) ? tags : []
+}
+
 export async function fetchArbeitnow(): Promise<RawListing[]> {
   const res = await fetch(FEED_URL, {
     headers: { 'User-Agent': 'Mozilla/5.0 (compatible; OppIDXScraper/1.0)' },
@@ -29,7 +39,7 @@ export async function fetchArbeitnow(): Promise<RawListing[]> {
   const jobs = Array.isArray(body.data) ? body.data : []
 
   return jobs
-    .filter(j => j.slug && j.title && ENTRY_LEVEL.test(`${j.title} ${(j.tags ?? []).join(' ')}`))
+    .filter(j => j.slug && j.title && ENTRY_LEVEL.test(`${j.title} ${tagArray(j.tags).join(' ')}`))
     .slice(0, 15)
     .map((j): RawListing => ({
       title: j.title!,
@@ -38,7 +48,7 @@ export async function fetchArbeitnow(): Promise<RawListing[]> {
       rawDescription: stripHtml(j.description ?? ''),
       location: j.remote ? 'Remote' : (j.location || undefined),
       audienceHint: 'EARLY_CAREER',
-      tags: (j.tags ?? []).slice(0, 5).join(','),
+      tags: tagArray(j.tags).slice(0, 5).join(','),
       sourceLabel: 'Arbeitnow',
       sourceUrl: FEED_URL,
     }))

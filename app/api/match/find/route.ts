@@ -112,13 +112,11 @@ async function matchByCategory(
   return total;
 }
 
-export async function POST(req: Request) {
-  const secret   = req.headers.get("x-cron-secret") || "";
-  const expected = process.env.CRON_SECRET || "";
-  const { timingSafeEqual } = await import("crypto");
-  const ok = secret.length === expected.length &&
-    timingSafeEqual(Buffer.from(secret), Buffer.from(expected));
-  if (!ok) return Response.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET(req: Request) {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return Response.json({ error: "Cron is not set up yet." }, { status: 503 });
+  const auth = req.headers.get("authorization");
+  if (auth !== `Bearer ${secret}`) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   // Friday-only guard (IST = UTC+5:30)
   const nowIST = new Date(Date.now() + 5.5 * 60 * 60 * 1000);

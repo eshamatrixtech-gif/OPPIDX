@@ -233,11 +233,14 @@ export async function proxy(req: NextRequest) {
       )
     }
 
-    /* Cron endpoints: server-to-server only, shared-secret gated */
+    /* Cron endpoints: server-to-server only, shared-secret gated — same
+       Authorization: Bearer CRON_SECRET convention Vercel Cron sends
+       natively (see vercel.json), which the route handlers themselves
+       also check; this is just an earlier rejection at the edge. */
     if (MATCH_SERVICE_CRON_ROUTES.includes(pathname)) {
-      const secret = req.headers.get('x-cron-secret')
+      const auth = req.headers.get('authorization')
       const expected = process.env.CRON_SECRET
-      if (!secret || !expected || secret !== expected) {
+      if (!expected || auth !== `Bearer ${expected}`) {
         return new NextResponse(null, { status: 401 })
       }
     }

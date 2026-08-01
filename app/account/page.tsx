@@ -260,7 +260,7 @@ export default function AccountPage() {
               </div>
 
               <p style={{ color: 'var(--ink-2)', fontSize: 12.5, marginBottom: 16, lineHeight: 1.6 }}>
-                Already have a Mayatara account? Log in here with the same email and password — it's the same account.
+                Already registered for Match? Log in here with the same email and password — it's the same account.
               </p>
 
               <form onSubmit={authTab === 'login' ? handleLogin : handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 10 }}>
@@ -521,7 +521,7 @@ export default function AccountPage() {
 
               <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16, marginTop: 20 }}>
                 <p style={{ fontSize: 13, color: 'var(--ink-2)' }}>
-                  Want to also find a match? <Link href="/mayatara/register" style={{ color: '#D4600A', textDecoration: 'underline' }}>Fill in your Mayatara profile →</Link>
+                  Want to also find a match? <Link href="/account/register" style={{ color: 'var(--terracotta)', textDecoration: 'underline' }}>Fill in your Match profile →</Link>
                 </p>
               </div>
             </>

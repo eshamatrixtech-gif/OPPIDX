@@ -53,7 +53,7 @@ export function PolicyDigestModal({ opportunityId, opportunityTitle, onClose }: 
           ))}
         </div>
       )}
-      <Link href={`/mayatara/pulse/digest/${todayPeriod()}`} style={{
+      <Link href={`/pulse/digest/${todayPeriod()}`} style={{
         display: 'block', marginTop: 16, paddingTop: 14, borderTop: '1px dashed var(--line)',
         fontSize: 12.5, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none', textAlign: 'center',
       }}>

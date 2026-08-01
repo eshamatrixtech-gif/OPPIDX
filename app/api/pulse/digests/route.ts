@@ -5,7 +5,7 @@ import { prisma } from '@/lib/db'
  * GET /api/pulse/digests — the archive: every daily and weekly policy
  * digest ever generated, newest first, so past ones aren't only reachable
  * if you already know the exact date/week slug. Powers the archive list
- * on /mayatara/pulse.
+ * on /pulse.
  */
 export async function GET() {
   const digests = await prisma.policyDigest.findMany({

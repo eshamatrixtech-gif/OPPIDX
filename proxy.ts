@@ -40,7 +40,8 @@ function edgeRateLimit(key: string): { ok: boolean; retryAfter?: number } {
   return { ok: true }
 }
 
-/* ── In-edge rate limiter (Mayatara's own /api/mayatara/* endpoints) ─────────
+/* ── In-edge rate limiter (Events/Pulse/Match's own /api/* endpoints,
+   formerly Mayatara's) ─────────────────────────────────────────────────────
    Separate Map/semantics from oppidx's limiter above — kept distinct rather
    than unified, since the two services' rate-limit shapes differ (this one
    is a simple fixed-window counter, not a lock-then-cooldown scheme) and
@@ -49,7 +50,7 @@ declare global { var __mtRl: Map<string, { count: number; resetAt: number }> | u
 globalThis.__mtRl ??= new Map()
 const mtRl = globalThis.__mtRl
 
-function mayataraRateLimit(id: string, max: number, windowMs: number): boolean {
+function matchServiceRateLimit(id: string, max: number, windowMs: number): boolean {
   const now = Date.now()
   const entry = mtRl.get(id)
   if (!entry || now > entry.resetAt) {
@@ -140,8 +141,8 @@ function applySecurityHeaders(res: NextResponse, req: NextRequest): NextResponse
   //   covers it), but `next dev` falls back to this direct host, so it's needed
   //   for a clean local console too.
   // • connect-src also includes Supabase/Anthropic/OpenAI origins for the
-  //   Mayatara service (client-side Supabase calls, AI-assisted matching/
-  //   interview features under /mayatara and /api/mayatara).
+  //   Events/Pulse/Match features (client-side Supabase calls, AI-assisted
+  //   matching/interview under /events, /pulse, /match and their APIs).
   // • Tighten further once you move to a CDN / nonces
   const csp = [
     "default-src 'self'",
@@ -174,7 +175,11 @@ function applySecurityHeaders(res: NextResponse, req: NextRequest): NextResponse
 
 /* ── Proxy (formerly "Middleware" — renamed in Next.js 16) ───── */
 const AUTH_ROUTES = ['/api/auth/login', '/api/auth/register']
-const MAYATARA_CRON_ROUTES = ['/api/mayatara/match/find', '/api/mayatara/pulse/refresh']
+// Events/Pulse/Match's own API prefixes — formerly all under one
+// /api/mayatara/* prefix when they were a separately-branded product; now
+// split across their own top-level API namespaces post-merge.
+const MATCH_SERVICE_PREFIXES = ['/api/events/', '/api/pulse/live/', '/api/match/']
+const MATCH_SERVICE_CRON_ROUTES = ['/api/match/find', '/api/pulse/live/refresh']
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
@@ -205,14 +210,15 @@ export async function proxy(req: NextRequest) {
     }
   }
 
-  /* ── Rate-limit Mayatara's /api/mayatara/* endpoints ──
-     Auth routes: strict (10/15min). Everything else under /api/mayatara/*:
+  /* ── Rate-limit Events/Pulse/Match's own API endpoints (formerly all
+     under one /api/mayatara/* prefix) ──
+     Auth routes: strict (10/15min). Everything else under these prefixes:
      general limit (60/60s). Scoped so oppidx's own /api/* is unaffected. */
-  if (pathname.startsWith('/api/mayatara/')) {
+  if (MATCH_SERVICE_PREFIXES.some(p => pathname.startsWith(p))) {
     const ip = getIP(req)
 
-    if (pathname.startsWith('/api/mayatara/auth/') && req.method === 'POST') {
-      if (!mayataraRateLimit(`mt-auth:${ip}`, 10, 15 * 60_000)) {
+    if (pathname.startsWith('/api/match/auth/') && req.method === 'POST') {
+      if (!matchServiceRateLimit(`mt-auth:${ip}`, 10, 15 * 60_000)) {
         return new NextResponse(
           JSON.stringify({ error: 'Too many attempts. Try again in 15 minutes.' }),
           { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '900' } },
@@ -220,7 +226,7 @@ export async function proxy(req: NextRequest) {
       }
     }
 
-    if (!mayataraRateLimit(`mt-api:${ip}`, 60, 60_000)) {
+    if (!matchServiceRateLimit(`mt-api:${ip}`, 60, 60_000)) {
       return new NextResponse(
         JSON.stringify({ error: 'Too many requests.' }),
         { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '60' } },
@@ -228,7 +234,7 @@ export async function proxy(req: NextRequest) {
     }
 
     /* Cron endpoints: server-to-server only, shared-secret gated */
-    if (MAYATARA_CRON_ROUTES.includes(pathname)) {
+    if (MATCH_SERVICE_CRON_ROUTES.includes(pathname)) {
       const secret = req.headers.get('x-cron-secret')
       const expected = process.env.CRON_SECRET
       if (!secret || !expected || secret !== expected) {
@@ -250,8 +256,8 @@ export async function proxy(req: NextRequest) {
      prefixes that defaulted to *protected* for anything not listed, which
      silently 302'd every unknown path (typos, bad links, new routes we
      forgot to add here) to the admin login screen instead of 404ing.
-     Mayatara's own auth (/mayatara/login etc.) is entirely client-side via
-     Supabase and isn't gated here — it never matched this check anyway. ── */
+     The shared Supabase login (the tab on /account) is entirely client-side and
+     isn't gated here — it never matched this check anyway. ── */
   const isProtected = pathname === '/admin' || pathname.startsWith('/admin/')
 
   const session = req.cookies.get(COOKIE)?.value

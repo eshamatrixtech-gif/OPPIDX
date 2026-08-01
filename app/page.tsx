@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { OpportunityCard, type CardExtras } from '@/components/ui/OpportunityCard'
 import { PulseCard, type PulseDigest } from '@/components/ui/PulseCard'
+import { EventCard, type UpcomingEvent } from '@/components/ui/EventCard'
 import { Wordmark } from '@/components/ui/Wordmark'
 import { FloatingActions } from '@/components/ui/FloatingActions'
 import { ShareBar } from '@/components/ui/ShareBar'
@@ -12,11 +13,12 @@ import { DISCORD_INVITE_URL } from '@/lib/discord'
 import { SOCIAL_CHANNELS_ENABLED } from '@/lib/socialChannels'
 import { SITE_URL } from '@/lib/siteUrl'
 import { getStoredReferralCode } from '@/lib/clientReferral'
-import { interleave } from '@/lib/feed/interleave'
+import { interleaveMulti } from '@/lib/feed/interleave'
 import type { Opportunity } from '@/types'
 
 // Same occasional cadence as /browse.
 const PULSE_EVERY = 9
+const EVENTS_EVERY = 15
 const AUTO_LOAD_CAP = 240
 
 /** A fresh, genuinely random pick of `count` items every time this runs —
@@ -135,9 +137,9 @@ function SubscribeForm() {
 
 const SIDEBAR_LINKS = [
   { href: '/resources', icon: '❖', label: 'Resources', desc: 'Prep guides, tools and communities.' },
-  { href: '/mayatara/pulse', icon: '◈', label: 'The Pulse', desc: 'A daily, apolitical read on the country.' },
-  { href: '/mayatara', icon: '◆', label: 'The Mayatara', desc: 'Find your person. One honest match, every Friday.' },
-  { href: '/mayatara/events', icon: '📍', label: 'Events', desc: 'Real, upcoming gatherings.' },
+  { href: '/pulse', icon: '◈', label: 'Pulse', desc: 'A daily, apolitical read on the country.' },
+  { href: '/events', icon: '📍', label: 'Events', desc: 'Real, upcoming gatherings.' },
+  { href: '/match', icon: '◆', label: 'Find your person', desc: 'One honest match, every Friday.' },
 ]
 
 /** Everything that isn't the feed itself — cross-product nav, newsletter,
@@ -202,7 +204,7 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
         </div>
 
         <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 10 }}>
-          Also from OppIDX
+          More ways in
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 26 }}>
           {SIDEBAR_LINKS.map(l => (
@@ -293,6 +295,7 @@ export default function Home() {
   const [featured, setFeatured] = useState<Opportunity[] | null>(null)
   const [featuredExtras, setFeaturedExtras] = useState<Record<string, CardExtras>>({})
   const [pulseDigests, setPulseDigests] = useState<PulseDigest[]>([])
+  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([])
   const [newSinceLastVisit, setNewSinceLastVisit] = useState<number | null>(null)
   const [sponsor, setSponsor] = useState<{ sponsorName: string; sponsorUrl: string; tagline: string } | null>(null)
   const [feedSponsor, setFeedSponsor] = useState<{ sponsorName: string; sponsorUrl: string; tagline: string } | null>(null)
@@ -338,6 +341,13 @@ export default function Home() {
     fetch('/api/pulse/recent')
       .then(r => r.json())
       .then(data => setPulseDigests(data.items ?? []))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/events/list')
+      .then(r => r.json())
+      .then(data => setUpcomingEvents((data.events ?? []).slice(0, 12)))
       .catch(() => {})
   }, [])
 
@@ -406,7 +416,10 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasMore, autoLoadCapped, loadingMore, boardPage])
 
-  const boardFeedSlots = interleave(boardItems, pulseDigests, PULSE_EVERY)
+  const boardFeedSlots = interleaveMulti(boardItems, [
+    { kind: 'pulse', items: pulseDigests, every: PULSE_EVERY },
+    { kind: 'event', items: upcomingEvents, every: EVENTS_EVERY },
+  ])
 
   return (
     <div style={{ minHeight: '100vh' }}>
@@ -434,6 +447,18 @@ export default function Home() {
                 textDecoration: 'none', letterSpacing: '0.02em',
               }}>
                 ◈ Collections
+              </Link>
+              <Link href="/events" style={{
+                fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, color: 'var(--ink-2)',
+                textDecoration: 'none', letterSpacing: '0.02em',
+              }}>
+                📍 Events
+              </Link>
+              <Link href="/pulse" style={{
+                fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, color: 'var(--ink-2)',
+                textDecoration: 'none', letterSpacing: '0.02em',
+              }}>
+                ◈ Pulse
               </Link>
               <Link href="/saved" style={{
                 fontFamily: 'var(--font-mono)', fontSize: 12.5, fontWeight: 700, color: 'var(--ink-2)',
@@ -554,10 +579,18 @@ export default function Home() {
           display: 'grid', gap: 26, marginBottom: 20,
           gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
         }}>
-          {boardFeedSlots.map(slot => slot.kind === 'primary'
-            ? <OpportunityCard key={slot.item.id} opp={slot.item} extras={boardExtras[slot.item.id]} />
-            : <PulseCard key={`pulse-${slot.item.period}`} digest={slot.item} />
-          )}
+          {boardFeedSlots.map(slot => {
+            if (slot.kind === 'primary') {
+              const opp = slot.item as Opportunity
+              return <OpportunityCard key={opp.id} opp={opp} extras={boardExtras[opp.id]} />
+            }
+            if (slot.kind === 'event') {
+              const event = slot.item as UpcomingEvent
+              return <EventCard key={`event-${event.slug}`} event={event} />
+            }
+            const digest = slot.item as PulseDigest
+            return <PulseCard key={`pulse-${digest.period}`} digest={digest} />
+          })}
         </div>
 
         <div ref={sentinelRef} />

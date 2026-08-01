@@ -1,11 +1,11 @@
 import { Resend } from "resend";
-import { SITE_URL, MAYATARA_BASE_URL, MAYATARA_DISPLAY_DOMAIN } from "@/lib/siteUrl";
+import { SITE_URL, DISPLAY_DOMAIN } from "@/lib/siteUrl";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 // Use oppidx.com once it's verified as a sending domain in Resend.
 // Until then: onboarding@resend.dev works on free tier for testing.
-const FROM = process.env.EMAIL_FROM || "The Mayatara <onboarding@resend.dev>";
-const LOGO_URL = `${SITE_URL}/mayatara-logo.png`;
+const FROM = process.env.EMAIL_FROM || "OppIDX Match <onboarding@resend.dev>";
+const LOGO_URL = `${SITE_URL}/logo.png`;
 
 export async function sendMatchEmail(
   toEmail: string,
@@ -47,9 +47,9 @@ export async function sendMatchEmail(
   <div class="wrap">
     <div class="header">
       <div class="header-inner">
-        <img src="${LOGO_URL}" alt="The Mayatara" width="72" height="72" style="object-fit:contain;display:block;" />
+        <img src="${LOGO_URL}" alt="OppIDX" width="72" height="72" style="object-fit:contain;display:block;" />
         <div>
-          <h1>THE MAYATARA</h1>
+          <h1>OPPIDX MATCH</h1>
           <p>YOUR FRIDAY MATCH</p>
         </div>
       </div>
@@ -68,7 +68,7 @@ export async function sendMatchEmail(
         The rest is yours.
       </p>
       <div class="sign">
-        The Mayatara · For the real ones · ${MAYATARA_DISPLAY_DOMAIN}<br>
+        OppIDX Match · For the real ones · ${DISPLAY_DOMAIN}<br>
               </div>
     </div>
   </div>
@@ -99,8 +99,8 @@ export async function sendNoMatchEmail(toEmail: string, userName: string) {
   <div class="wrap">
     <div class="header">
       <div class="header-inner">
-        <img src="${LOGO_URL}" alt="The Mayatara" width="72" height="72" style="object-fit:contain;display:block;" />
-        <h1>THE MAYATARA</h1>
+        <img src="${LOGO_URL}" alt="OppIDX" width="72" height="72" style="object-fit:contain;display:block;" />
+        <h1>OPPIDX MATCH</h1>
       </div>
     </div>
     <div class="body">
@@ -109,7 +109,7 @@ export async function sendNoMatchEmail(toEmail: string, userName: string) {
       <p>Not because there's anything wrong with you. The pool is still growing — and the right person might join next week, or already be in it and need one more data point before we're confident enough to send them your way.</p>
       <p>We'll run again next Friday. You'll hear from us either way.</p>
       <p style="color:#D4600A;font-style:italic">"The right match is worth waiting a week for."</p>
-      <div class="sign">The Mayatara · ${MAYATARA_DISPLAY_DOMAIN}</div>
+      <div class="sign">OppIDX Match · ${DISPLAY_DOMAIN}</div>
     </div>
   </div>
 </body>
@@ -122,7 +122,7 @@ export async function sendCronAlertEmail(error: string, matched: number, notifie
   await resend.emails.send({
     from: FROM,
     to: ADMIN,
-    subject: `⚠️ The Mayatara — Friday cron ${error ? "FAILED" : "completed"}`,
+    subject: `⚠️ OppIDX Match — Friday cron ${error ? "FAILED" : "completed"}`,
     html: `
 <!DOCTYPE html><html><head><meta charset="utf-8">
 <style>
@@ -137,7 +137,7 @@ export async function sendCronAlertEmail(error: string, matched: number, notifie
     <p class="stat">Matched: <strong>${matched}</strong> pairs</p>
     <p class="stat">No-match notified: <strong>${notified}</strong> users</p>
     ${error ? `<p style="color:#FF4444;margin-top:16px">Error:</p><pre>${error}</pre>` : ""}
-    <p style="font-size:11px;color:#6B4C35;margin-top:20px">The Mayatara · Friday cron · ${MAYATARA_DISPLAY_DOMAIN}</p>
+    <p style="font-size:11px;color:#6B4C35;margin-top:20px">OppIDX Match · Friday cron · ${DISPLAY_DOMAIN}</p>
   </div>
 </body></html>`,
   });
@@ -147,7 +147,7 @@ export async function sendWelcomeEmail(toEmail: string, userName: string, lookin
   await resend.emails.send({
     from: FROM,
     to: toEmail,
-    subject: "You're in the pool — The Mayatara",
+    subject: "You're in the pool — OppIDX Match",
     html: `
 <!DOCTYPE html>
 <html>
@@ -166,8 +166,8 @@ export async function sendWelcomeEmail(toEmail: string, userName: string, lookin
   <div class="wrap">
     <div class="header">
       <div class="header-inner">
-        <img src="${LOGO_URL}" alt="The Mayatara" width="72" height="72" style="object-fit:contain;display:block;" />
-        <h1>THE MAYATARA</h1>
+        <img src="${LOGO_URL}" alt="OppIDX" width="72" height="72" style="object-fit:contain;display:block;" />
+        <h1>OPPIDX MATCH</h1>
       </div>
     </div>
     <div class="body">
@@ -176,13 +176,13 @@ export async function sendWelcomeEmail(toEmail: string, userName: string, lookin
       <p>Every Friday night, we run the pool. If we find your person, you'll get an email with their contact. If we don't, we'll tell you that too.</p>
       <p><strong>Either way — your result will always be on your dashboard.</strong> Email can get delayed or land in spam. Your dashboard won't. Make it a habit: open it every Friday evening.</p>
       <div style="margin:20px 0;text-align:center">
-        <a href="${MAYATARA_BASE_URL}/dashboard" style="display:inline-block;background:#8B1A1A;color:#FAF0D7;font-family:'Courier New',monospace;font-size:12px;letter-spacing:3px;padding:14px 28px;text-decoration:none;">
+        <a href="${SITE_URL}/account/dashboard" style="display:inline-block;background:#8B1A1A;color:#FAF0D7;font-family:'Courier New',monospace;font-size:12px;letter-spacing:3px;padding:14px 28px;text-decoration:none;">
           ◆ &nbsp; CHECK YOUR DASHBOARD
         </a>
       </div>
       <p style="font-size:11px;color:#6B4C35">Bookmark it. Every Friday evening, that's where you go first.</p>
       <p style="color:#D4600A;font-style:italic">"5 questions. One match. The rest is yours."</p>
-      <div class="sign">The Mayatara · For the real ones · ${MAYATARA_DISPLAY_DOMAIN}<br>Built in India. Thinking from Silicon Valley.</div>
+      <div class="sign">OppIDX Match · For the real ones · ${DISPLAY_DOMAIN}<br>Built in India. Thinking from Silicon Valley.</div>
     </div>
   </div>
 </body>

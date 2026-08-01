@@ -21,8 +21,8 @@ function maxDOB() {
 }
 
 /**
- * The real signup — same two existing Mayatara endpoints the full
- * /mayatara/register + /mayatara/interview flow uses (register, then
+ * The real signup — same two existing Match endpoints the full
+ * /account/register + /match/interview flow uses (register, then
  * profile/save), just the minimum required subset of fields instead of
  * the full demographic form, and one combined "about you" line standing
  * in for the 5-question interview. A real account and a real, matchable
@@ -77,7 +77,7 @@ export function FindYourPersonModal({ opportunityTitle, onClose }: { opportunity
   async function saveProfile(accessToken: string) {
     setRetrying(true)
     try {
-      const saveRes = await fetch('/api/mayatara/profile/save', {
+      const saveRes = await fetch('/api/match/profile/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({
@@ -111,7 +111,7 @@ export function FindYourPersonModal({ opportunityTitle, onClose }: { opportunity
     if (!sharedSession && !password) { setError('Choose a password.'); return }
     setState('sending')
     try {
-      const registerRes = await fetch('/api/mayatara/auth/register', {
+      const registerRes = await fetch('/api/match/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -151,12 +151,12 @@ export function FindYourPersonModal({ opportunityTitle, onClose }: { opportunity
         <>
           <ModalHeader title="India only — for now." onClose={onClose} />
           <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 16 }}>
-            The Mayatara is currently open for registration in India only. We&apos;re starting here, doing it right, and expanding when the time is right.
+            OppIDX Match is currently open for registration in India only. We&apos;re starting here, doing it right, and expanding when the time is right.
           </p>
           <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 20 }}>
             You can still explore the app and check compatibility.
           </p>
-          <Link href="/mayatara" onClick={onClose} style={{ fontSize: 13, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none' }}>Explore The Mayatara →</Link>
+          <Link href="/match" onClick={onClose} style={{ fontSize: 13, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none' }}>Explore OppIDX Match →</Link>
         </>
       ) : state === 'done' ? (
         <>
@@ -164,7 +164,7 @@ export function FindYourPersonModal({ opportunityTitle, onClose }: { opportunity
           <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 18 }}>
             You&apos;re in the pool for this Friday&apos;s match. Want to add more detail — photos, preferences, a real interview answer instead of the placeholder? Finish it from your dashboard any time.
           </p>
-          <Link href="/mayatara/dashboard" onClick={onClose} style={{
+          <Link href="/account/dashboard" onClick={onClose} style={{
             display: 'inline-block', padding: '10px 20px', borderRadius: 2,
             background: 'var(--btn-bg)', color: 'var(--btn-text)', textDecoration: 'none',
             fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13,
@@ -184,11 +184,11 @@ export function FindYourPersonModal({ opportunityTitle, onClose }: { opportunity
               {retrying ? 'Retrying…' : 'Retry saving your profile →'}
             </ModalSubmitButton>
           ) : (
-            <Link href="/mayatara/login" onClick={onClose} style={{
+            <Link href="/account" onClick={onClose} style={{
               display: 'inline-block', padding: '10px 20px', borderRadius: 2,
               background: 'var(--btn-bg)', color: 'var(--btn-text)', textDecoration: 'none',
               fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13,
-            }}>Log in to The Mayatara →</Link>
+            }}>Log in →</Link>
           )}
         </>
       ) : (
@@ -226,7 +226,7 @@ export function FindYourPersonModal({ opportunityTitle, onClose }: { opportunity
           </ModalSubmitButton>
 
           <p style={{ fontSize: 10.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 12, lineHeight: 1.5 }}>
-            18+. By joining you agree to <Link href="/mayatara/terms" style={{ color: 'var(--ink-3)' }}>The Mayatara&apos;s Terms</Link>. Matches run once a week, this Friday.
+            18+. By joining you agree to <Link href="/match/terms" style={{ color: 'var(--ink-3)' }}>OppIDX Match&apos;s Terms</Link>. Matches run once a week, this Friday.
           </p>
         </form>
       )}

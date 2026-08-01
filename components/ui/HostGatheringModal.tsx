@@ -12,8 +12,8 @@ function minDateTime() {
   return d.toISOString().slice(0, 16)
 }
 
-/** A direct port of /mayatara/events/new into a popup — same fields, same
- * unauthenticated /api/mayatara/events/create endpoint, same "no account,
+/** A direct port of /events/new into a popup — same fields, same
+ * unauthenticated /api/events/create endpoint, same "no account,
  * live in seconds" model. Only difference is where it's triggered from. */
 export function HostGatheringModal({ opportunityTitle, onClose }: { opportunityTitle: string; onClose: () => void }) {
   const [title, setTitle] = useState(`${opportunityTitle} — meetup`)
@@ -35,7 +35,7 @@ export function HostGatheringModal({ opportunityTitle, onClose }: { opportunityT
     setError('')
     setState('sending')
     try {
-      const res = await fetch('/api/mayatara/events/create', {
+      const res = await fetch('/api/events/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -55,7 +55,7 @@ export function HostGatheringModal({ opportunityTitle, onClose }: { opportunityT
   }
 
   if (state === 'done' && result) {
-    const manageUrl = `/mayatara/events/${result.slug}/manage?token=${result.manageToken}`
+    const manageUrl = `/events/${result.slug}/manage?token=${result.manageToken}`
     return (
       <Modal onClose={onClose}>
         <ModalHeader title="Your gathering is live." onClose={onClose} />
@@ -68,7 +68,7 @@ export function HostGatheringModal({ opportunityTitle, onClose }: { opportunityT
         </p>
         <div style={{ display: 'flex', gap: 10 }}>
           <Link href={manageUrl} onClick={onClose} style={{ flex: 1, textAlign: 'center', padding: '10px 16px', borderRadius: 2, background: 'var(--btn-bg)', color: 'var(--btn-text)', textDecoration: 'none', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5 }}>Guest list →</Link>
-          <Link href={`/mayatara/events/${result.slug}`} onClick={onClose} style={{ flex: 1, textAlign: 'center', padding: '10px 16px', borderRadius: 2, border: '1.5px solid var(--line)', color: 'var(--ink)', textDecoration: 'none', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5 }}>View page →</Link>
+          <Link href={`/events/${result.slug}`} onClick={onClose} style={{ flex: 1, textAlign: 'center', padding: '10px 16px', borderRadius: 2, border: '1.5px solid var(--line)', color: 'var(--ink)', textDecoration: 'none', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5 }}>View page →</Link>
         </div>
       </Modal>
     )
@@ -92,7 +92,7 @@ export function HostGatheringModal({ opportunityTitle, onClose }: { opportunityT
 
         <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 11.5, color: 'var(--ink-2)', marginBottom: 14, lineHeight: 1.5 }}>
           <input type="checkbox" checked={isListed} onChange={e => setIsListed(e.target.checked)} style={{ marginTop: 2 }} />
-          List this publicly on /mayatara/events so anyone can discover it. Off — only people with the direct link can find it.
+          List this publicly on /events so anyone can discover it. Off — only people with the direct link can find it.
         </label>
 
         <div style={{ display: 'flex', gap: 10 }}>
@@ -107,7 +107,7 @@ export function HostGatheringModal({ opportunityTitle, onClose }: { opportunityT
         </ModalSubmitButton>
 
         <p style={{ fontSize: 10.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 12, lineHeight: 1.5 }}>
-          You&apos;re responsible for your event&apos;s legality and any required permits — see <Link href="/mayatara/terms" style={{ color: 'var(--ink-3)' }}>Terms</Link>.
+          You&apos;re responsible for your event&apos;s legality and any required permits — see <Link href="/match/terms" style={{ color: 'var(--ink-3)' }}>Terms</Link>.
         </p>
       </form>
     </Modal>

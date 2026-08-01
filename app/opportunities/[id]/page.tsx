@@ -302,7 +302,7 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {relatedGatherings.map(g => (
-                    <a key={g.slug} href={`/mayatara/events/${g.slug}`} style={{ fontSize: 13.5, color: 'var(--pin)', textDecoration: 'none' }}>
+                    <a key={g.slug} href={`/events/${g.slug}`} style={{ fontSize: 13.5, color: 'var(--pin)', textDecoration: 'none' }}>
                       {g.title} <span style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>· {g.location}</span>
                     </a>
                   ))}
@@ -317,7 +317,7 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
                 </div>
                 <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.6 }}>
                   No browsable list here — that would out who's applying to what. If you're linked with{' '}
-                  <Link href="/mayatara" style={{ color: 'var(--pin)' }}>Mayatara</Link>, a real match within this group (if there's a good one) reveals itself the usual way, this Friday.
+                  <Link href="/match" style={{ color: 'var(--pin)' }}>Match</Link>, a real match within this group (if there's a good one) reveals itself the usual way, this Friday.
                 </div>
               </div>
             )}

@@ -26,12 +26,12 @@ export async function GET(req: NextRequest) {
   }
 
   const daily = await generateDailyDigest()
-  const dailyUrl = `${SITE_URL}/mayatara/pulse/digest/${daily.period}`
+  const dailyUrl = `${SITE_URL}/pulse/digest/${daily.period}`
   const dailyCount = `${daily.itemCount} action${daily.itemCount === 1 ? '' : 's'}`
 
   const isSunday = new Date().getUTCDay() === 0
   const weekly = isSunday ? await generateWeeklyDigest() : null
-  const weeklyUrl = weekly ? `${SITE_URL}/mayatara/pulse/digest/${weekly.period}` : null
+  const weeklyUrl = weekly ? `${SITE_URL}/pulse/digest/${weekly.period}` : null
   const weeklyCount = weekly ? `${weekly.itemCount} action${weekly.itemCount === 1 ? '' : 's'}` : ''
 
   const telegramMessage = [

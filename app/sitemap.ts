@@ -21,7 +21,9 @@ const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitema
   { path: '/companies', changeFrequency: 'daily', priority: 0.8 },
   { path: '/newsletter', changeFrequency: 'daily', priority: 0.8 },
   { path: '/resources', changeFrequency: 'daily', priority: 0.8 },
-  { path: '/mayatara/pulse', changeFrequency: 'daily', priority: 0.7 },
+  { path: '/events', changeFrequency: 'hourly', priority: 0.7 },
+  { path: '/pulse', changeFrequency: 'daily', priority: 0.7 },
+  { path: '/match', changeFrequency: 'weekly', priority: 0.6 },
   { path: '/philosophy', changeFrequency: 'monthly', priority: 0.5 },
   ...(PAYWALL_ENABLED ? [{ path: '/pricing', changeFrequency: 'monthly' as const, priority: 0.5 }] : []),
   { path: '/advertise', changeFrequency: 'monthly', priority: 0.4 },
@@ -76,7 +78,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   const pulseDigestEntries: MetadataRoute.Sitemap = pulseDigests.map(p => ({
-    url: `${SITE_URL}/mayatara/pulse/digest/${p.period}`,
+    url: `${SITE_URL}/pulse/digest/${p.period}`,
     lastModified: p.createdAt,
     changeFrequency: 'yearly',
     priority: 0.5,

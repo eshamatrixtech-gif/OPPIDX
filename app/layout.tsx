@@ -2,10 +2,10 @@ import type { Metadata } from 'next'
 import { Special_Elite, IBM_Plex_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SITE_URL } from '@/lib/siteUrl'
-import { CrossPromoNav } from '@/components/ui/CrossPromoNav'
 import { ReferralCapture } from '@/components/ReferralCapture'
 import { VisitTracker } from '@/components/VisitTracker'
 import './globals.css'
+import './stamped.css'
 
 const typewriter = Special_Elite({
   subsets: ['latin'],
@@ -47,7 +47,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
         <ReferralCapture />
         <VisitTracker />
-        <CrossPromoNav />
         {children}
         <Analytics />
       </body>

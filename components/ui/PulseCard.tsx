@@ -43,7 +43,7 @@ export const PulseCard = memo(function PulseCard({ digest }: { digest: PulseDige
             {digest.summary}
           </h2>
           <Link
-            href={`/mayatara/pulse/digest/${digest.period}`}
+            href={`/pulse/digest/${digest.period}`}
             style={{
               display: 'inline-block', fontSize: 11.5, fontWeight: 700, color: 'var(--pin)',
               textDecoration: 'none', border: '1.5px solid var(--pin)', borderRadius: 2, padding: '6px 12px',

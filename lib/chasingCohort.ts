@@ -68,7 +68,7 @@ export async function chasingCohortSizes(opportunityIds: string[]): Promise<Reco
 
 /**
  * Every opportunity with a real chasing cohort right now — the Friday
- * cron's entry point (app/api/mayatara/match/find/route.ts), not scoped to
+ * cron's entry point (app/api/match/find/route.ts), not scoped to
  * a single page like chasingCohortSizes. Only opportunities that clear
  * CHASING_MIN linked, real subscribers come back — same rule as
  * everywhere else in this file.
@@ -115,7 +115,7 @@ export async function opportunitiesWithChasingCohorts(): Promise<Array<{ opportu
 /**
  * The real profile pool for one opportunity's cohort — is_active and
  * not yet matched this week, same eligibility rule the main weekly pool
- * uses. Used by the Friday cron (app/api/mayatara/match/find/route.ts),
+ * uses. Used by the Friday cron (app/api/match/find/route.ts),
  * which groups this by looking_for and runs the real matcher over it,
  * same as it already does for the main pool.
  */

@@ -1,5 +1,44 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {};
+// Mayatara (Pulse/Events/Match) used to live under /mayatara/* as a
+// separately-branded product. These are permanent, one-time URL moves as
+// part of merging it into OppIDX as one product — not aliases, so
+// `permanent: true` throughout to consolidate any existing inbound links.
+const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      { source: "/mayatara/events", destination: "/events", permanent: true },
+      { source: "/mayatara/events/new", destination: "/events/new", permanent: true },
+      { source: "/mayatara/events/:slug/manage", destination: "/events/:slug/manage", permanent: true },
+      { source: "/mayatara/events/:slug", destination: "/events/:slug", permanent: true },
+      { source: "/mayatara/pulse/digest/:period", destination: "/pulse/digest/:period", permanent: true },
+      { source: "/mayatara/pulse", destination: "/pulse", permanent: true },
+      { source: "/mayatara/interview", destination: "/match/interview", permanent: true },
+      { source: "/mayatara/compatibility", destination: "/match/compatibility", permanent: true },
+      { source: "/mayatara/philosophy", destination: "/match/philosophy", permanent: true },
+      { source: "/mayatara/terms", destination: "/match/terms", permanent: true },
+      { source: "/mayatara/match", destination: "/match", permanent: true },
+      { source: "/mayatara/login", destination: "/account", permanent: true },
+      { source: "/mayatara/register", destination: "/account/register", permanent: true },
+      { source: "/mayatara/dashboard", destination: "/account/dashboard", permanent: true },
+      { source: "/mayatara", destination: "/match", permanent: true },
+
+      // API-path redirects — defense in depth for any external caller of the
+      // old endpoints this diff didn't already fix directly (e.g. the two
+      // GitHub Actions cron workflows, updated to call the new URLs
+      // directly since a 308 only helps a client that follows redirects on
+      // its own, which `curl` without `-L` does not).
+      { source: "/api/mayatara/events/:path*", destination: "/api/events/:path*", permanent: true },
+      { source: "/api/mayatara/pulse/:path*", destination: "/api/pulse/live/:path*", permanent: true },
+      { source: "/api/mayatara/auth/:path*", destination: "/api/match/auth/:path*", permanent: true },
+      { source: "/api/mayatara/match/:path*", destination: "/api/match/:path*", permanent: true },
+      { source: "/api/mayatara/interview", destination: "/api/match/interview", permanent: true },
+      { source: "/api/mayatara/compatibility/:path*", destination: "/api/match/compatibility/:path*", permanent: true },
+      { source: "/api/mayatara/profile/:path*", destination: "/api/match/profile/:path*", permanent: true },
+      { source: "/api/mayatara/feedback", destination: "/api/match/feedback", permanent: true },
+      { source: "/api/mayatara/report/:path*", destination: "/api/match/report/:path*", permanent: true },
+    ];
+  },
+};
 
 export default nextConfig;

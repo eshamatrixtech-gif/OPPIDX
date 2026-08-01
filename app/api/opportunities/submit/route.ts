@@ -4,6 +4,7 @@ import { rateLimit } from '@/lib/rateLimit'
 import { getClientIp } from '@/lib/ip'
 import { validateSubmission, type SubmissionInput } from '@/lib/submissions/validate'
 import { inferGeo } from '@/lib/scraper/geo'
+import { templateOpportunitySummary } from '@/lib/scraper/summarize'
 
 /**
  * POST /api/opportunities/submit — public, free. "Enlist your opportunity."
@@ -51,12 +52,24 @@ export async function POST(req: NextRequest) {
   }
 
   const geo = inferGeo(input.location)
+  // employmentType isn't collected on this form (unlike scraped listings,
+  // which sometimes get a real source-disclosed value) — passing null here
+  // is honest, not a gap: the template already falls back to an
+  // audience-based label when it's absent.
+  const summary = templateOpportunitySummary({
+    org: input.org || null,
+    location: input.location || null,
+    audience: input.audience!,
+    employmentType: null,
+    compType: input.compType || null,
+  })
 
   try {
     const opp = await prisma.opportunity.create({
       data: {
         title: input.title!,
         description: input.description!,
+        summary,
         url: input.url!,
         org: input.org || null,
         audience: input.audience!,

@@ -43,7 +43,12 @@ export function templateOpportunitySummary(opp: {
 
   let summary = clauses.join(' ')
   if (opp.compType) summary += ` — ${opp.compType.toLowerCase()}`
-  summary += '.'
+  // org/location/compType are free text from the source (or, for
+  // user-submitted opportunities, the submitter) — "Stripe, Inc." or
+  // "Washington, D.C." already end in a period, and blindly appending one
+  // produced a visible ".." in both the on-page summary and the SEO meta
+  // description built from it.
+  if (!/[.!?]$/.test(summary)) summary += '.'
 
   return summary
 }

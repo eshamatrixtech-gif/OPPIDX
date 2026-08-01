@@ -8,6 +8,7 @@ import { getCurrentPaidSubscriber }  from '@/lib/subscriberSession'
 import { FREE_SEARCH_LIMIT, PAYWALL_ENABLED } from '@/lib/limits'
 import { enrichOpportunities }       from '@/lib/feedEnrichment'
 import { fetchOgMedia }              from '@/lib/ogImage'
+import { templateOpportunitySummary } from '@/lib/scraper/summarize'
 
 const PAGE_SIZE = 24
 const VALID_AUDIENCES = ['STUDENT', 'EARLY_CAREER', 'FOUNDER', 'GENERAL']
@@ -157,13 +158,20 @@ export async function POST(req: NextRequest) {
   }
 
   const geo = typeof location === 'string' ? inferGeo(location) : { region: '', country: '' }
+  const resolvedOrg = typeof org === 'string' ? org.trim() : null
+  const resolvedLocation = typeof location === 'string' ? location.trim() : null
+  const resolvedCompType = typeof compType === 'string' ? compType.trim() : null
+  const summary = templateOpportunitySummary({
+    org: resolvedOrg, location: resolvedLocation, audience, employmentType: null, compType: resolvedCompType,
+  })
 
   const created = await prisma.opportunity.create({
     data: {
       title: title.trim(),
       description: description.trim(),
+      summary,
       url: url.trim(),
-      org: typeof org === 'string' ? org.trim() : null,
+      org: resolvedOrg,
       audience,
       eligibility: typeof eligibility === 'string' ? eligibility.trim() : '',
       prepResources: typeof prepResources === 'string' ? prepResources.trim() : '',
@@ -172,7 +180,7 @@ export async function POST(req: NextRequest) {
       location: typeof location === 'string' ? location.trim() : null,
       region: geo.region,
       country: geo.country,
-      compType: typeof compType === 'string' ? compType.trim() : null,
+      compType: resolvedCompType,
       verified: typeof verified === 'boolean' ? verified : false,
       featured: typeof featured === 'boolean' ? featured : false,
       source: typeof source === 'string' && source ? source : 'user-provided',

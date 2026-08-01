@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma }                    from '@/lib/db'
 import { requireAuth }               from '@/lib/auth'
 import { inferGeo }                  from '@/lib/scraper/geo'
+import { templateOpportunitySummary } from '@/lib/scraper/summarize'
 
 /** PATCH /api/opportunities/[id] — admin-only edit/verify/soft-delete. */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -43,6 +44,25 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (typeof b.featured === 'boolean') data.featured = b.featured
   if (b.delete === true) data.deletedAt = new Date()
   if (b.delete === false) data.deletedAt = null
+
+  // Keep `summary` in sync whenever an edit touches any field it's built
+  // from — otherwise an admin correcting the org/location/comp type on a
+  // listing would leave a stale summary describing the old values.
+  const summaryInputs = ['org', 'location', 'audience', 'compType'] as const
+  if (summaryInputs.some(k => k in data)) {
+    const current = await prisma.opportunity.findUnique({
+      where: { id }, select: { org: true, location: true, audience: true, compType: true, employmentType: true },
+    })
+    if (current) {
+      data.summary = templateOpportunitySummary({
+        org: (data.org ?? current.org) as string | null,
+        location: (data.location ?? current.location) as string | null,
+        audience: (data.audience ?? current.audience) as string,
+        compType: (data.compType ?? current.compType) as string | null,
+        employmentType: current.employmentType,
+      })
+    }
+  }
 
   const updated = await prisma.opportunity.update({ where: { id }, data }).catch(() => null)
   if (!updated) return NextResponse.json({ error: 'Not found.' }, { status: 404 })

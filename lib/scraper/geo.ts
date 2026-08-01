@@ -103,6 +103,24 @@ const CONTINENT_PATTERNS: { pattern: RegExp; region: string }[] = [
 
 const REMOTE_GLOBAL_PATTERN = /\b(global|worldwide|online|remote)\b/i
 
+// Same US state list already used above to classify country/region, reused
+// here for schema.org's `addressRegion` — a much narrower claim than
+// region/country: only fires on the specific, unambiguous "City, ST"
+// pattern, not the looser full-state-name or bare-city matches used for
+// the broader region field. Blank for anything else (including non-US
+// locations) rather than guess.
+const US_STATE_SUFFIX = /,\s*(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC)\s*$/
+
+/** Deterministic, conservative extraction of a JobPosting-suitable
+ * addressRegion from free text — only the unambiguous "City, ST" suffix,
+ * never a guess. Returns "" when the location doesn't end in a
+ * recognizable US state code. */
+export function extractAddressRegion(location?: string | null): string {
+  if (!location) return ''
+  const match = US_STATE_SUFFIX.exec(location)
+  return match ? match[1] : ''
+}
+
 /** Best-effort, deterministic classification from free-text location —
  * never guesses beyond what the text says. Returns "" for both fields
  * when nothing in the string is recognizable. */

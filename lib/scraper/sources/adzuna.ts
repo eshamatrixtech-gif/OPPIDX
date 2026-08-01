@@ -8,6 +8,11 @@ import { stripHtml } from '../util'
 // erroring every hourly pass when unconfigured.
 const COUNTRIES = ['in', 'us', 'gb'] as const
 
+// Adzuna's job object carries no explicit currency field — amounts are
+// implicitly in the local currency of whichever country endpoint was
+// queried, so this maps 1:1 with COUNTRIES above.
+const CURRENCY_BY_COUNTRY: Record<string, string> = { in: 'INR', us: 'USD', gb: 'GBP' }
+
 // Exported so app/opportunities/[id]/page.tsx can key its required on-page
 // attribution off the exact same sourceUrl this adapter stores.
 export const SOURCE_URL = 'https://www.adzuna.com/'
@@ -23,8 +28,16 @@ interface AdzunaJob {
   description?: string
   redirect_url?: string
   company?: { display_name?: string }
-  location?: { display_name?: string }
+  location?: { display_name?: string; area?: string[] }
   category?: { label?: string }
+  contract_type?: string      // real, disclosed: "full_time" | "part_time" | "contract" | "permanent"
+  salary_min?: number
+  salary_max?: number
+  // "1" when Adzuna's own model estimated the figure rather than the
+  // employer disclosing it — never used for baseSalary, since an estimate
+  // presented as fact would be exactly the kind of inaccurate structured
+  // data Google's JobPosting policy exists to catch.
+  salary_is_predicted?: string
 }
 
 async function fetchCountry(country: string, appId: string, appKey: string): Promise<RawListing[]> {
@@ -46,6 +59,12 @@ async function fetchCountry(country: string, appId: string, appKey: string): Pro
         INTERNSHIP_TITLE.test(j.title!) ? 'internship' : null,
       ].filter((t): t is string => Boolean(t)).join(',')
 
+      // area is ordered broad-to-specific, e.g. ["US","Virginia","Fauquier
+      // County","Warrenton"] — index 1 is the real state/province Adzuna
+      // itself resolved, more reliable than parsing display_name text.
+      const addressRegionHint = Array.isArray(j.location?.area) ? j.location.area[1] : undefined
+      const hasRealSalary = j.salary_is_predicted !== '1' && j.salary_min != null && j.salary_max != null
+
       return {
         title: j.title!,
         url: j.redirect_url!,
@@ -56,6 +75,13 @@ async function fetchCountry(country: string, appId: string, appKey: string): Pro
         tags: tags || undefined,
         sourceLabel: 'Adzuna',
         sourceUrl: SOURCE_URL,
+        employmentTypeHint: j.contract_type,
+        addressRegionHint: addressRegionHint || undefined,
+        ...(hasRealSalary ? {
+          salaryMin: j.salary_min,
+          salaryMax: j.salary_max,
+          salaryCurrency: CURRENCY_BY_COUNTRY[country],
+        } : {}),
       }
     })
 }

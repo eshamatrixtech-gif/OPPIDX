@@ -53,6 +53,14 @@ export async function runScrapePass(): Promise<RunResult> {
             region: normalized.region,
             country: normalized.country,
             compType: normalized.compType,
+            addressRegion: normalized.addressRegion || null,
+            employmentType: normalized.employmentType,
+            // Salary is the one JobPosting field never derived here — only
+            // ever the source's own disclosed figure, passed straight
+            // through from RawListing (see lib/scraper/types.ts).
+            salaryMin: raw.salaryMin ?? null,
+            salaryMax: raw.salaryMax ?? null,
+            salaryCurrency: raw.salaryCurrency ?? null,
             imageUrl,
             videoUrl,
             verified: true,

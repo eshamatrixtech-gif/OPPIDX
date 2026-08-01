@@ -40,6 +40,20 @@ model Opportunity {
   region        String    @default("") // North America | South America | Europe | Africa | Asia | Oceania | Remote / Global | "" (unknown)
   country       String    @default("") // best-effort from location text, e.g. "India" — "" if not confidently known
   compType      String?
+  // The four fields below feed the JobPosting structured-data block (see
+  // jobPostingJsonLd() in app/opportunities/[id]/page.tsx) — every one is
+  // null unless the source genuinely provided (addressRegion: derivable
+  // from `location` text itself, e.g. a US "City, ST" suffix) or disclosed
+  // (employmentType/salary: only ever set from a real source-provided
+  // value — see lib/scraper/normalize.ts and lib/scraper/sources/adzuna.ts
+  // — never inferred or estimated). No fabricated field is ever written
+  // here; a still-null value after ingestion means the source truly
+  // doesn't say, and the JSON-LD omits that property rather than guess.
+  addressRegion String?
+  employmentType String?  // Google's enum: FULL_TIME | PART_TIME | CONTRACTOR | TEMPORARY | INTERN | VOLUNTEER | PER_DIEM | OTHER
+  salaryMin     Float?
+  salaryMax     Float?
+  salaryCurrency String?  // ISO 4217, e.g. "USD" — always set together with salaryMin/salaryMax
   // Real og:image / og:video pulled from the listing's own application
   // page at ingestion time (lib/ogImage.ts) — never stock media. Null for
   // most pre-existing rows until a backfill runs; the card renders

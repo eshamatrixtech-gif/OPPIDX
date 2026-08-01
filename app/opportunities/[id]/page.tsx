@@ -103,8 +103,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 // applying it to a scholarship, grant, or competition would be structured-
 // data misuse (and risks a manual action against the whole site), so this
 // only fires for listings whose tags don't carry one of those non-job
-// signals. No fabricated fields: baseSalary/validThrough are omitted
-// entirely rather than guessed, since the data genuinely isn't tracked.
+// signals. No fabricated fields, ever: addressRegion/employmentType/
+// baseSalary are only emitted when Opportunity actually has a real,
+// source-derived value stored (see lib/scraper/normalize.ts and
+// lib/scraper/sources/adzuna.ts for how those get populated honestly) —
+// still omitted otherwise, same as validThrough/streetAddress/postalCode
+// always are, since nothing in this pipeline captures those at all.
 //
 // hiringOrganization and a location signal (jobLocation, or jobLocationType
 // "TELECOMMUTE" + applicantLocationRequirements) are both REQUIRED by
@@ -129,9 +133,17 @@ function jobPostingJsonLd(opp: NonNullable<Awaited<ReturnType<typeof getOpportun
     description: opp.description,
     datePosted: opp.addedAt.toISOString(),
     hiringOrganization: { '@type': 'Organization', name: opp.org },
-    employmentType: tags.includes('internship') || tags.includes('intern') ? 'INTERN' : undefined,
+    employmentType: opp.employmentType || (tags.includes('internship') || tags.includes('intern') ? 'INTERN' : undefined),
     directApply: false,
     url: pageUrl,
+  }
+
+  if (opp.salaryMin != null && opp.salaryMax != null && opp.salaryCurrency) {
+    jsonLd.baseSalary = {
+      '@type': 'MonetaryAmount',
+      currency: opp.salaryCurrency,
+      value: { '@type': 'QuantitativeValue', minValue: opp.salaryMin, maxValue: opp.salaryMax, unitText: 'YEAR' },
+    }
   }
 
   // applicantLocationRequirements is required whenever jobLocationType is
@@ -148,6 +160,7 @@ function jobPostingJsonLd(opp: NonNullable<Awaited<ReturnType<typeof getOpportun
       address: {
         '@type': 'PostalAddress',
         addressLocality: opp.location || undefined,
+        addressRegion: opp.addressRegion || undefined,
         addressCountry: opp.country || undefined,
       },
     }

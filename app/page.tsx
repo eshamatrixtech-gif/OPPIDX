@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { OpportunityCard, type CardExtras } from '@/components/ui/OpportunityCard'
 import { PulseCard, type PulseDigest } from '@/components/ui/PulseCard'
 import { EventCard, type UpcomingEvent } from '@/components/ui/EventCard'
@@ -453,7 +454,7 @@ export default function Home() {
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', rowGap: 12, marginBottom: 28 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <img src="/logo.png" alt="" width={40} height={40} style={{ display: 'block' }} />
+              <Image src="/logo.png" alt="OppIDX" width={40} height={40} priority style={{ display: 'block' }} />
               <Wordmark size={22} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>

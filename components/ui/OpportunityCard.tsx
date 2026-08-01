@@ -112,7 +112,7 @@ export const OpportunityCard = memo(function OpportunityCard({ opp, extras }: { 
           {opp.imageUrl ? (
             <SafeImage
               src={opp.imageUrl}
-              alt=""
+              alt={opp.org ? `${opp.title} at ${opp.org}` : opp.title}
               style={{ display: 'block', width: '100%', height: 132, objectFit: 'cover', borderBottom: '1px solid var(--line)' }}
               fallback={<GeneratedBanner id={opp.id} audience={opp.audience} height={132} />}
             />

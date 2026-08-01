@@ -205,7 +205,7 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
           }}>
             <SafeImage
               src={opp.imageUrl}
-              alt=""
+              alt={opp.org ? `${opp.title} at ${opp.org}` : opp.title}
               style={{ display: 'block', width: '100%', maxHeight: 280, objectFit: 'cover' }}
               fallback={<GeneratedBanner id={opp.id} audience={opp.audience} height={220} />}
             />

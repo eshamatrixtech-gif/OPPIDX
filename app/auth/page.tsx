@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { Wordmark } from '@/components/ui/Wordmark'
 
@@ -71,7 +72,7 @@ function AuthForm() {
         style={{ width: '100%', maxWidth: 400, padding: '38px 32px' }}>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 26 }}>
-          <img src="/logo.png" alt="" width={44} height={44} style={{ display: 'block' }} />
+          <Image src="/logo.png" alt="OppIDX" width={44} height={44} style={{ display: 'block' }} />
           <Wordmark size={24} />
         </div>
 

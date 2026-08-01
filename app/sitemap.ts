@@ -14,7 +14,17 @@ import { getCompanyList } from '@/lib/companies'
 // changes code."
 export const revalidate = 3600
 
-const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency']; priority: number }> = [
+// `lastModified` below is deliberately NOT always "now" — Search Console
+// and Google's own sitemap docs treat lastmod as a claim about real content
+// change, and a sitemap that stamps every URL with the current instant on
+// every regeneration (this ran hourly) teaches Googlebot the signal is
+// unreliable, which makes it fall back to slower heuristic recrawl timing
+// for the whole site — including the pages that genuinely do change every
+// hour. Only routes whose content is actually live-computed from the
+// database on every request (the feed, the live board) get `new Date()`;
+// static informational pages get a fixed date that only moves when someone
+// deliberately updates it alongside a real content change.
+const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency']; priority: number; lastModified?: Date }> = [
   { path: '', changeFrequency: 'hourly', priority: 1 },
   { path: '/browse', changeFrequency: 'hourly', priority: 0.9 },
   { path: '/collections', changeFrequency: 'daily', priority: 0.8 },
@@ -22,11 +32,11 @@ const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitema
   { path: '/newsletter', changeFrequency: 'daily', priority: 0.8 },
   { path: '/resources', changeFrequency: 'daily', priority: 0.8 },
   { path: '/pulse', changeFrequency: 'daily', priority: 0.7 },
-  { path: '/philosophy', changeFrequency: 'monthly', priority: 0.5 },
-  ...(PAYWALL_ENABLED ? [{ path: '/pricing', changeFrequency: 'monthly' as const, priority: 0.5 }] : []),
-  { path: '/advertise', changeFrequency: 'monthly', priority: 0.4 },
-  { path: '/widget', changeFrequency: 'monthly', priority: 0.3 },
-  { path: '/terms', changeFrequency: 'yearly', priority: 0.2 },
+  { path: '/philosophy', changeFrequency: 'monthly', priority: 0.5, lastModified: new Date('2026-08-01') },
+  ...(PAYWALL_ENABLED ? [{ path: '/pricing', changeFrequency: 'monthly' as const, priority: 0.5, lastModified: new Date('2026-08-01') }] : []),
+  { path: '/advertise', changeFrequency: 'monthly', priority: 0.4, lastModified: new Date('2026-08-01') },
+  { path: '/widget', changeFrequency: 'monthly', priority: 0.3, lastModified: new Date('2026-08-01') },
+  { path: '/terms', changeFrequency: 'yearly', priority: 0.2, lastModified: new Date('2026-08-01') },
 ]
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -49,7 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map(r => ({
     url: `${SITE_URL}${r.path}`,
-    lastModified: new Date(),
+    lastModified: r.lastModified ?? new Date(),
     changeFrequency: r.changeFrequency,
     priority: r.priority,
   }))

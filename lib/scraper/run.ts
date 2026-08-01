@@ -3,6 +3,7 @@ import { SOURCES } from './sources'
 import { normalize } from './normalize'
 import { normalizeUrl } from './util'
 import { fetchOgMedia } from '@/lib/ogImage'
+import { writeOpportunitySummary } from './summarize.ai'
 
 interface SourceStats {
   fetched: number
@@ -37,11 +38,17 @@ export async function runScrapePass(): Promise<RunResult> {
 
         const normalized = normalize(raw)
         const { imageUrl, videoUrl } = await fetchOgMedia(url)
+        // Real, original 1-2 sentence summary — see summarize.ai.ts. Never
+        // blocks or fails the listing itself: returns null (not a fake
+        // fallback) if the AI call errors, same fail-open rule as every
+        // other AI call in this codebase.
+        const summary = await writeOpportunitySummary(raw.title.trim(), raw.org ?? null, normalized.description)
 
         await prisma.opportunity.create({
           data: {
             title: raw.title.trim(),
             description: normalized.description,
+            summary,
             url,
             org: raw.org ?? null,
             audience: normalized.audience,

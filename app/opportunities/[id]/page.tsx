@@ -94,9 +94,44 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!opp) return { title: 'Not found — OppIDX' }
   return pageMetadata({
     title: `${opp.title} — OppIDX`,
-    description: opp.description.slice(0, 160),
+    // Prefer the original AI-written summary over a truncated raw
+    // description — the raw text is usually scraped verbatim from the
+    // original posting, so a meta description built from it tends to be
+    // near-identical to what Indeed/LinkedIn/the employer's own listing
+    // shows in the same search results. summary is genuinely unique copy.
+    description: (opp.summary || opp.description).slice(0, 160),
     canonical: `${SITE_URL}/opportunities/${opp.id}`,
   })
+}
+
+// Shows the breadcrumb trail in the search result itself instead of a bare
+// URL — real navigation path, not a fabricated one: Collections pages for
+// STUDENT/EARLY_CAREER/FOUNDER already exist and are linked from the
+// header nav (see lib/collectionDefs.ts); GENERAL has no dedicated
+// collection, so it falls back to the real /browse listing instead.
+const AUDIENCE_COLLECTION: Record<string, { slug: string; label: string }> = {
+  STUDENT: { slug: 'students', label: 'Students' },
+  EARLY_CAREER: { slug: 'early-career', label: 'Early Career' },
+  FOUNDER: { slug: 'founders', label: 'Founders' },
+}
+
+function breadcrumbJsonLd(opp: { title: string; audience: string }, pageUrl: string): string {
+  const collection = AUDIENCE_COLLECTION[opp.audience]
+  const items = [
+    { name: 'OppIDX', item: SITE_URL },
+    collection
+      ? { name: collection.label, item: `${SITE_URL}/collections/${collection.slug}` }
+      : { name: 'Browse', item: `${SITE_URL}/browse` },
+    { name: opp.title, item: pageUrl },
+  ]
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((it, i) => ({
+      '@type': 'ListItem', position: i + 1, name: it.name, item: it.item,
+    })),
+  }
+  return JSON.stringify(jsonLd).replace(/</g, '\\u003c')
 }
 
 // Google's JobPosting rich result is for actual employment listings —
@@ -186,10 +221,12 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
   const chasingCount = await chasingCohortSize(opp.id)
   const pageUrl = `${SITE_URL}/opportunities/${opp.id}`
   const jobLd = jobPostingJsonLd(opp, pageUrl)
+  const breadcrumbLd = breadcrumbJsonLd(opp, pageUrl)
 
   return (
     <div style={{ minHeight: '100vh', padding: '40px 20px 80px' }}>
       {jobLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jobLd }} />}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbLd }} />
       <ViewTracker id={opp.id} />
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
         <Link href="/" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>
@@ -242,6 +279,15 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
             {opp.title}
           </h1>
           {opp.org && <div style={{ fontSize: 14, color: 'var(--ink-2)', marginBottom: 20 }}>{opp.org}</div>}
+
+          {opp.summary && (
+            <p style={{
+              fontSize: 15, color: 'var(--ink)', lineHeight: 1.6, marginBottom: 18, fontWeight: 600,
+              paddingLeft: 14, borderLeft: '3px solid var(--terracotta)',
+            }}>
+              {opp.summary}
+            </p>
+          )}
 
           <p style={{ fontSize: 14.5, color: 'var(--ink-2)', lineHeight: 1.75, marginBottom: 24, whiteSpace: 'pre-wrap' }}>
             {opp.description}

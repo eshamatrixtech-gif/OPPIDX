@@ -40,6 +40,18 @@ model Opportunity {
   region        String    @default("") // North America | South America | Europe | Africa | Asia | Oceania | Remote / Global | "" (unknown)
   country       String    @default("") // best-effort from location text, e.g. "India" — "" if not confidently known
   compType      String?
+  // A short, original 1-2 sentence AI-written summary — never a paraphrase
+  // instruction that could invent facts, only ever describing what's
+  // literally in title/org/description (see lib/scraper/summarize.ai.ts).
+  // Exists because `description` itself is usually scraped verbatim from
+  // the original posting, identical to what Indeed/LinkedIn/the employer's
+  // own site show — real duplicate-content risk that hurts ranking against
+  // higher-authority domains carrying the same text. `summary` is the one
+  // piece of genuinely original copy on the page. Null until the
+  // ingestion-time AI call succeeds or a backfill covers it (see
+  // scripts/backfill-summaries.ts) — the raw description is still shown
+  // and indexed either way, this only adds to it.
+  summary       String?
   // The four fields below feed the JobPosting structured-data block (see
   // jobPostingJsonLd() in app/opportunities/[id]/page.tsx) — every one is
   // null unless the source genuinely provided (addressRegion: derivable

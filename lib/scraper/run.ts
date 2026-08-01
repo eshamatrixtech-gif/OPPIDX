@@ -3,7 +3,11 @@ import { SOURCES } from './sources'
 import { normalize } from './normalize'
 import { normalizeUrl } from './util'
 import { fetchOgMedia } from '@/lib/ogImage'
-import { writeOpportunitySummary } from './summarize.ai'
+// Templated (non-AI) for now — no OpenAI credit as of writing. Swap back
+// to `import { writeOpportunitySummary } from './summarize.ai'` (and call
+// it with (title, org, description) instead) once there's budget again;
+// see lib/scraper/summarize.ts's own comment for the full swap-back note.
+import { templateOpportunitySummary } from './summarize'
 
 interface SourceStats {
   fetched: number
@@ -38,11 +42,13 @@ export async function runScrapePass(): Promise<RunResult> {
 
         const normalized = normalize(raw)
         const { imageUrl, videoUrl } = await fetchOgMedia(url)
-        // Real, original 1-2 sentence summary — see summarize.ai.ts. Never
-        // blocks or fails the listing itself: returns null (not a fake
-        // fallback) if the AI call errors, same fail-open rule as every
-        // other AI call in this codebase.
-        const summary = await writeOpportunitySummary(raw.title.trim(), raw.org ?? null, normalized.description)
+        const summary = templateOpportunitySummary({
+          org: raw.org ?? null,
+          location: raw.location ?? null,
+          audience: normalized.audience,
+          employmentType: normalized.employmentType,
+          compType: normalized.compType,
+        })
 
         await prisma.opportunity.create({
           data: {

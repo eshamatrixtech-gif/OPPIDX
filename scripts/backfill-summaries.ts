@@ -1,54 +1,44 @@
 /**
- * One-off backfill: the real, original AI-written `summary` (see
- * lib/scraper/summarize.ai.ts) for opportunities that predate it — every
- * new listing gets one automatically at ingestion time now (see
- * lib/scraper/run.ts). Bounded and prioritized by viewCount, same
- * reasoning as scripts/backfill-images.ts: this costs a real OpenAI call
- * per row, so a small worker pool and a hard cap keep one run a
- * reasonable, re-runnable chunk of the backlog rather than a blind pass
- * over the whole table.
+ * One-off backfill: the `summary` field (see lib/scraper/summarize.ts) for
+ * opportunities that predate it — every new listing gets one automatically
+ * at ingestion time now (see lib/scraper/run.ts). Templated, not AI —
+ * there's no OpenAI credit as of writing (see lib/scraper/summarize.ai.ts's
+ * comment for the swap-back note); this uses the pure-templating sibling
+ * instead, so it's free to run and doesn't need to wait on billing.
+ *
+ * Bounded by default, same reasoning as scripts/backfill-images.ts —
+ * though since this makes no external calls at all (pure computation over
+ * columns already on the row), there's no real reason not to run it
+ * unbounded; pass a very high limit (or 0) to cover everything in one go.
  *
  * Usage: npx tsx scripts/backfill-summaries.ts [limit]
- * Defaults to the top 150 most-viewed opportunities missing a summary.
+ * Defaults to the top 150 most-viewed opportunities missing a summary;
+ * pass 0 for no limit (every row missing one).
  */
 import { prisma } from '../lib/db'
-import { writeOpportunitySummary } from '../lib/scraper/summarize.ai'
-
-const CONCURRENCY = 5
+import { templateOpportunitySummary } from '../lib/scraper/summarize'
 
 async function main() {
-  const limit = parseInt(process.argv[2] ?? '150', 10) || 150
+  const limitArg = parseInt(process.argv[2] ?? '150', 10)
+  const limit = Number.isFinite(limitArg) && limitArg > 0 ? limitArg : undefined
 
   const targets = await prisma.opportunity.findMany({
     where: { summary: null, verified: true, deletedAt: null },
     orderBy: { viewCount: 'desc' },
-    take: limit,
-    select: { id: true, title: true, org: true, description: true },
+    ...(limit ? { take: limit } : {}),
+    select: { id: true, org: true, location: true, audience: true, employmentType: true, compType: true },
   })
 
-  console.log(`Backfilling summaries for ${targets.length} opportunities (top ${limit} by views)…`)
+  console.log(`Backfilling summaries for ${targets.length} opportunities…`)
 
   let filled = 0
-  let checked = 0
-  let cursor = 0
-
-  async function worker() {
-    while (cursor < targets.length) {
-      const target = targets[cursor++]
-      const summary = await writeOpportunitySummary(target.title, target.org, target.description)
-      checked++
-
-      if (summary) {
-        await prisma.opportunity.update({ where: { id: target.id }, data: { summary } })
-        filled++
-        console.log(`✓ [${checked}/${targets.length}] ${target.title}`)
-      } else {
-        console.log(`· [${checked}/${targets.length}] ${target.title} — AI call failed, left null`)
-      }
+  for (const opp of targets) {
+    const summary = templateOpportunitySummary(opp)
+    if (summary) {
+      await prisma.opportunity.update({ where: { id: opp.id }, data: { summary } })
+      filled++
     }
   }
-
-  await Promise.all(Array.from({ length: CONCURRENCY }, worker))
 
   console.log(`\nDone. ${filled} of ${targets.length} got a summary.`)
 }

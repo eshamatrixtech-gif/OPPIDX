@@ -1,29 +1,32 @@
 import { rateLimit } from '@/lib/rateLimit'
+import { getResend } from '@/lib/email'
+
+const FROM = process.env.EMAIL_FROM || 'OppIDX <onboarding@resend.dev>'
 
 /**
  * Internal ops alerting — separate from lib/discord.ts's
  * sendDiscordMessage(), which posts to the *public* community server and
- * is gated behind SOCIAL_CHANNELS_ENABLED (currently off). Error payloads
- * can contain request paths, digests, and stack-adjacent detail that
- * shouldn't be visible to community members, so this uses its own webhook
- * pointed at a private channel and has no dependency on that flag.
+ * is gated behind SOCIAL_CHANNELS_ENABLED (currently off). Emails ADMIN_EMAIL
+ * directly instead of Discord, since that's not somewhere this gets watched.
+ * Plain text, not HTML — this is a wake-up ping, not a newsletter, and it
+ * sidesteps ever needing to escape error text for safe HTML rendering.
  *
- * No-ops (returns false, never throws) until DISCORD_ALERTS_WEBHOOK_URL is
- * set — create an incoming webhook on a private Discord channel and add
- * the URL to your env to turn this on.
+ * No-ops (returns false, never throws) if ADMIN_EMAIL or RESEND_API_KEY
+ * isn't set, same fail-open pattern as every other integration here.
  */
-export async function sendOpsAlert(content: string): Promise<boolean> {
-  const webhookUrl = process.env.DISCORD_ALERTS_WEBHOOK_URL
-  if (!webhookUrl) return false
+export async function sendOpsAlert(subject: string, details: string): Promise<boolean> {
+  const to = process.env.ADMIN_EMAIL
+  if (!to) return false
 
   try {
-    const res = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: content.slice(0, 1900) }),
+    const { error } = await getResend().emails.send({
+      from: FROM,
+      to,
+      subject: `🚨 ALERT!!! CAUTION — ${subject}`,
+      text: `ALERT!!! CAUTION\n\n${details}`,
     })
-    if (!res.ok) {
-      console.error('[alerts] send failed:', res.status, await res.text().catch(() => ''))
+    if (error) {
+      console.error('[alerts] send failed:', error)
       return false
     }
     return true
@@ -34,9 +37,9 @@ export async function sendOpsAlert(content: string): Promise<boolean> {
 }
 
 /** One alert per distinct error key per window — a crash-looping route
- * would otherwise post hundreds of near-identical messages. */
-export async function sendThrottledOpsAlert(key: string, content: string): Promise<boolean> {
+ * would otherwise send hundreds of near-identical emails. */
+export async function sendThrottledOpsAlert(key: string, subject: string, details: string): Promise<boolean> {
   const rl = rateLimit(`ops-alert:${key}`, 15 * 60_000, 1)
   if (!rl.ok) return false
-  return sendOpsAlert(content)
+  return sendOpsAlert(subject, details)
 }

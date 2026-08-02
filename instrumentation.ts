@@ -16,10 +16,10 @@ export async function register() {
 // Server-side error hook: Next.js calls this for uncaught errors in Server
 // Components, Route Handlers, and Server Actions — the cases route.ts files
 // that DON'T wrap themselves in try/catch would otherwise fail silently
-// (visible only in server logs nobody's watching). Posts to a private
-// Discord channel via lib/alerts.ts, throttled per error site so a
-// crash-looping route can't spam it. Skipped outside production — every
-// `next dev` type error would otherwise fire it while coding.
+// (visible only in server logs nobody's watching). Emails ADMIN_EMAIL via
+// lib/alerts.ts, throttled per error site so a crash-looping route can't
+// spam the inbox. Skipped outside production — every `next dev` type error
+// would otherwise fire it while coding.
 import type { Instrumentation } from 'next'
 
 export const onRequestError: Instrumentation.onRequestError = async (err, request, context) => {
@@ -31,9 +31,8 @@ export const onRequestError: Instrumentation.onRequestError = async (err, reques
   const { sendThrottledOpsAlert } = await import('./lib/alerts')
   await sendThrottledOpsAlert(
     digest ?? `${request.method} ${request.path}`,
-    `⚠️ **OppIDX server error**\n` +
-    `${request.method} \`${request.path}\` (${context.routeType})\n` +
-    `${message}` +
-    (digest ? `\nRef: \`${digest}\`` : ''),
+    `${request.method} ${request.path}`,
+    `${request.method} ${request.path} (${context.routeType})\n${message}` +
+    (digest ? `\nRef: ${digest}` : ''),
   )
 }

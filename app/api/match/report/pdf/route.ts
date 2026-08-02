@@ -1,4 +1,16 @@
 import PDFDocument from "pdfkit";
+import { NextRequest } from "next/server";
+import { rateLimit } from "@/lib/rateLimit";
+
+const MAX_BODY = 20_000
+
+function ip(req: NextRequest): string {
+  return (
+    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
+    req.headers.get('x-real-ip') ??
+    'unknown'
+  )
+}
 
 interface ReportData {
   personA: string;
@@ -13,7 +25,21 @@ interface ReportData {
   verdict: string;
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const contentLength = Number(req.headers.get('content-length') ?? 0)
+  if (contentLength > MAX_BODY) {
+    return new Response(JSON.stringify({ error: 'Request too large.' }), { status: 413 })
+  }
+
+  // Unauthenticated, CPU-bound PDF generation from client-supplied text —
+  // rate-limited so it can't be hammered as a resource-exhaustion vector.
+  const rl = rateLimit(`match-report-pdf:${ip(req)}`, 10 * 60_000, 10, 30 * 60_000)
+  if (!rl.ok) {
+    return new Response(JSON.stringify({ error: 'Too many requests. Please slow down.' }), {
+      status: 429, headers: { 'Retry-After': String(rl.retryAfter) },
+    })
+  }
+
   const data: ReportData = await req.json();
 
   const chunks: Buffer[] = [];

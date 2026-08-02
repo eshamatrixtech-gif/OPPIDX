@@ -1,4 +1,16 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { NextRequest } from "next/server";
+import { rateLimit } from "@/lib/rateLimit";
+
+const MAX_BODY = 32_768 // ~16 exchanges of real conversation fits well under this
+
+function ip(req: NextRequest): string {
+  return (
+    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
+    req.headers.get('x-real-ip') ??
+    'unknown'
+  )
+}
 
 const BASE = `You are OppIDX Match — an AI that helps people find the right person to connect with. Your job is to interview someone and build a genuine, honest profile of who they are.
 
@@ -93,7 +105,22 @@ PHASES:
 Weave in a second controversial question naturally. Help them discover what they actually want — don't push a label.`,
 };
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const contentLength = Number(request.headers.get('content-length') ?? 0)
+  if (contentLength > MAX_BODY) {
+    return Response.json({ error: 'Request too large.' }, { status: 413 })
+  }
+
+  // No session on this endpoint — every call is a metered Claude request,
+  // so this is the only thing stopping an unauthenticated cost-DoS loop.
+  const rl = rateLimit(`match-interview:${ip(request)}`, 10 * 60_000, 20, 30 * 60_000)
+  if (!rl.ok) {
+    return Response.json(
+      { error: 'Too many requests. Please slow down.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } },
+    )
+  }
+
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   try {
     const { history, relationshipType } = await request.json() as {

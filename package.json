@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
     "setup-db": "npx prisma db push && npx prisma generate",
     "seed-opportunities": "npx ts-node scripts/seed-opportunities.ts",
     "seed-resources": "npx ts-node scripts/seed-resources.ts",
@@ -48,6 +49,7 @@
     "eslint-config-next": "16.2.10",
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }

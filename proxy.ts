@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getSessionSecret } from './lib/sessionSecret'
 
 const COOKIE  = 'oppidx_session'
-const SECRET  = process.env.SESSION_SECRET ?? 'dev_fallback_secret'
 const MAX_AGE = 60 * 60 * 24 * 30 * 1000  // 30 days
 
 /* ── Bot/scanner path block — from Mayatara, applies site-wide ──
@@ -80,7 +80,7 @@ async function isValidSession(token: string | undefined): Promise<boolean> {
 
   const enc = new TextEncoder()
   const key = await crypto.subtle.importKey(
-    'raw', enc.encode(SECRET),
+    'raw', enc.encode(getSessionSecret()),
     { name: 'HMAC', hash: 'SHA-256' },
     false, ['sign'],
   )

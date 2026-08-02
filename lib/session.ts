@@ -1,7 +1,7 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'crypto'
 import { cookies }                                                from 'next/headers'
+import { getSessionSecret }                                       from './sessionSecret'
 
-const SECRET   = process.env.SESSION_SECRET ?? 'dev_fallback_secret'
 const COOKIE   = 'oppidx_session'
 const MAX_AGE  = 60 * 60 * 24 * 30 // 30 days
 
@@ -25,7 +25,7 @@ export function verifyPassword(password: string, stored: string): boolean {
 /* ── Session token: <userId>.<timestamp>.<hmac> ─────────────── */
 function sign(userId: string, ts: number): string {
   const payload = `${userId}.${ts}`
-  const sig     = createHmac('sha256', SECRET).update(payload).digest('hex')
+  const sig     = createHmac('sha256', getSessionSecret()).update(payload).digest('hex')
   return `${payload}.${sig}`
 }
 
@@ -34,7 +34,7 @@ function verify(token: string): string | null {
   if (parts.length < 3) return null
   const sig     = parts.pop()!
   const payload = parts.join('.')
-  const expected = createHmac('sha256', SECRET).update(payload).digest('hex')
+  const expected = createHmac('sha256', getSessionSecret()).update(payload).digest('hex')
   if (sig !== expected) return null
   const [userId, ts] = payload.split('.')
   if (Date.now() - parseInt(ts) > MAX_AGE * 1000) return null

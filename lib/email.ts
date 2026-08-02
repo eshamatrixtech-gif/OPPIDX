@@ -4,9 +4,20 @@ import { SITE_URL } from '@/lib/siteUrl'
 
 // Separate from lib/mayatara/email.ts on purpose — same Resend account and
 // free tier, but a different FROM identity and template voice for OppIDX
-// proper vs. the Mayatara sub-brand. Exported (not just used internally) so
-// the webhook route can call resend.webhooks.verify with the same client.
-export const resend = new Resend(process.env.RESEND_API_KEY)
+// proper vs. the Mayatara sub-brand.
+//
+// Lazily constructed: the Resend SDK throws synchronously in its
+// constructor if RESEND_API_KEY is missing, and this module is imported
+// (transitively) by most API routes. Building it at module scope meant any
+// environment without that key set — a fresh checkout, CI — failed
+// `next build` entirely at "Collecting page data", for routes that never
+// even send email. Exported as a getter (not just used internally) so the
+// webhook route can call getResend().webhooks.verify with the same client.
+let _resend: Resend | null = null
+export function getResend(): Resend {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY)
+  return _resend
+}
 const FROM = process.env.EMAIL_FROM || 'OppIDX <onboarding@resend.dev>'
 
 // Resend's batch endpoint caps at 100 emails per call — chunk rather than
@@ -110,7 +121,7 @@ export async function sendWeeklyDigestBatch(
     }))
 
     try {
-      const { data, error } = await resend.batch.send(payload, { batchValidation: 'permissive' })
+      const { data, error } = await getResend().batch.send(payload, { batchValidation: 'permissive' })
       if (error) {
         chunk.forEach(r => results.push({ subscriberId: r.subscriberId, resendId: null, error: error.message }))
         continue
@@ -134,7 +145,7 @@ export async function sendWeeklyDigestBatch(
 }
 
 export async function sendWelcomeEmail(toEmail: string) {
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: toEmail,
     subject: "You're on the list — OppIDX",
@@ -161,7 +172,7 @@ export async function sendWelcomeEmail(toEmail: string) {
 }
 
 export async function sendInstitutionVerificationEmail(toEmail: string, verifyUrl: string) {
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: toEmail,
     subject: 'Verify your email for OppIDX',

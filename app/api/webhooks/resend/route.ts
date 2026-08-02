@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { resend } from '@/lib/email'
+import { getResend } from '@/lib/email'
 
 /**
  * POST /api/webhooks/resend — Resend's own delivery-event webhook (bounce,
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
   let event
   try {
-    event = resend.webhooks.verify({
+    event = getResend().webhooks.verify({
       payload,
       headers: { id: svixId, timestamp: svixTimestamp, signature: svixSignature },
       webhookSecret,

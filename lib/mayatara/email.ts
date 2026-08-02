@@ -1,7 +1,14 @@
 import { Resend } from "resend";
 import { SITE_URL, DISPLAY_DOMAIN } from "@/lib/siteUrl";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazily constructed — see lib/email.ts for why (Resend's constructor
+// throws synchronously when RESEND_API_KEY is unset, which crashed
+// `next build` for any environment missing it, not just at send time).
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+  return _resend;
+}
 // Use oppidx.com once it's verified as a sending domain in Resend.
 // Until then: onboarding@resend.dev works on free tier for testing.
 const FROM = process.env.EMAIL_FROM || "OppIDX Match <onboarding@resend.dev>";
@@ -17,7 +24,7 @@ export async function sendMatchEmail(
 ) {
   const contactLabel = contactType === "instagram" ? "Instagram" : contactType === "whatsapp" ? "WhatsApp" : "number";
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: toEmail,
     subject: `Your Friday match is here — ${matchName}`,
@@ -78,7 +85,7 @@ export async function sendMatchEmail(
 }
 
 export async function sendNoMatchEmail(toEmail: string, userName: string) {
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: toEmail,
     subject: "No match this Friday — we're still looking",
@@ -119,7 +126,7 @@ export async function sendNoMatchEmail(toEmail: string, userName: string) {
 
 export async function sendCronAlertEmail(error: string, matched: number, notified: number) {
   const ADMIN = process.env.ADMIN_EMAIL || "e87997699@gmail.com";
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: ADMIN,
     subject: `⚠️ OppIDX Match — Friday cron ${error ? "FAILED" : "completed"}`,
@@ -144,7 +151,7 @@ export async function sendCronAlertEmail(error: string, matched: number, notifie
 }
 
 export async function sendWelcomeEmail(toEmail: string, userName: string, lookingFor: string) {
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: toEmail,
     subject: "You're in the pool — OppIDX Match",

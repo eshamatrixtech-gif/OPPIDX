@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
+import { ListingPageSchema } from '@/components/ui/ListingPageSchema'
 import { getRegionList, getRegionOpportunities, regionBlurb } from '@/lib/regions'
 import { SITE_URL } from '@/lib/siteUrl'
 import { pageMetadata } from '@/lib/pageMetadata'
@@ -31,6 +32,12 @@ export default async function RegionPage({ params }: { params: Promise<{ slug: s
 
   return (
     <div style={{ minHeight: '100vh' }}>
+      <ListingPageSchema
+        title={`Opportunities in ${region}`}
+        description={`${total.toLocaleString()} real, verified opportunities in ${region} — ${regionBlurb(region)}`}
+        path={`/regions/${slug}`}
+        items={items}
+      />
       <header style={{ padding: '40px 24px 24px', borderBottom: '1px solid var(--line)' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <Breadcrumbs items={[

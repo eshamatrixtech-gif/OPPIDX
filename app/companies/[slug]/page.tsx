@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
+import { ListingPageSchema } from '@/components/ui/ListingPageSchema'
 import { getCompanyList, getCompanyOpportunities } from '@/lib/companies'
 import { SITE_URL } from '@/lib/siteUrl'
 import { pageMetadata } from '@/lib/pageMetadata'
@@ -31,6 +32,12 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div style={{ minHeight: '100vh' }}>
+      <ListingPageSchema
+        title={`${org} Jobs & Internships`}
+        description={`${total.toLocaleString()} real, verified opportunities at ${org} — hand-checked before they go up.`}
+        path={`/companies/${slug}`}
+        items={items}
+      />
       <header style={{ padding: '40px 24px 24px', borderBottom: '1px solid var(--line)' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <Breadcrumbs items={[

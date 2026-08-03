@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
+import { ListingPageSchema } from '@/components/ui/ListingPageSchema'
 import { getCollectionOpportunities, getAllCollectionDefs, resolveCollectionDef } from '@/lib/collections'
 import { SITE_URL } from '@/lib/siteUrl'
 import { pageMetadata } from '@/lib/pageMetadata'
@@ -31,6 +32,12 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
 
   return (
     <div style={{ minHeight: '100vh' }}>
+      <ListingPageSchema
+        title={def.pageTitle}
+        description={def.description}
+        path={`/collections/${slug}`}
+        items={items}
+      />
       <header style={{ padding: '40px 24px 24px', borderBottom: '1px solid var(--line)' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <Breadcrumbs items={[

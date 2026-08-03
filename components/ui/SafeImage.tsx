@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 
 /** A real, sourced image (og:image, fetched at ingestion time — see
  * lib/ogImage.ts) that renders `fallback` if the stored URL ever fails to
@@ -9,9 +10,25 @@ import { useState } from 'react'
  * dead link is common enough on real external URLs (site redesigns, expired
  * CDN paths) that leaving `fallback` unset would otherwise mean a real,
  * once-valid image silently degrades to blanker than a card that never had
- * one at all — which is exactly backwards. */
-export function SafeImage({ src, alt, style, fallback = null }: { src: string; alt: string; style?: React.CSSProperties; fallback?: React.ReactNode }) {
+ * one at all — which is exactly backwards.
+ *
+ * Renders via next/image in `fill` mode — the caller is responsible for a
+ * positioned (`position: relative`), explicitly sized ancestor, same as any
+ * `fill` image. `sizes` should reflect how wide the image actually renders
+ * at each breakpoint; it defaults to a card-thumbnail-sized guess. */
+export function SafeImage({
+  src, alt, style, fallback = null, sizes = '(max-width: 640px) 100vw, 640px',
+}: { src: string; alt: string; style?: React.CSSProperties; fallback?: React.ReactNode; sizes?: string }) {
   const [failed, setFailed] = useState(false)
   if (failed) return <>{fallback}</>
-  return <img src={src} alt={alt} loading="lazy" onError={() => setFailed(true)} style={style} />
+  return (
+    <Image
+      src={`/api/images?url=${encodeURIComponent(src)}`}
+      alt={alt}
+      fill
+      sizes={sizes}
+      style={{ objectFit: 'cover', ...style }}
+      onError={() => setFailed(true)}
+    />
+  )
 }

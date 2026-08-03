@@ -114,6 +114,77 @@ async function fetchHtmlHead(startUrl: string): Promise<string | null> {
 }
 
 /**
+ * A URL pulled out of a third party's og:image/og:video tag, not one we
+ * chose — https-only is necessary but not sufficient. Now that SafeImage
+ * renders these through next/image (see components/ui/SafeImage.tsx), our
+ * own server fetches this URL to optimize it, which is exactly the
+ * SSRF shape isSafeHost() already exists to stop; a scraped page could
+ * otherwise point og:image at an internal service and get our backend to
+ * request it. Same check as the page fetch itself, just applied to what
+ * that page claims its media URL is.
+ */
+export async function isSafeMediaUrl(raw: string): Promise<boolean> {
+  if (!/^https:\/\//.test(raw)) return false
+  try {
+    return await isSafeHost(new URL(raw).hostname)
+  } catch {
+    return false
+  }
+}
+
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024
+const ALLOWED_IMAGE_TYPES = new Set([
+  'image/avif', 'image/gif', 'image/jpeg', 'image/png', 'image/webp',
+])
+
+/**
+ * Fetches an externally hosted raster image for the same-origin image proxy.
+ * Redirects are handled manually so every destination receives the same DNS
+ * private-address check as the original URL. Keeping this in the ingestion
+ * module means the crawler and serving path share one SSRF policy.
+ */
+export async function fetchSafeExternalImage(startUrl: string): Promise<Response | null> {
+  let currentUrl = startUrl
+
+  for (let hop = 0; hop < 3; hop++) {
+    if (!(await isSafeMediaUrl(currentUrl))) return null
+
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 10_000)
+    let response: Response
+    try {
+      response = await fetch(currentUrl, {
+        signal: controller.signal,
+        redirect: 'manual',
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; OppIDXBot/1.0; +https://oppidx.com)' },
+      })
+    } catch {
+      return null
+    } finally {
+      clearTimeout(timeout)
+    }
+
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location')
+      if (!location) return null
+      try {
+        currentUrl = new URL(location, currentUrl).toString()
+      } catch {
+        return null
+      }
+      continue
+    }
+
+    const contentType = response.headers.get('content-type')?.split(';', 1)[0].toLowerCase()
+    const contentLength = Number(response.headers.get('content-length') ?? 0)
+    if (!response.ok || !contentType || !ALLOWED_IMAGE_TYPES.has(contentType) || contentLength > MAX_IMAGE_BYTES) return null
+    return response
+  }
+
+  return null
+}
+
+/**
  * Best-effort og:image + og:video fetch for a listing's own application
  * page — real, sourced media at ingestion time, never a stock photo or a
  * fabricated visual. Fails silently: a listing with no fetchable media
@@ -136,13 +207,13 @@ export async function fetchOgMedia(url: string): Promise<OgMedia> {
     html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
     html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)
   const rawImage = imageMatch?.[1]?.trim()
-  const imageUrl = rawImage && /^https:\/\//.test(rawImage) ? rawImage : null
+  const imageUrl = rawImage && (await isSafeMediaUrl(rawImage)) ? rawImage : null
 
   const videoMatch =
     html.match(/<meta[^>]+property=["']og:video(?::url|:secure_url)?["'][^>]+content=["']([^"']+)["']/i) ||
     html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:video(?::url|:secure_url)?["']/i)
   const rawVideo = videoMatch?.[1]?.trim()
-  const videoUrl = rawVideo && /^https:\/\//.test(rawVideo) ? rawVideo : null
+  const videoUrl = rawVideo && (await isSafeMediaUrl(rawVideo)) ? rawVideo : null
 
   return { imageUrl, videoUrl }
 }

@@ -223,13 +223,13 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
           <VideoEmbed src={opp.videoUrl} />
         ) : opp.imageUrl ? (
           <div style={{
-            marginTop: 20, borderRadius: 3, border: '1.5px solid var(--line)',
-            boxShadow: '4px 4px 0 var(--shadow)', overflow: 'hidden',
+            position: 'relative', height: 220, marginTop: 20, borderRadius: 3,
+            border: '1.5px solid var(--line)', boxShadow: '4px 4px 0 var(--shadow)', overflow: 'hidden',
           }}>
             <SafeImage
               src={opp.imageUrl}
               alt={opp.org ? `${opp.title} at ${opp.org}` : opp.title}
-              style={{ display: 'block', width: '100%', maxHeight: 280, objectFit: 'cover' }}
+              sizes="(max-width: 640px) 100vw, 640px"
               fallback={<GeneratedBanner id={opp.id} audience={opp.audience} height={220} />}
             />
           </div>

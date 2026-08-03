@@ -108,12 +108,13 @@ export const OpportunityCard = memo(function OpportunityCard({ opp, extras }: { 
   return (
     <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.2 }}>
       <div className="card-box" style={{ minHeight: 220, overflow: 'hidden' }}>
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', height: opp.imageUrl ? 132 : undefined }}>
           {opp.imageUrl ? (
             <SafeImage
               src={opp.imageUrl}
               alt={opp.org ? `${opp.title} at ${opp.org}` : opp.title}
-              style={{ display: 'block', width: '100%', height: 132, objectFit: 'cover', borderBottom: '1px solid var(--line)' }}
+              style={{ borderBottom: '1px solid var(--line)' }}
+              sizes="(max-width: 640px) 100vw, 260px"
               fallback={<GeneratedBanner id={opp.id} audience={opp.audience} height={132} />}
             />
           ) : (

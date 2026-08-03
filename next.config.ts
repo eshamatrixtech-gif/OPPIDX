@@ -5,6 +5,12 @@ import type { NextConfig } from "next";
 // part of merging it into OppIDX as one product — not aliases, so
 // `permanent: true` throughout to consolidate any existing inbound links.
 const nextConfig: NextConfig = {
+  images: {
+    // Only the same-origin gateway may have a dynamic image URL. The gateway
+    // validates its `url` parameter (including every redirect) before it
+    // fetches anything, so this is not a general local-image wildcard.
+    localPatterns: [{ pathname: '/api/images' }],
+  },
   async redirects() {
     return [
       { source: "/mayatara/events", destination: "/resources", permanent: true },

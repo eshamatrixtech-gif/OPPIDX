@@ -1,33 +1,33 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
-import { getCollectionOpportunities, getAllCollectionDefs, resolveCollectionDef } from '@/lib/collections'
+import { getRegionList, getRegionOpportunities, regionBlurb } from '@/lib/regions'
 import { SITE_URL } from '@/lib/siteUrl'
 import { pageMetadata } from '@/lib/pageMetadata'
 
 export async function generateStaticParams() {
-  const defs = await getAllCollectionDefs()
-  return defs.map(c => ({ slug: c.slug }))
+  const regions = await getRegionList()
+  return regions.map(r => ({ slug: r.slug }))
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const def = await resolveCollectionDef(slug)
-  if (!def) return { title: 'Not found — OppIDX' }
+  const result = await getRegionOpportunities(slug)
+  if (!result) return { title: 'Not found — OppIDX' }
   return pageMetadata({
-    title: def.pageTitle,
-    description: def.description,
-    canonical: `${SITE_URL}/collections/${slug}`,
+    title: `Opportunities in ${result.region} — OppIDX`,
+    description: `${result.total.toLocaleString()} real, verified opportunities in ${result.region} — ${regionBlurb(result.region)}`,
+    canonical: `${SITE_URL}/regions/${slug}`,
   })
 }
 
-export default async function CollectionPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function RegionPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const def = await resolveCollectionDef(slug)
-  if (!def) notFound()
+  const result = await getRegionOpportunities(slug)
+  if (!result) notFound()
 
-  const { items, total, restricted } = await getCollectionOpportunities(def)
+  const { region, items, total, restricted } = result
 
   return (
     <div style={{ minHeight: '100vh' }}>
@@ -35,33 +35,27 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <Breadcrumbs items={[
             { name: 'OppIDX', href: '/' },
-            { name: 'Collections', href: '/collections' },
-            { name: def.title, href: `/collections/${slug}` },
+            { name: 'Regions', href: '/regions' },
+            { name: region, href: `/regions/${slug}` },
           ]} />
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(26px, 4.5vw, 38px)', color: 'var(--ink)', marginTop: 14, textTransform: 'uppercase' }}>
-            {def.title}
+            {region}
           </h1>
           <p style={{ fontSize: 14, color: 'var(--ink-2)', marginTop: 10, maxWidth: 640, lineHeight: 1.65 }}>
-            {def.description} {total.toLocaleString()} real opportunities right now.
+            {regionBlurb(region)} {total.toLocaleString()} real opportunities right now.
           </p>
         </div>
       </header>
 
       <main style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px 80px' }}>
-        {items.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
-            Nothing here yet — check back soon.
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gap: 26, gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', marginBottom: 30 }}>
-            {items.map(opp => <OpportunityCard key={opp.id} opp={opp} />)}
-          </div>
-        )}
+        <div style={{ display: 'grid', gap: 26, gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', marginBottom: 30 }}>
+          {items.map(opp => <OpportunityCard key={opp.id} opp={opp} />)}
+        </div>
 
         {restricted && (
           <div className="card-box" style={{ textAlign: 'center', padding: '26px 24px' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13.5, color: 'var(--ink)', marginBottom: 12 }}>
-              {(total - items.length).toLocaleString()} more are subscriber-only.
+              {(total - items.length).toLocaleString()} more in {region} are subscriber-only.
             </div>
             <Link href="/pricing" style={{
               display: 'inline-block', padding: '11px 24px', borderRadius: 2,
@@ -74,8 +68,8 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
         )}
 
         <div style={{ textAlign: 'center', marginTop: 30 }}>
-          <Link href="/collections" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none' }}>
-            See all collections →
+          <Link href="/regions" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none' }}>
+            See all regions →
           </Link>
         </div>
       </main>

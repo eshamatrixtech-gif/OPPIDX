@@ -4,6 +4,8 @@ import { SITE_URL } from '@/lib/siteUrl'
 import { PAYWALL_ENABLED } from '@/lib/limits'
 import { getAllCollectionDefs } from '@/lib/collections'
 import { getCompanyList } from '@/lib/companies'
+import { getRegionList } from '@/lib/regions'
+import { supabaseAdmin } from '@/lib/mayatara/supabase'
 
 // Without this, sitemap.ts has no request-time API and no dynamic config,
 // so Next prerenders it once at build time and freezes it there — new
@@ -29,6 +31,7 @@ const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitema
   { path: '/browse', changeFrequency: 'hourly', priority: 0.9 },
   { path: '/collections', changeFrequency: 'daily', priority: 0.8 },
   { path: '/companies', changeFrequency: 'daily', priority: 0.8 },
+  { path: '/regions', changeFrequency: 'daily', priority: 0.8 },
   { path: '/newsletter', changeFrequency: 'daily', priority: 0.8 },
   { path: '/resources', changeFrequency: 'daily', priority: 0.8 },
   { path: '/pulse', changeFrequency: 'daily', priority: 0.7 },
@@ -39,8 +42,23 @@ const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitema
   { path: '/terms', changeFrequency: 'yearly', priority: 0.2, lastModified: new Date('2026-08-01') },
 ]
 
+// Events live in Supabase, not Prisma (see lib/mayatara/supabase.ts) — a
+// separate query, and `supabaseAdmin` is null in any environment missing
+// the service-role env vars, so this degrades to "no event URLs" rather
+// than breaking the whole sitemap.
+async function getListedEvents() {
+  if (!supabaseAdmin) return []
+  const { data } = await supabaseAdmin
+    .from('events')
+    .select('slug, created_at')
+    .eq('is_published', true)
+    .eq('is_cancelled', false)
+    .eq('is_listed', true)
+  return data ?? []
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [opportunities, resources, newsletters, pulseDigests, companies, collections] = await Promise.all([
+  const [opportunities, resources, newsletters, pulseDigests, companies, collections, regions, events] = await Promise.all([
     prisma.opportunity.findMany({
       where: { verified: true, deletedAt: null },
       select: { id: true, addedAt: true },
@@ -55,6 +73,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     prisma.policyDigest.findMany({ select: { period: true, createdAt: true } }),
     getCompanyList(),
     getAllCollectionDefs(),
+    getRegionList(),
+    getListedEvents(),
   ])
 
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map(r => ({
@@ -106,8 +126,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.65,
   }))
 
+  const regionEntries: MetadataRoute.Sitemap = regions.map(r => ({
+    url: `${SITE_URL}/regions/${r.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily',
+    priority: 0.65,
+  }))
+
+  const eventEntries: MetadataRoute.Sitemap = events.map(e => ({
+    url: `${SITE_URL}/events/${e.slug}`,
+    lastModified: e.created_at ? new Date(e.created_at) : new Date(),
+    changeFrequency: 'weekly',
+    priority: 0.5,
+  }))
+
   return [
     ...staticEntries, ...opportunityEntries, ...resourceEntries, ...newsletterEntries,
-    ...pulseDigestEntries, ...collectionEntries, ...companyEntries,
+    ...pulseDigestEntries, ...collectionEntries, ...companyEntries, ...regionEntries, ...eventEntries,
   ]
 }

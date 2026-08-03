@@ -16,6 +16,7 @@ import { SafeImage } from '@/components/ui/SafeImage'
 import { VideoEmbed } from '@/components/ui/VideoEmbed'
 import { GeneratedBanner } from '@/components/ui/GeneratedBanner'
 import { EcosystemActions } from '@/components/ui/EcosystemActions'
+import { Breadcrumbs, type BreadcrumbItem } from '@/components/ui/Breadcrumbs'
 import { FEED_URL as JOBICY_SOURCE_URL } from '@/lib/scraper/sources/jobicy'
 import { SOURCE_URL as ADZUNA_SOURCE_URL } from '@/lib/scraper/sources/adzuna'
 import type { Opportunity } from '@/types'
@@ -104,8 +105,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   })
 }
 
-// Shows the breadcrumb trail in the search result itself instead of a bare
-// URL — real navigation path, not a fabricated one: Collections pages for
+// Real navigation path, not a fabricated one: Collections pages for
 // STUDENT/EARLY_CAREER/FOUNDER already exist and are linked from the
 // header nav (see lib/collectionDefs.ts); GENERAL has no dedicated
 // collection, so it falls back to the real /browse listing instead.
@@ -115,23 +115,13 @@ const AUDIENCE_COLLECTION: Record<string, { slug: string; label: string }> = {
   FOUNDER: { slug: 'founders', label: 'Founders' },
 }
 
-function breadcrumbJsonLd(opp: { title: string; audience: string }, pageUrl: string): string {
+function breadcrumbTrail(opp: { id: string; title: string; audience: string }): BreadcrumbItem[] {
   const collection = AUDIENCE_COLLECTION[opp.audience]
-  const items = [
-    { name: 'OppIDX', item: SITE_URL },
-    collection
-      ? { name: collection.label, item: `${SITE_URL}/collections/${collection.slug}` }
-      : { name: 'Browse', item: `${SITE_URL}/browse` },
-    { name: opp.title, item: pageUrl },
+  return [
+    { name: 'OppIDX', href: '/' },
+    collection ? { name: collection.label, href: `/collections/${collection.slug}` } : { name: 'Browse', href: '/browse' },
+    { name: opp.title, href: `/opportunities/${opp.id}` },
   ]
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: items.map((it, i) => ({
-      '@type': 'ListItem', position: i + 1, name: it.name, item: it.item,
-    })),
-  }
-  return JSON.stringify(jsonLd).replace(/</g, '\\u003c')
 }
 
 // Google's JobPosting rich result is for actual employment listings —
@@ -221,17 +211,13 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
   const chasingCount = await chasingCohortSize(opp.id)
   const pageUrl = `${SITE_URL}/opportunities/${opp.id}`
   const jobLd = jobPostingJsonLd(opp, pageUrl)
-  const breadcrumbLd = breadcrumbJsonLd(opp, pageUrl)
 
   return (
     <div style={{ minHeight: '100vh', padding: '40px 20px 80px' }}>
       {jobLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jobLd }} />}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbLd }} />
       <ViewTracker id={opp.id} />
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
-        <Link href="/" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>
-          ← Back to the board
-        </Link>
+        <Breadcrumbs items={breadcrumbTrail(opp)} />
 
         {opp.videoUrl ? (
           <VideoEmbed src={opp.videoUrl} />
@@ -300,18 +286,18 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
 
           {opp.eligibility && (
             <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 6 }}>
+              <h2 style={{ margin: 0, fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 6 }}>
                 Who can apply
-              </div>
+              </h2>
               <div style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.65 }}>{opp.eligibility}</div>
             </div>
           )}
 
           {opp.prepResources && (
             <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 6 }}>
+              <h2 style={{ margin: 0, fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 6 }}>
                 How to prepare
-              </div>
+              </h2>
               <div style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{opp.prepResources}</div>
             </div>
           )}
@@ -326,9 +312,9 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
 
             {relatedResources.length > 0 && (
               <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
-                <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 8 }}>
+                <h2 style={{ margin: 0, fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 8 }}>
                   📚 Resources that might help
-                </div>
+                </h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {relatedResources.map(r => (
                     <Link key={r.id} href={`/resources/${r.id}`} style={{ fontSize: 13.5, color: 'var(--pin)', textDecoration: 'none' }}>
@@ -341,9 +327,9 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
 
             {relatedPolicyReads.length > 0 && (
               <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
-                <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--terracotta)', marginBottom: 8 }}>
+                <h2 style={{ margin: 0, fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--terracotta)', marginBottom: 8 }}>
                   📰 Policy reads
-                </div>
+                </h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {relatedPolicyReads.map(p => (
                     <a key={p.url} href={p.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13.5, color: 'var(--pin)', textDecoration: 'none' }}>
@@ -356,9 +342,9 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
 
             {relatedGatherings.length > 0 && (
               <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--board)', borderRadius: 2, border: '1px solid var(--line)' }}>
-                <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--green)', marginBottom: 8 }}>
+                <h2 style={{ margin: 0, fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--green)', marginBottom: 8 }}>
                   📍 Gatherings for people chasing this
-                </div>
+                </h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {relatedGatherings.map(g => (
                     <a key={g.slug} href={`/events/${g.slug}`} style={{ fontSize: 13.5, color: 'var(--pin)', textDecoration: 'none' }}>

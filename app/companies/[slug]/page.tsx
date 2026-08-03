@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { getCompanyList, getCompanyOpportunities } from '@/lib/companies'
 import { SITE_URL } from '@/lib/siteUrl'
 import { pageMetadata } from '@/lib/pageMetadata'
@@ -32,9 +33,11 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
     <div style={{ minHeight: '100vh' }}>
       <header style={{ padding: '40px 24px 24px', borderBottom: '1px solid var(--line)' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <Link href="/" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>
-            ← OppIDX
-          </Link>
+          <Breadcrumbs items={[
+            { name: 'OppIDX', href: '/' },
+            { name: 'Companies', href: '/companies' },
+            { name: org, href: `/companies/${slug}` },
+          ]} />
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(26px, 4.5vw, 38px)', color: 'var(--ink)', marginTop: 14, textTransform: 'uppercase' }}>
             {org}
           </h1>

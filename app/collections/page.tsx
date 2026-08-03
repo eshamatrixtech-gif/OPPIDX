@@ -77,9 +77,12 @@ export default async function CollectionsIndexPage() {
           </div>
         )}
 
-        <div style={{ marginTop: 20 }}>
+        <div style={{ marginTop: 20, display: 'flex', gap: 14 }}>
           <Link href="/companies" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none' }}>
             Browse by company →
+          </Link>
+          <Link href="/regions" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none' }}>
+            Browse by region →
           </Link>
         </div>
       </main>

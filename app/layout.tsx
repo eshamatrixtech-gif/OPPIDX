@@ -29,6 +29,11 @@ export const metadata: Metadata = {
   alternates: {
     types: { 'application/rss+xml': `${SITE_URL}/feed.xml` },
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1, 'max-video-preview': -1 },
+  },
   openGraph: {
     title: 'OppIDX — the opportunity board',
     description: 'Every opportunity worth applying to, pinned up in one place.',

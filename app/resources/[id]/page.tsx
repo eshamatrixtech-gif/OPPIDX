@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import { ShareBar } from '@/components/ui/ShareBar'
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { SITE_URL } from '@/lib/siteUrl'
 import { pageMetadata } from '@/lib/pageMetadata'
 
@@ -44,9 +45,11 @@ export default async function ResourcePage({ params }: { params: Promise<{ id: s
   return (
     <div style={{ minHeight: '100vh', padding: '40px 20px 80px' }}>
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
-        <Link href="/resources" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>
-          ← Back to Resources
-        </Link>
+        <Breadcrumbs items={[
+          { name: 'OppIDX', href: '/' },
+          { name: 'Resources', href: '/resources' },
+          { name: item.title, href: `/resources/${item.id}` },
+        ]} />
 
         <div className="card-box" style={{ marginTop: 20, padding: '36px 32px' }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>

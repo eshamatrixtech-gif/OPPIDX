@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { runScrapePass } from '@/lib/scraper/run'
 import { prisma } from '@/lib/db'
 import { notifyMatchingSubscribers } from '@/lib/push'
+import { notifyGoogleJobPostingUpdates } from '@/lib/seo/googleIndexing'
 
 /**
  * GET /api/cron/scrape — triggers one scraper pass. Meant to be called by an
@@ -43,11 +44,16 @@ export async function GET(req: NextRequest) {
   if (result.added > 0) {
     const newOpportunities = await prisma.opportunity.findMany({
       where: { verified: true, deletedAt: null, addedAt: { gte: result.startedAt } },
-      select: { id: true, audience: true },
+      select: { id: true, audience: true, tags: true, org: true, location: true, country: true },
     })
     await notifyMatchingSubscribers(newOpportunities).catch(err =>
       console.error('[scrape cron] push notification pass failed:', err)
     )
+    const indexing = await notifyGoogleJobPostingUpdates(newOpportunities).catch(err => {
+      console.error('[scrape cron] Google Indexing API notification failed:', err)
+      return null
+    })
+    if (indexing) console.log('[scrape cron] Google indexing:', indexing)
   }
 
   return NextResponse.json(result)

@@ -36,6 +36,25 @@ export async function sendOpsAlert(subject: string, details: string): Promise<bo
   }
 }
 
+/** A scheduled operational report, deliberately not an urgent alert. */
+export async function sendOpsReport(subject: string, details: string): Promise<boolean> {
+  const to = process.env.ADMIN_EMAIL
+  if (!to) return false
+  try {
+    const { error } = await getResend().emails.send({
+      from: FROM, to, subject: `OppIDX — ${subject}`, text: details,
+    })
+    if (error) {
+      console.error('[alerts] report send failed:', error)
+      return false
+    }
+    return true
+  } catch (err) {
+    console.error('[alerts] report send threw:', err)
+    return false
+  }
+}
+
 /** One alert per distinct error key per window — a crash-looping route
  * would otherwise send hundreds of near-identical emails. */
 export async function sendThrottledOpsAlert(key: string, subject: string, details: string): Promise<boolean> {

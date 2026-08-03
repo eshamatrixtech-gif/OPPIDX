@@ -16,6 +16,7 @@ import { SafeImage } from '@/components/ui/SafeImage'
 import { VideoEmbed } from '@/components/ui/VideoEmbed'
 import { GeneratedBanner } from '@/components/ui/GeneratedBanner'
 import { EcosystemActions } from '@/components/ui/EcosystemActions'
+import { isEligibleJobPosting } from '@/lib/seo/jobPosting'
 import { Breadcrumbs, type BreadcrumbItem } from '@/components/ui/Breadcrumbs'
 import { FEED_URL as JOBICY_SOURCE_URL } from '@/lib/scraper/sources/jobicy'
 import { SOURCE_URL as ADZUNA_SOURCE_URL } from '@/lib/scraper/sources/adzuna'
@@ -142,12 +143,9 @@ function breadcrumbTrail(opp: { id: string; title: string; audience: string }): 
 // branch below returns null rather than emit a script tag with one of
 // those missing, since a page with no JobPosting markup is strictly better
 // than one with structured data Google rejects.
-const NON_JOB_TAGS = ['scholarship', 'fellowship', 'grant', 'hackathon', 'competition', 'contest', 'award']
-
 function jobPostingJsonLd(opp: NonNullable<Awaited<ReturnType<typeof getOpportunity>>>, pageUrl: string): string | null {
   const tags = opp.tags.toLowerCase()
-  if (NON_JOB_TAGS.some(k => tags.includes(k))) return null
-  if (!opp.org) return null // hiringOrganization.name is required — never guess it
+  if (!isEligibleJobPosting(opp)) return null // required org + location signal; never guess either
 
   const isRemote = /\bremote\b/i.test(opp.location ?? '') || /\bremote\b/i.test(opp.region ?? '')
 

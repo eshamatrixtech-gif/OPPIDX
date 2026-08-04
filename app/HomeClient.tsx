@@ -136,11 +136,9 @@ function SubscribeForm() {
   )
 }
 
-// Match isn't listed here on purpose — it has no browsable "come explore
-// it" destination. Matching runs automatically (Friday cron +
-// chasingCohort's "N others chasing this"); the only front-end surface is
-// the "Find your person" action already embedded on every opportunity card
-// (see EcosystemActions), not a place anyone navigates to separately.
+// Mayatara has a deliberately quiet home in the More panel rather than the
+// primary navigation, so OppIDX stays focused on opportunities while it
+// remains available to anyone looking for it.
 // Events isn't listed separately either — gatherings live inside
 // /resources now (see its "Gatherings" section) rather than a standalone
 // browse page that's often just an empty calendar.
@@ -279,16 +277,6 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
         </div>
 
         <div className="divider" style={{ marginBottom: 16 }}><span>◆ More ◆</span></div>
-        <Link href="/advertise" onClick={onClose} className="card-box" style={{
-          display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px',
-          textDecoration: 'none', marginBottom: 14, borderColor: 'var(--terracotta)',
-        }}>
-          <span style={{ fontSize: 16, color: 'var(--terracotta)' }}>◆</span>
-          <span>
-            <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, color: 'var(--ink)', textTransform: 'uppercase' }}>Advertise with us</span>
-            <span style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-2)', lineHeight: 1.4 }}>Reach students, early-career talent, and founders actively looking.</span>
-          </span>
-        </Link>
         <Link href="/mayatara" onClick={onClose} className="card-box" style={{
           display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px',
           textDecoration: 'none', marginBottom: 14, borderColor: 'var(--saffron)',
@@ -297,6 +285,16 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
           <span>
             <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, color: 'var(--ink)', textTransform: 'uppercase' }}>The Mayatara</span>
             <span style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-2)', lineHeight: 1.4 }}>A spark to life</span>
+          </span>
+        </Link>
+        <Link href="/advertise" onClick={onClose} className="card-box" style={{
+          display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px',
+          textDecoration: 'none', marginBottom: 14, borderColor: 'var(--terracotta)',
+        }}>
+          <span style={{ fontSize: 16, color: 'var(--terracotta)' }}>◆</span>
+          <span>
+            <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, color: 'var(--ink)', textTransform: 'uppercase' }}>Advertise with us</span>
+            <span style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-2)', lineHeight: 1.4 }}>Reach students, early-career talent, and founders actively looking.</span>
           </span>
         </Link>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 12.5 }}>

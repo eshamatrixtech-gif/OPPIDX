@@ -6,10 +6,11 @@ import type { NextConfig } from "next";
 // `permanent: true` throughout to consolidate any existing inbound links.
 const nextConfig: NextConfig = {
   images: {
-    // Only the same-origin gateway may have a dynamic image URL. The gateway
-    // validates its `url` parameter (including every redirect) before it
-    // fetches anything, so this is not a general local-image wildcard.
-    localPatterns: [{ pathname: '/api/images' }],
+    // The same-origin gateway may have a dynamic image URL, and the committed
+    // wordmark is the one additional local image the header may optimize.
+    // The gateway validates its `url` parameter (including every redirect)
+    // before it fetches anything, so this is not a general local-image wildcard.
+    localPatterns: [{ pathname: '/api/images' }, { pathname: '/logo.png' }],
   },
   async redirects() {
     return [

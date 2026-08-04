@@ -71,16 +71,17 @@ function PromptRow({ text, cta, onClick, accent }: { text: string; cta: string; 
 }
 
 /**
- * The one-click bridge into the rest of the ecosystem — matching, hosting a
- * gathering, adding a guide, and reading policy — from
- * wherever an opportunity is already being looked at. Match in particular
- * has no standalone "come explore it" destination on purpose: matching runs
- * automatically in the background (the Friday cron + chasingCohort's
- * "N others chasing this"), and the only front-end surface is this
- * in-context action — nowhere in the nav sends anyone to browse a separate
- * Match product. Every action opens a real popup backed by the exact same
- * endpoints its full-page counterpart uses — nothing here is a shortcut that
- * produces fake or incomplete data, just a shorter path to a real one.
+ * The one-click bridge into the rest of the ecosystem — hosting a gathering,
+ * adding a guide, and reading policy — from wherever an opportunity is
+ * already being looked at. The compact card row deliberately leaves Match
+ * out (it's a heavier, more personal action than the others; it only
+ * appears in the `full` variant on the opportunity's own detail page, as
+ * "Find your person"). Match has no standalone "come explore it"
+ * destination on purpose beyond that: matching runs automatically in the
+ * background (the Friday cron + chasingCohort's "N others chasing this").
+ * Every action opens a real popup backed by the exact same endpoints its
+ * full-page counterpart uses — nothing here is a shortcut that produces
+ * fake or incomplete data, just a shorter path to a real one.
  */
 export function EcosystemActions({ opp, variant = 'compact', hasResources = false, hasGatherings = false }: {
   opp: OppRef
@@ -95,7 +96,6 @@ export function EcosystemActions({ opp, variant = 'compact', hasResources = fals
     <>
       {variant === 'compact' ? (
         <div style={{ display: 'flex', borderTop: '1px solid var(--line)' }}>
-          <IconButton icon="🫂" caption="Match" label="Find your person" onClick={() => setOpen('match')} />
           <IconButton icon="📍" caption="Event" label="Host a gathering" onClick={() => setOpen('event')} />
           <IconButton icon="📚" caption="Guide" label="Add a guide" onClick={() => setOpen('resource')} />
           <IconButton icon="📰" caption="Policy" label="Policy reads" onClick={() => setOpen('policy')} />

@@ -228,6 +228,7 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
               src={opp.imageUrl}
               alt={opp.org ? `${opp.title} at ${opp.org}` : opp.title}
               sizes="(max-width: 640px) 100vw, 640px"
+              priority
               fallback={<GeneratedBanner id={opp.id} audience={opp.audience} height={220} />}
             />
           </div>

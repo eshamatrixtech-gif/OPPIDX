@@ -138,13 +138,17 @@ function SubscribeForm() {
 
 // Mayatara has a deliberately quiet home in the More panel rather than the
 // primary navigation, so OppIDX stays focused on opportunities while it
-// remains available to anyone looking for it.
+// remains available to anyone looking for it — listed here, in "More ways
+// in" near the top of the panel, rather than buried past Newsletter/Share/
+// About further down, so it's actually seen rather than just technically
+// reachable.
 // Events isn't listed separately either — gatherings live inside
 // /resources now (see its "Gatherings" section) rather than a standalone
 // browse page that's often just an empty calendar.
 const SIDEBAR_LINKS = [
   { href: '/resources', icon: '❖', label: 'Resources', desc: 'Prep guides, tools, communities and gatherings.' },
   { href: '/pulse', icon: '◈', label: 'Pulse', desc: 'A daily, apolitical read on the country.' },
+  { href: '/mayatara', icon: '✦', label: 'The Mayatara', desc: 'A spark to life — a quieter way to find your person.', accent: 'var(--saffron)' },
 ]
 
 /** Everything that isn't the feed itself — cross-product nav, newsletter,
@@ -216,8 +220,11 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 26 }}>
           {SIDEBAR_LINKS.map(l => (
-            <Link key={l.href} href={l.href} onClick={onClose} className="card-box" style={{ padding: '12px 14px', textDecoration: 'none', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-              <span style={{ fontSize: 16, color: 'var(--pin)' }}>{l.icon}</span>
+            <Link key={l.href} href={l.href} onClick={onClose} className="card-box" style={{
+              padding: '12px 14px', textDecoration: 'none', display: 'flex', gap: 10, alignItems: 'flex-start',
+              ...(l.accent ? { borderColor: l.accent } : {}),
+            }}>
+              <span style={{ fontSize: 16, color: l.accent ?? 'var(--pin)' }}>{l.icon}</span>
               <span>
                 <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, color: 'var(--ink)', textTransform: 'uppercase' }}>{l.label}</span>
                 <span style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-2)', lineHeight: 1.4 }}>{l.desc}</span>
@@ -277,16 +284,6 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
         </div>
 
         <div className="divider" style={{ marginBottom: 16 }}><span>◆ More ◆</span></div>
-        <Link href="/mayatara" onClick={onClose} className="card-box" style={{
-          display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px',
-          textDecoration: 'none', marginBottom: 14, borderColor: 'var(--saffron)',
-        }}>
-          <span style={{ fontSize: 16, color: 'var(--saffron)' }}>✦</span>
-          <span>
-            <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, color: 'var(--ink)', textTransform: 'uppercase' }}>The Mayatara</span>
-            <span style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-2)', lineHeight: 1.4 }}>A spark to life</span>
-          </span>
-        </Link>
         <Link href="/advertise" onClick={onClose} className="card-box" style={{
           display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px',
           textDecoration: 'none', marginBottom: 14, borderColor: 'var(--terracotta)',

@@ -289,6 +289,16 @@ function Sidebar({ open, onClose, sponsor }: { open: boolean; onClose: () => voi
             <span style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-2)', lineHeight: 1.4 }}>Reach students, early-career talent, and founders actively looking.</span>
           </span>
         </Link>
+        <Link href="/mayatara" onClick={onClose} className="card-box" style={{
+          display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px',
+          textDecoration: 'none', marginBottom: 14, borderColor: 'var(--saffron)',
+        }}>
+          <span style={{ fontSize: 16, color: 'var(--saffron)' }}>✦</span>
+          <span>
+            <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12.5, color: 'var(--ink)', textTransform: 'uppercase' }}>The Mayatara</span>
+            <span style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-2)', lineHeight: 1.4 }}>A spark to life</span>
+          </span>
+        </Link>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 12.5 }}>
           <Link href="/philosophy" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Our philosophy</Link>
           <Link href="/saved" style={{ color: 'var(--ink-2)', textDecoration: 'none' }}>Saved</Link>

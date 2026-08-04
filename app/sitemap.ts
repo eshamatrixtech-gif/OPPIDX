@@ -35,6 +35,7 @@ const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitema
   { path: '/newsletter', changeFrequency: 'daily', priority: 0.8 },
   { path: '/resources', changeFrequency: 'daily', priority: 0.8 },
   { path: '/pulse', changeFrequency: 'daily', priority: 0.7 },
+  { path: '/mayatara', changeFrequency: 'monthly', priority: 0.4, lastModified: new Date('2026-08-04') },
   { path: '/philosophy', changeFrequency: 'monthly', priority: 0.5, lastModified: new Date('2026-08-01') },
   ...(PAYWALL_ENABLED ? [{ path: '/pricing', changeFrequency: 'monthly' as const, priority: 0.5, lastModified: new Date('2026-08-01') }] : []),
   { path: '/advertise', changeFrequency: 'monthly', priority: 0.4, lastModified: new Date('2026-08-01') },

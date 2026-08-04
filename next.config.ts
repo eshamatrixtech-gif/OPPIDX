@@ -27,8 +27,6 @@ const nextConfig: NextConfig = {
       { source: "/mayatara/login", destination: "/account", permanent: true },
       { source: "/mayatara/register", destination: "/account/register", permanent: true },
       { source: "/mayatara/dashboard", destination: "/account/dashboard", permanent: true },
-      { source: "/mayatara", destination: "/", permanent: true },
-
       // API-path redirects — defense in depth for any external caller of the
       // old endpoints this diff didn't already fix directly (e.g. the two
       // GitHub Actions cron workflows, updated to call the new URLs

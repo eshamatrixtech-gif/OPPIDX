@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runScrapePass } from '@/lib/scraper/run'
-import { prisma } from '@/lib/db'
-import { notifyMatchingSubscribers } from '@/lib/push'
-import { notifyGoogleJobPostingUpdates } from '@/lib/seo/googleIndexing'
+import { afterScrapePass } from '@/lib/scraper/afterPass'
 
 /**
  * GET /api/cron/scrape — triggers one scraper pass. Meant to be called by an
@@ -14,6 +12,11 @@ import { notifyGoogleJobPostingUpdates } from '@/lib/seo/googleIndexing'
  * production — it only really works on a persistent server process (local
  * dev, a VPS). This route is what actually keeps the board "updated hourly"
  * once deployed serverless.
+ *
+ * The post-pass work (expiring paid Featured slots, pushing to subscribers,
+ * pinging Google's Indexing API) lives in lib/scraper/afterPass.ts so this
+ * route and the in-process scheduler genuinely do the same thing — they used
+ * to differ, and the scheduler path silently did none of it.
  *
  * Protected by a shared secret (not admin cookie auth) since the caller is a
  * scheduler, not a logged-in browser.
@@ -29,32 +32,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Paid "Featured" upserts are only good for a fixed window (see
-  // lib/billing/razorpay.ts's FEATURED_DURATION_DAYS) — unset featured once
-  // it passes so the homepage's featured pool doesn't keep a stale paid
-  // listing forever. Piggybacks on this already-hourly cron rather than
-  // adding a new schedule.
-  await prisma.opportunity.updateMany({
-    where: { featured: true, featuredUntil: { lt: new Date() } },
-    data: { featured: false },
-  })
-
   const result = await runScrapePass()
-
-  if (result.added > 0) {
-    const newOpportunities = await prisma.opportunity.findMany({
-      where: { verified: true, deletedAt: null, addedAt: { gte: result.startedAt } },
-      select: { id: true, audience: true, tags: true, org: true, location: true, country: true },
-    })
-    await notifyMatchingSubscribers(newOpportunities).catch(err =>
-      console.error('[scrape cron] push notification pass failed:', err)
-    )
-    const indexing = await notifyGoogleJobPostingUpdates(newOpportunities).catch(err => {
-      console.error('[scrape cron] Google Indexing API notification failed:', err)
-      return null
-    })
-    if (indexing) console.log('[scrape cron] Google indexing:', indexing)
-  }
+  await afterScrapePass(result, 'scrape cron')
 
   return NextResponse.json(result)
 }

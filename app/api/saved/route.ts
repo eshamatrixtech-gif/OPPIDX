@@ -25,7 +25,7 @@ export async function GET() {
     orderBy: { savedAt: 'desc' },
   })
   const appliedCount = saved.filter(s => s.appliedAt).length
-  if (saved.length === 0) return NextResponse.json({ items: [], appliedCount: 0 })
+  if (saved.length === 0) return NextResponse.json({ items: [], appliedCount: 0, chases: {} })
 
   const items = await prisma.opportunity.findMany({
     where: { id: { in: saved.map(s => s.opportunityId) }, deletedAt: null },
@@ -34,7 +34,22 @@ export async function GET() {
   const byId = new Map(items.map(o => [o.id, o]))
   const ordered = saved.map(s => byId.get(s.opportunityId)).filter((o): o is NonNullable<typeof o> => !!o)
 
-  return NextResponse.json({ items: ordered, appliedCount })
+  // Per-opportunity chase state, keyed by opportunity id so /saved can render
+  // a tracker rather than a list of bookmarks. Sent as a sidecar map rather
+  // than merged into the Opportunity objects, because those are the shared
+  // public shape (types/index.ts) that every card renders — a chase is this
+  // subscriber's private relationship to a listing, not a property of it.
+  const chases: Record<string, { appliedAt: string | null; outcome: string | null; note: string | null; shareConsent: boolean }> = {}
+  for (const s of saved) {
+    chases[s.opportunityId] = {
+      appliedAt: s.appliedAt?.toISOString() ?? null,
+      outcome: s.outcome,
+      note: s.outcomeNote,
+      shareConsent: s.shareConsent,
+    }
+  }
+
+  return NextResponse.json({ items: ordered, appliedCount, chases })
 }
 
 /**

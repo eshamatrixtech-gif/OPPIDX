@@ -43,6 +43,9 @@ const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitema
   // than searched for. /philosophy itself is deliberately absent — it 308s
   // here now, and listing a redirect in a sitemap is a crawl-budget waste.
   { path: '/manifesto', changeFrequency: 'monthly', priority: 0.9, lastModified: new Date('2026-08-06') },
+  // The board's own track record. 'daily' because it's rebuilt from live
+  // outcome rows on every request, not from a file someone edits.
+  { path: '/proof', changeFrequency: 'daily', priority: 0.7 },
   ...(PAYWALL_ENABLED ? [{ path: '/pricing', changeFrequency: 'monthly' as const, priority: 0.5, lastModified: new Date('2026-08-01') }] : []),
   { path: '/advertise', changeFrequency: 'monthly', priority: 0.4, lastModified: new Date('2026-08-01') },
   { path: '/widget', changeFrequency: 'monthly', priority: 0.3, lastModified: new Date('2026-08-01') },

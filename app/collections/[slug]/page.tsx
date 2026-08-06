@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { OpportunityCard } from '@/components/ui/OpportunityCard'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
+import { FollowCollection } from '@/components/ui/FollowCollection'
 import { ListingPageSchema } from '@/components/ui/ListingPageSchema'
 import { getCollectionOpportunities, getAllCollectionDefs, resolveCollectionDef } from '@/lib/collections'
 import { SITE_URL } from '@/lib/siteUrl'
@@ -51,6 +52,9 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
           <p style={{ fontSize: 14, color: 'var(--ink-2)', marginTop: 10, maxWidth: 640, lineHeight: 1.65 }}>
             {def.description} {total.toLocaleString()} real opportunities right now.
           </p>
+          <div style={{ marginTop: 16 }}>
+            <FollowCollection slug={slug} title={def.title} />
+          </div>
         </div>
       </header>
 

@@ -164,9 +164,61 @@ model SavedOpportunity {
   // real signal for "did saving something here lead anywhere," not a vanity
   // metric. Null forever for saves that never converted.
   appliedAt     DateTime?
+  // ── Outcome ──────────────────────────────────────────────────────────
+  // Until this existed the site could not know whether it had ever worked
+  // for anybody. viewCount/verified/featured describe the listing; nothing
+  // described what happened to the person. "No public success stories" was
+  // never a marketing gap — there was no column to put one in, and asking
+  // for testimonials after the fact is the least reliable version of a
+  // thing you can simply record as it happens.
+  //
+  // Null for as long as a chase is open, which is most of them most of the
+  // time. Only ever written by the person who chased it (see
+  // app/api/saved/outcome/route.ts) — never inferred from clicks, never
+  // set by a cron.
+  outcome       String?   // got_it | rejected | no_response | withdrew
+  outcomeAt     DateTime?
+  // Their own words, optional, capped at OUTCOME_NOTE_MAX. Only ever shown
+  // publicly alongside shareConsent.
+  outcomeNote   String?
+  // Explicit, per-outcome permission to show this publicly. Defaults to
+  // false and is asked for separately from the outcome itself: an outcome
+  // is recorded for the person's own tracker first and is not proof until
+  // they say it can be. A "got_it" without consent still counts toward the
+  // aggregate number, never toward a quotable story.
+  shareConsent  Boolean   @default(false)
 
   @@unique([subscriberId, opportunityId])
   @@index([subscriberId])
+  // Powers the public proof surface and the outcome-nudge query without a
+  // full scan as the table grows.
+  @@index([outcome])
+}
+
+// A standing subscription to a collection — "tell me when something new
+// lands in Grants for Founders."
+//
+// The push machinery (lib/push.ts) and the save machinery (SavedOpportunity)
+// both already existed; nothing connected either of them to a *standing*
+// interest, so the only signal available for matching was the audience of
+// things a person had already saved — which pings a student about every new
+// student listing on the board. This is the missing half: an explicit,
+// revocable statement of what someone wants to hear about.
+model CollectionAlert {
+  id             String   @id @default(cuid())
+  subscriberId   String
+  // Matches a slug in lib/collectionDefs.ts. Stored rather than joined —
+  // collections are code-defined, not rows.
+  collectionSlug String
+  createdAt      DateTime @default(now())
+  // Last time a push actually went out for this alert, so the throttle is
+  // per-alert rather than per-browser — following three collections should
+  // not mean two of them go silent for six hours.
+  lastNotifiedAt DateTime?
+
+  @@unique([subscriberId, collectionSlug])
+  @@index([subscriberId])
+  @@index([collectionSlug])
 }
 
 // A browser's Web Push subscription — tied to a Subscriber so "matching"

@@ -31,6 +31,7 @@ const COLUMNS: Array<{ heading: string; links: Array<{ href: string; label: stri
     heading: 'Read',
     links: [
       { href: '/manifesto', label: 'The manifesto' },
+      { href: '/proof', label: 'Does this work?' },
       { href: '/pulse', label: 'Pulse' },
       { href: '/newsletter', label: 'Daily digest' },
       { href: '/resources', label: 'Resources' },

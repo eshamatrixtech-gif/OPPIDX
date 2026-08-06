@@ -408,7 +408,7 @@ function BrowseInner() {
             <motion.div layout className="card-grid" style={{ ['--card-min' as string]: '260px' }}>
               <AnimatePresence mode="popLayout">
                 {feedSlots.map(slot => slot.kind === 'primary'
-                  ? <OpportunityCard key={slot.item.id} opp={slot.item} extras={extras[slot.item.id]} />
+                  ? <OpportunityCard key={slot.item.id} opp={slot.item} extras={extras[slot.item.id]} animated />
                   : <PulseCard key={`pulse-${slot.item.period}`} digest={slot.item} />
                 )}
               </AnimatePresence>

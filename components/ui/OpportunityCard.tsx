@@ -103,12 +103,44 @@ function AttachmentStrip({ href, extras }: { href: string; extras: CardExtras })
  * parent state in every caller, so the default shallow-prop comparison
  * correctly bails out here without a custom comparator.
  */
-export const OpportunityCard = memo(function OpportunityCard({ opp, extras }: { opp: Opportunity; extras?: CardExtras }) {
+export const OpportunityCard = memo(function OpportunityCard({
+  opp,
+  extras,
+  animated = false,
+}: {
+  opp: Opportunity
+  extras?: CardExtras
+  /**
+   * Wrap in framer-motion so the card can fade/slide as it enters, leaves,
+   * or gets reordered.
+   *
+   * Off by default, and only /browse turns it on — it's the one surface
+   * where filtering genuinely adds, removes and reorders cards inside an
+   * AnimatePresence. Everywhere else the list is fixed for the lifetime of
+   * the page, so the wrapper bought nothing and cost two real things: every
+   * card started at `opacity: 0` and faded in, which on a 211-card
+   * collection page is a visibly blank grid on arrival; and `layout` forces
+   * framer-motion to measure every card on every render pass, which is 211
+   * layout reads on a phone for an animation nobody asked for.
+   */
+  animated?: boolean
+}) {
   const tags = opp.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 3)
   const href = opportunityPath(opp)
 
+  const Wrapper = animated ? motion.div : 'div'
+  const motionProps = animated
+    ? {
+        layout: true,
+        initial: { opacity: 0, y: 12 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, scale: 0.96 },
+        transition: { duration: 0.2 },
+      }
+    : {}
+
   return (
-    <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.2 }}>
+    <Wrapper {...motionProps}>
       <div className="card-box" style={{ minHeight: 220, overflow: 'hidden' }}>
         <div style={{ position: 'relative', height: opp.imageUrl ? 132 : undefined }}>
           {opp.imageUrl ? (
@@ -219,6 +251,6 @@ export const OpportunityCard = memo(function OpportunityCard({ opp, extras }: { 
 
         <EcosystemActions opp={opp} variant="compact" />
       </div>
-    </motion.div>
+    </Wrapper>
   )
 })

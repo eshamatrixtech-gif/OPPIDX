@@ -1,6 +1,22 @@
 import Link from 'next/link'
 import { Wordmark } from '@/components/ui/Wordmark'
 
+// Do NOT add an `app/loading.tsx` (or any Suspense boundary above a page
+// that calls notFound()). A root loading.tsx wraps every route in a
+// Suspense boundary, so the first `await` in a dynamic page suspends, the
+// fallback renders, and the response body starts streaming — which commits
+// a 200 before the DB lookup has resolved. notFound() then renders this UI
+// on a 200 instead of a 404 (a "soft 404"). That silently affected every
+// dynamic route: /opportunities/[id], /resources/[id], /collections/[slug],
+// /regions/[slug], /companies/[slug], /newsletter/[date], and
+// /pulse/digest/[period]. With ~2,200 listing URLs in the sitemap and
+// listings that come down when a source stops publishing them, Google
+// treats each of those as a real page competing for crawl budget.
+// See node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/loading.md
+// ("Status Codes"): once streaming starts the status can no longer change.
+// If a specific slow route needs a fallback, scope it to that segment —
+// never the root — and only where a 404 status isn't required.
+
 export const metadata = {
   title: 'Page not found — OppIDX',
   robots: { index: false, follow: true },

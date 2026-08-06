@@ -220,11 +220,19 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
   if (!opp) notFound()
 
   const tags = opp.tags.split(',').map(t => t.trim()).filter(Boolean)
-  const similar = await getSimilar(opp)
-  const relatedResources = await getRelatedResources(opp)
-  const relatedGatherings = await getRelatedGatherings(opp)
-  const relatedPolicyReads = await getRelatedPolicyReads(opp)
-  const chasingCount = await chasingCohortSize(opp.id)
+  // These five only depend on `opp`, never on each other, so they run
+  // concurrently rather than as five sequential round trips. That matters
+  // more than it used to: there is deliberately no Suspense boundary above
+  // this page (see app/not-found.tsx), so the whole render is what the
+  // visitor waits on before any HTML is sent, instead of being hidden
+  // behind a spinner. Awaited after the notFound() above, never before it.
+  const [similar, relatedResources, relatedGatherings, relatedPolicyReads, chasingCount] = await Promise.all([
+    getSimilar(opp),
+    getRelatedResources(opp),
+    getRelatedGatherings(opp),
+    getRelatedPolicyReads(opp),
+    chasingCohortSize(opp.id),
+  ])
   const pageUrl = `${SITE_URL}/opportunities/${opp.id}`
   const jobLd = jobPostingJsonLd(opp, pageUrl)
 

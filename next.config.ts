@@ -14,23 +14,6 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      // Canonicalize on the apex domain — SITE_URL (lib/siteUrl.ts) and every
-      // canonical tag already assume https://oppidx.com, but DNS also serves
-      // www.oppidx.com as a live, independently-crawlable copy of the same
-      // app with no host-level redirect between them. Search Console's own
-      // Pages report confirms Google is indexing both as separate URLs (e.g.
-      // /companies/openai showing up twice, once per host), splitting
-      // impressions across the same content instead of consolidating them
-      // onto one canonical page. A canonical <link> is a hint the ranking
-      // algorithm can take weeks to fully honor; a real 301 here is
-      // immediate and unambiguous. Host-matched redirects need to come
-      // before the path-based ones below since they apply to every route.
-      {
-        source: "/:path*",
-        has: [{ type: "host", value: "www.oppidx.com" }],
-        destination: "https://oppidx.com/:path*",
-        permanent: true,
-      },
       { source: "/mayatara/events", destination: "/resources", permanent: true },
       { source: "/mayatara/events/new", destination: "/events/new", permanent: true },
       { source: "/mayatara/events/:slug/manage", destination: "/events/:slug/manage", permanent: true },

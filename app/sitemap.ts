@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { prisma } from '@/lib/db'
 import { SITE_URL } from '@/lib/siteUrl'
+import { opportunityPath } from '@/lib/slug'
 import { PAYWALL_ENABLED } from '@/lib/limits'
 import { getAllCollectionDefs } from '@/lib/collections'
 import { getCompanyList } from '@/lib/companies'
@@ -36,7 +37,12 @@ const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitema
   { path: '/resources', changeFrequency: 'daily', priority: 0.8 },
   { path: '/pulse', changeFrequency: 'daily', priority: 0.7 },
   { path: '/mayatara', changeFrequency: 'monthly', priority: 0.4, lastModified: new Date('2026-08-04') },
-  { path: '/philosophy', changeFrequency: 'monthly', priority: 0.5, lastModified: new Date('2026-08-01') },
+  // Priority raised from the 0.5 /philosophy carried: this is the page that
+  // states what the board is for, it's now in the site nav and linked from
+  // every footer, and it's the one URL here written to be forwarded rather
+  // than searched for. /philosophy itself is deliberately absent — it 308s
+  // here now, and listing a redirect in a sitemap is a crawl-budget waste.
+  { path: '/manifesto', changeFrequency: 'monthly', priority: 0.9, lastModified: new Date('2026-08-06') },
   ...(PAYWALL_ENABLED ? [{ path: '/pricing', changeFrequency: 'monthly' as const, priority: 0.5, lastModified: new Date('2026-08-01') }] : []),
   { path: '/advertise', changeFrequency: 'monthly', priority: 0.4, lastModified: new Date('2026-08-01') },
   { path: '/widget', changeFrequency: 'monthly', priority: 0.3, lastModified: new Date('2026-08-01') },
@@ -62,7 +68,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [opportunities, resources, newsletters, pulseDigests, companies, collections, regions, events] = await Promise.all([
     prisma.opportunity.findMany({
       where: { verified: true, deletedAt: null },
-      select: { id: true, addedAt: true },
+      select: { id: true, slug: true, addedAt: true },
       orderBy: { addedAt: 'desc' },
     }),
     prisma.resource.findMany({
@@ -86,7 +92,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   const opportunityEntries: MetadataRoute.Sitemap = opportunities.map(o => ({
-    url: `${SITE_URL}/opportunities/${o.id}`,
+    url: `${SITE_URL}${opportunityPath(o)}`,
     lastModified: o.addedAt,
     changeFrequency: 'weekly',
     priority: 0.7,

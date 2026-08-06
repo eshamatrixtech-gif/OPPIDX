@@ -1,6 +1,7 @@
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
+import { isCuid, opportunityPath } from '@/lib/slug'
 import { ViewTracker } from '@/components/ui/ViewTracker'
 import { ShareBar } from '@/components/ui/ShareBar'
 import { SaveButton } from '@/components/ui/SaveButton'
@@ -35,8 +36,20 @@ const DIFFICULTY_COLOR: Record<string, string> = {
   Hard: 'var(--danger)',
 }
 
-async function getOpportunity(id: string) {
-  const opp = await prisma.opportunity.findUnique({ where: { id } })
+/**
+ * Resolves the single `[id]` segment as either a slug or a legacy cuid.
+ *
+ * Both have to keep working indefinitely: cuid URLs are already in Google's
+ * index, already in the RSS feed, and already pasted in whatever group chats
+ * carried this board before slugs existed. A cuid request that resolves to a
+ * row with a slug gets a 308 to the slug form (see the page component), so
+ * link equity consolidates on one canonical URL without ever 404ing the old
+ * one.
+ */
+async function getOpportunity(idOrSlug: string) {
+  const opp = isCuid(idOrSlug)
+    ? await prisma.opportunity.findUnique({ where: { id: idOrSlug } })
+    : await prisma.opportunity.findUnique({ where: { slug: idOrSlug } })
   if (!opp || opp.deletedAt) return null
   return opp
 }
@@ -109,6 +122,28 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const opp = await getOpportunity(id)
   if (!opp) return { title: 'Not found — OppIDX' }
 
+  // Legacy cuid URL for a listing that now has a slug — send the reader to
+  // the readable one.
+  //
+  // Measured behaviour, not the documented ideal: this route is dynamic, so
+  // by the time the lookup resolves Next has already committed the response,
+  // and permanentRedirect() degrades to a client-side
+  // <meta http-equiv="refresh" content="0;url=…"> on a 200 rather than a 308
+  // with a Location header. Confirmed against a production build, from both
+  // here and the page body. It isn't something this route can opt out of —
+  // every dynamic route in this app behaves the same way (notFound() on
+  // /resources/[id] and /collections/[slug] likewise renders on a 200). A
+  // config-level redirect isn't available either: the destination depends on
+  // a database lookup, and next.config.ts redirects are static.
+  //
+  // Acceptable because the redirect is not what consolidates the two URL
+  // forms — the canonical tag below is, and it points at the slug on both.
+  // Google treats an instant meta refresh as a redirect; combined with a
+  // matching canonical, a sitemap listing only slug URLs, and internal links
+  // that only ever emit slugs, the signal is unambiguous. The refresh is for
+  // the person, the canonical for the crawler.
+  if (opp.slug && id !== opp.slug) permanentRedirect(opportunityPath(opp))
+
   const facts = metaFactsLine(opp)
   // Prefer the original AI-written summary over a truncated raw
   // description — the raw text is usually scraped verbatim from the
@@ -120,7 +155,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return pageMetadata({
     title: opp.org ? `${opp.title} at ${opp.org} — OppIDX` : `${opp.title} — OppIDX`,
     description: (facts ? `${facts} — ${body}` : body).slice(0, 160),
-    canonical: `${SITE_URL}/opportunities/${opp.id}`,
+    // Always the slug form when one exists, even when this request arrived
+    // on the legacy cuid URL — that's what makes the two forms consolidate
+    // rather than compete as duplicates.
+    canonical: `${SITE_URL}${opportunityPath(opp)}`,
   })
 }
 
@@ -134,12 +172,12 @@ const AUDIENCE_COLLECTION: Record<string, { slug: string; label: string }> = {
   FOUNDER: { slug: 'founders', label: 'Founders' },
 }
 
-function breadcrumbTrail(opp: { id: string; title: string; audience: string }): BreadcrumbItem[] {
+function breadcrumbTrail(opp: { id: string; slug: string | null; title: string; audience: string }): BreadcrumbItem[] {
   const collection = AUDIENCE_COLLECTION[opp.audience]
   return [
     { name: 'OppIDX', href: '/' },
     collection ? { name: collection.label, href: `/collections/${collection.slug}` } : { name: 'Browse', href: '/browse' },
-    { name: opp.title, href: `/opportunities/${opp.id}` },
+    { name: opp.title, href: opportunityPath(opp) },
   ]
 }
 
@@ -220,16 +258,24 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
   if (!opp) notFound()
 
   const tags = opp.tags.split(',').map(t => t.trim()).filter(Boolean)
-  const similar = await getSimilar(opp)
-  const relatedResources = await getRelatedResources(opp)
-  const relatedGatherings = await getRelatedGatherings(opp)
-  const relatedPolicyReads = await getRelatedPolicyReads(opp)
-  const chasingCount = await chasingCohortSize(opp.id)
-  const pageUrl = `${SITE_URL}/opportunities/${opp.id}`
+
+  // All five are independent reads — two of them (gatherings, policy reads)
+  // pull a whole pool before matching. Awaited sequentially they stacked five
+  // round-trips into the TTFB of the single most search-visible template on
+  // the site. Same pattern already used in app/sitemap.ts.
+  const [similar, relatedResources, relatedGatherings, relatedPolicyReads, chasingCount] = await Promise.all([
+    getSimilar(opp),
+    getRelatedResources(opp),
+    getRelatedGatherings(opp),
+    getRelatedPolicyReads(opp),
+    chasingCohortSize(opp.id),
+  ])
+
+  const pageUrl = `${SITE_URL}${opportunityPath(opp)}`
   const jobLd = jobPostingJsonLd(opp, pageUrl)
 
   return (
-    <div style={{ minHeight: '100vh', padding: '40px 20px 80px' }}>
+    <div style={{ padding: '28px var(--gutter) 60px' }}>
       {jobLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jobLd }} />}
       <ViewTracker id={opp.id} />
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
@@ -259,7 +305,7 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
           </div>
         )}
 
-        <div className="card-box" style={{ marginTop: 20, padding: '36px 32px' }}>
+        <div className="card-box card-pad-lg" style={{ marginTop: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 16 }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               <span style={{
@@ -434,10 +480,7 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
             <div className="divider" style={{ marginBottom: 20 }}>
               <span>◆ Similar opportunities ◆</span>
             </div>
-            <div style={{
-              display: 'grid', gap: 20,
-              gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
-            }}>
+            <div className="card-grid" style={{ ['--card-min' as string]: '230px', gap: 20 }}>
               {similar.map(s => <OpportunityCard key={s.id} opp={s} />)}
             </div>
           </div>

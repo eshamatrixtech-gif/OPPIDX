@@ -14,6 +14,15 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // /philosophy → /manifesto: same writing, reordered so the Chaser
+      // identity leads, plus a share card and a real nav slot. Declared here
+      // rather than as a page calling permanentRedirect() because a page-level
+      // redirect resolves inside the streaming render, where Next can only
+      // emit a client-side <meta http-equiv="refresh"> on a 200 response —
+      // verified against a production build. A config redirect is a genuine
+      // 308 with a Location header, which is what an indexed URL needs.
+      { source: "/philosophy", destination: "/manifesto", permanent: true },
+
       { source: "/mayatara/events", destination: "/resources", permanent: true },
       { source: "/mayatara/events/new", destination: "/events/new", permanent: true },
       { source: "/mayatara/events/:slug/manage", destination: "/events/:slug/manage", permanent: true },

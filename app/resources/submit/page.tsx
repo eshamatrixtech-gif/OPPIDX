@@ -71,7 +71,7 @@ export default function SubmitResource() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', padding: '40px 24px 80px' }}>
+    <div style={{ minHeight: '100vh', padding: '40px var(--gutter) 80px' }}>
       <div style={{ maxWidth: 480, margin: '0 auto' }}>
         <div style={{ marginBottom: 6 }}>
           <Link href="/resources" style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', textDecoration: 'none' }}>← Back</Link>
@@ -107,7 +107,7 @@ export default function SubmitResource() {
           )}
 
           <button type="submit" disabled={state === 'checking'} style={{
-            padding: '11px 24px', borderRadius: 2, border: 'none', cursor: 'pointer',
+            padding: '11px var(--gutter)', borderRadius: 2, border: 'none', cursor: 'pointer',
             background: 'var(--btn-bg)', color: 'var(--btn-text)', fontFamily: 'var(--font-mono)',
             fontWeight: 700, fontSize: 13.5, letterSpacing: '0.02em', boxShadow: '3px 3px 0 var(--shadow)',
           }}>

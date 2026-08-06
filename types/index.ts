@@ -3,6 +3,11 @@ export type Difficulty = 'Easy' | 'Medium' | 'Hard'
 
 export interface Opportunity {
   id: string
+  /** Human-readable URL segment (see lib/slug.ts). Null on rows written
+   * before slugs existed and not yet covered by scripts/backfill-slugs.ts —
+   * build listing links with opportunityPath(), never by hand, so those
+   * rows keep resolving by id. */
+  slug: string | null
   title: string
   description: string
   url: string

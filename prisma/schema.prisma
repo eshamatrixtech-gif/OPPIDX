@@ -27,6 +27,15 @@ model User {
 // source values: user-provided | researched
 model Opportunity {
   id            String    @id @default(cuid())
+  // Human-readable URL segment, e.g. "chevening-scholarship-uk-gov-k2p901".
+  // Built from the row's own title/org plus a suffix of its cuid (see
+  // lib/slug.ts) — derived from stored facts, never invented. Nullable
+  // because it was added to a populated table: rows written before the
+  // backfill (scripts/backfill-slugs.ts) legitimately have none, and
+  // /opportunities/[id] still resolves those by id and 308s to the slug once
+  // one exists. Every write path sets it; a null here means "not backfilled
+  // yet", not "this listing has no name".
+  slug          String?   @unique
   title         String
   description   String
   url           String

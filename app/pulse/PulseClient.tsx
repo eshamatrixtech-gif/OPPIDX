@@ -182,12 +182,11 @@ export default function PulseClient() {
 
   return (
     <div className="stamped-scope min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
-      <header className="border-b-2 z-10 relative" style={{ borderColor: "var(--border)", background: "var(--card)" }}>
-        <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between flex-wrap gap-y-2">
-          <Link href="/" className="font-typewriter text-xl tracking-wider" style={{ color: "var(--pin)" }}>← OppIDX</Link>
+      <div className="border-b-2 z-10 relative" style={{ borderColor: "var(--border)", background: "var(--card)" }}>
+        <div className="max-w-4xl mx-auto px-6 py-2.5 text-center">
           <span className="text-xs tracking-widest font-typewriter" style={{ color: "var(--ink-muted)" }}>NO LEFT. NO RIGHT. JUST FORWARD.</span>
         </div>
-      </header>
+      </div>
 
       <div className="flex-1 max-w-3xl mx-auto w-full px-4 py-14 relative z-10">
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { opportunityPath } from "@/lib/slug";
 
 interface RelatedOpportunity {
   id: string;
@@ -42,7 +43,7 @@ export function RelatedOpportunities({ category }: { category: string }) {
         {items.map((opp) => (
           <Link
             key={opp.id}
-            href={`/opportunities/${opp.id}`}
+            href={opportunityPath(opp)}
             style={{ fontSize: 12.5, color: "var(--saffron)", textDecoration: "none", lineHeight: 1.4 }}
           >
             {opp.title}

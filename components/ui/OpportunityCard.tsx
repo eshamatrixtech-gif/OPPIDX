@@ -7,6 +7,7 @@ import { SaveButton } from '@/components/ui/SaveButton'
 import { SafeImage } from '@/components/ui/SafeImage'
 import { GeneratedBanner } from '@/components/ui/GeneratedBanner'
 import { EcosystemActions } from '@/components/ui/EcosystemActions'
+import { opportunityPath } from '@/lib/slug'
 import type { Opportunity } from '@/types'
 
 const AUDIENCE_LABEL: Record<string, string> = {
@@ -59,7 +60,7 @@ const ATTACHMENT_ICON: Record<string, string> = {
  * whether something's real enough to show. A card that clears none of
  * these renders no strip at all, same as a card with no stats gets no
  * stat badge — never a row of zeroes. */
-function AttachmentStrip({ oppId, extras }: { oppId: string; extras: CardExtras }) {
+function AttachmentStrip({ href, extras }: { href: string; extras: CardExtras }) {
   const entries: Array<{ kind: string; label: string }> = []
   if (extras.resourceCount > 0) entries.push({ kind: 'resource', label: `${extras.resourceCount} related guide${extras.resourceCount === 1 ? '' : 's'}` })
   if (extras.policyReadCount > 0) entries.push({ kind: 'policy', label: `${extras.policyReadCount} policy read${extras.policyReadCount === 1 ? '' : 's'}` })
@@ -75,7 +76,7 @@ function AttachmentStrip({ oppId, extras }: { oppId: string; extras: CardExtras 
 
   return (
     <Link
-      href={`/opportunities/${oppId}#related`}
+      href={`${href}#related`}
       style={{
         display: 'flex', flexWrap: 'wrap', gap: 12, padding: '9px 18px',
         borderTop: '1px solid var(--line)', textDecoration: 'none',
@@ -104,6 +105,7 @@ function AttachmentStrip({ oppId, extras }: { oppId: string; extras: CardExtras 
  */
 export const OpportunityCard = memo(function OpportunityCard({ opp, extras }: { opp: Opportunity; extras?: CardExtras }) {
   const tags = opp.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 3)
+  const href = opportunityPath(opp)
 
   return (
     <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.2 }}>
@@ -132,7 +134,7 @@ export const OpportunityCard = memo(function OpportunityCard({ opp, extras }: { 
           )}
         </div>
         <Link
-          href={`/opportunities/${opp.id}`}
+          href={href}
           style={{ display: 'block', padding: '20px 18px 14px', textDecoration: 'none' }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
@@ -201,6 +203,7 @@ export const OpportunityCard = memo(function OpportunityCard({ opp, extras }: { 
           borderTop: '1px solid var(--line)', padding: '10px 18px',
           fontFamily: 'var(--font-mono)', fontSize: 11,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+          flexWrap: 'wrap',
         }}>
           <a
             href={opp.url} target="_blank" rel="noopener noreferrer"
@@ -212,7 +215,7 @@ export const OpportunityCard = memo(function OpportunityCard({ opp, extras }: { 
           <SaveButton opportunityId={opp.id} />
         </div>
 
-        {extras && <AttachmentStrip oppId={opp.id} extras={extras} />}
+        {extras && <AttachmentStrip href={href} extras={extras} />}
 
         <EcosystemActions opp={opp} variant="compact" />
       </div>

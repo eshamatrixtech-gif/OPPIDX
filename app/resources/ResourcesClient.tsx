@@ -76,7 +76,7 @@ function LearnSection() {
   if (financial?.length === 0 && spiritual?.length === 0) return null
 
   return (
-    <div style={{ background: 'var(--board)', borderBottom: '1px solid var(--line)', padding: '32px 24px' }}>
+    <div style={{ background: 'var(--board)', borderBottom: '1px solid var(--line)', padding: '32px var(--gutter)' }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
         <div className="divider" style={{ marginBottom: 6 }}>
           <span>◆ Learn ◆</span>
@@ -126,7 +126,7 @@ function GatheringsSection() {
   }, [])
 
   return (
-    <div style={{ borderBottom: '1px solid var(--line)', padding: '32px 24px' }}>
+    <div style={{ borderBottom: '1px solid var(--line)', padding: '32px var(--gutter)' }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
         <div className="divider" style={{ marginBottom: 6 }}>
           <span>◆ Gatherings ◆</span>
@@ -246,11 +246,8 @@ function ResourcesInner() {
 
   return (
     <div style={{ minHeight: '100vh' }}>
-      <header style={{ padding: '40px 24px 28px', borderBottom: '1px solid var(--line)' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div style={{ marginBottom: 6 }}>
-            <Link href="/" style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', textDecoration: 'none' }}>← Back</Link>
-          </div>
+      <header style={{ padding: '34px 0 28px', borderBottom: '1px solid var(--line)' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 var(--gutter)' }}>
           <h1 style={{
             fontFamily: 'var(--font-display)', fontSize: 'clamp(26px, 5vw, 40px)',
             lineHeight: 1.15, marginBottom: 10, textTransform: 'uppercase', color: 'var(--ink)',
@@ -289,7 +286,7 @@ function ResourcesInner() {
       <GatheringsSection />
       <LearnSection />
 
-      <main style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px 80px' }}>
+      <main style={{ maxWidth: 900, margin: '0 auto', padding: '32px var(--gutter) 80px' }}>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', marginBottom: 16 }}>
           {loading ? 'Loading…' : `${total.toLocaleString()} resource${total === 1 ? '' : 's'}`}
         </div>

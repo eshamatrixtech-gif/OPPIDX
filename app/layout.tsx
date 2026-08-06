@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { SITE_URL } from '@/lib/siteUrl'
 import { ReferralCapture } from '@/components/ReferralCapture'
 import { VisitTracker } from '@/components/VisitTracker'
+import { SiteChrome } from '@/components/ui/SiteChrome'
 import './globals.css'
 import './stamped.css'
 
@@ -84,7 +85,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd).replace(/</g, '\\u003c') }} />
         <ReferralCapture />
         <VisitTracker />
-        {children}
+        {/* One persistent header + footer for the whole site. Every page used
+            to hand-roll its own header whose only navigation was a back-link
+            to "/", and the listing pages search traffic lands on had none at
+            all — see components/ui/SiteChrome.tsx for the two surfaces that
+            deliberately stay bare. */}
+        <SiteChrome>{children}</SiteChrome>
         <Analytics />
       </body>
     </html>

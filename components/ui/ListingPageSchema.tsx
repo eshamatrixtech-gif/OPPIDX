@@ -1,4 +1,5 @@
 import { SITE_URL } from '@/lib/siteUrl'
+import { opportunityPath } from '@/lib/slug'
 
 interface ListingItem {
   id: string
@@ -32,7 +33,7 @@ export function ListingPageSchema({
       itemListElement: items.map((item, index) => ({
         '@type': 'ListItem',
         position: index + 1,
-        url: `${SITE_URL}/opportunities/${item.id}`,
+        url: `${SITE_URL}${opportunityPath(item)}`,
         name: item.title,
       })),
     },

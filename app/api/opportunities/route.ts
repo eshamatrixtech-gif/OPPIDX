@@ -9,6 +9,7 @@ import { FREE_SEARCH_LIMIT, PAYWALL_ENABLED } from '@/lib/limits'
 import { enrichOpportunities }       from '@/lib/feedEnrichment'
 import { fetchOgMedia }              from '@/lib/ogImage'
 import { templateOpportunitySummary } from '@/lib/scraper/summarize'
+import { newSlug } from '@/lib/slug'
 
 const PAGE_SIZE = 24
 const VALID_AUDIENCES = ['STUDENT', 'EARLY_CAREER', 'FOUNDER', 'GENERAL']
@@ -168,6 +169,7 @@ export async function POST(req: NextRequest) {
   const created = await prisma.opportunity.create({
     data: {
       title: title.trim(),
+      slug: newSlug({ title: title.trim(), org: resolvedOrg }),
       description: description.trim(),
       summary,
       url: url.trim(),

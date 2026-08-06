@@ -30,6 +30,7 @@ import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { prisma } from '../lib/db'
 import { inferGeo } from '../lib/scraper/geo'
+import { newSlug } from '../lib/slug'
 
 const IMPORT_FILE = join(__dirname, '..', 'data', 'opportunities-import.json')
 const VALID_AUDIENCES = ['STUDENT', 'EARLY_CAREER', 'FOUNDER', 'GENERAL']
@@ -63,6 +64,7 @@ async function main() {
     await prisma.opportunity.create({
       data: {
         title: String(entry.title).trim(),
+        slug: newSlug({ title: String(entry.title).trim(), org: entry.org ? String(entry.org).trim() : null }),
         description: String(entry.description).trim(),
         url: String(entry.url).trim(),
         org: entry.org ? String(entry.org).trim() : null,

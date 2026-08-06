@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import { SITE_URL } from '@/lib/siteUrl'
 import { FREE_SEARCH_LIMIT } from '@/lib/limits'
+import { opportunityPath } from '@/lib/slug'
 
 function escapeXml(input: string): string {
   return input
@@ -29,8 +30,8 @@ export async function GET() {
   const rssItems = items.map(o => `
     <item>
       <title>${escapeXml(o.title)}</title>
-      <link>${SITE_URL}/opportunities/${o.id}</link>
-      <guid isPermaLink="true">${SITE_URL}/opportunities/${o.id}</guid>
+      <link>${SITE_URL}${opportunityPath(o)}</link>
+      <guid isPermaLink="true">${SITE_URL}${opportunityPath(o)}</guid>
       <pubDate>${o.addedAt.toUTCString()}</pubDate>
       <description>${escapeXml(o.description.slice(0, 500))}</description>
     </item>`).join('')

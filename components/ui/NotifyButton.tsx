@@ -100,7 +100,7 @@ export function NotifyButton() {
           style={{
             padding: '8px 12px', borderRadius: 2, border: '1.5px solid var(--line)',
             background: 'var(--card)', color: 'var(--ink)', fontFamily: 'var(--font-mono)',
-            fontSize: 12.5, outline: 'none', minWidth: 180,
+            fontSize: 12.5, outline: 'none', minWidth: 0, flex: '1 1 180px',
           }}
         />
         <button type="submit" style={{

@@ -72,7 +72,7 @@ export function SaveButton({ opportunityId, initiallySaved = false }: { opportun
           style={{
             padding: '5px 8px', borderRadius: 2, border: '1.5px solid var(--line)',
             background: 'var(--card)', color: 'var(--ink)', fontFamily: 'var(--font-mono)',
-            fontSize: 11.5, width: 150, outline: 'none',
+            fontSize: 11.5, width: '100%', maxWidth: 150, minWidth: 0, outline: 'none',
           }}
         />
         <button type="submit" disabled={busy} style={{

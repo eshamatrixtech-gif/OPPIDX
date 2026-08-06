@@ -8,6 +8,7 @@ import { fetchOgMedia } from '@/lib/ogImage'
 // it with (title, org, description) instead) once there's budget again;
 // see lib/scraper/summarize.ts's own comment for the full swap-back note.
 import { templateOpportunitySummary } from './summarize'
+import { newSlug } from '@/lib/slug'
 
 interface SourceStats {
   fetched: number
@@ -53,6 +54,7 @@ export async function runScrapePass(): Promise<RunResult> {
         await prisma.opportunity.create({
           data: {
             title: raw.title.trim(),
+            slug: newSlug({ title: raw.title.trim(), org: raw.org ?? null }),
             description: normalized.description,
             summary,
             url,

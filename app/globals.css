@@ -48,6 +48,15 @@
     scroll-behavior: smooth;
   }
 
+  /* Scraped listing descriptions and raw application URLs are both arbitrary
+     third-party text — a 90-character URL rendered verbatim (the listing
+     page shows "Apply → {url}") pushed the layout wider than the viewport on
+     a phone, and body's overflow-x:hidden hid the symptom by clipping the
+     card rather than fixing the wrap. */
+  p, a, h1, h2, h3, h4, li, span, div {
+    overflow-wrap: break-word;
+  }
+
   body {
     font-family: var(--font-mono), monospace;
     color: var(--ink);
@@ -125,4 +134,442 @@
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SITE CHROME — the persistent header/footer mounted in app/layout.tsx.
+
+   Written as real classes with real breakpoints rather than the inline
+   style objects used elsewhere in this codebase, because inline styles
+   cannot express a media query — which is why the whole site was
+   desktop-only until now (this file previously contained exactly one
+   @media rule, and it controlled text wrapping on a decorative divider).
+   ══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --shell-h: 58px;
+  --gutter: 24px;
+  --maxw: 1100px;
+}
+
+/* Anchor links (e.g. the cards' "#related" deep link) must not land under
+   the sticky header. */
+@layer base {
+  :target { scroll-margin-top: calc(var(--shell-h) + 16px); }
+}
+
+.site-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────── */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  background: var(--card);
+  border-bottom: 1.5px solid var(--line);
+}
+
+.site-header-inner {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  height: var(--shell-h);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.site-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+.site-brand img { display: block; }
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.site-nav-link {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  text-decoration: none;
+  white-space: nowrap;
+  padding: 4px 0;
+  border-bottom: 2px solid transparent;
+}
+.site-nav-link:hover { color: var(--ink); }
+.site-nav-link.is-active {
+  color: var(--pin);
+  border-bottom-color: var(--pin);
+}
+
+.site-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.hdr-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--board);
+  border: 1.5px solid var(--line);
+  border-radius: 2px;
+  padding: 6px 10px;
+  color: var(--ink-3);
+  width: 190px;
+}
+.hdr-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.btn-solid {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 14px;
+  border-radius: 2px;
+  border: none;
+  cursor: pointer;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 3px 3px 0 var(--shadow);
+}
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 14px;
+  border-radius: 2px;
+  border: 1.5px solid var(--line);
+  cursor: pointer;
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.btn-block { width: 100%; padding: 11px 16px; font-size: 13px; }
+
+.site-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 34px;
+  border-radius: 2px;
+  border: 1.5px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ─── Drawer ─────────────────────────────────────────────────────────── */
+.site-drawer-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.42);
+  z-index: 90;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.site-drawer-scrim.is-open { opacity: 1; pointer-events: auto; }
+
+.site-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(370px, 92vw);
+  z-index: 91;
+  background: var(--card);
+  border-left: 1.5px solid var(--line);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transform: translateX(100%);
+  transition: transform 0.22s ease;
+  padding: 18px 20px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.site-drawer.is-open { transform: translateX(0); }
+/* `hidden` on a flex container is overridden by display:flex — restore it so
+   the closed drawer is genuinely out of the a11y tree and tab order. */
+.site-drawer[hidden] { display: none; }
+
+.site-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.site-drawer-close {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--ink-2);
+  padding: 0 4px;
+}
+.site-drawer-search { margin-bottom: 10px; }
+.site-drawer-search .hdr-search { width: 100%; padding: 9px 12px; }
+
+.drawer-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pin);
+  margin-top: 14px;
+  margin-bottom: 2px;
+}
+
+.site-drawer-links { display: flex; flex-direction: column; }
+.site-drawer-link {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.site-drawer-link.is-active { color: var(--pin); }
+
+.site-drawer-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: 7px 14px;
+  border-radius: 2px;
+  border: 1.5px solid var(--line);
+  background: var(--board);
+  text-decoration: none;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.site-drawer-cards { display: flex; flex-direction: column; gap: 8px; }
+.site-drawer-card { padding: 11px 13px; text-decoration: none; display: block; }
+.site-drawer-card-title {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+.site-drawer-card-desc {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink-2);
+  line-height: 1.4;
+}
+
+.site-drawer-cta { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+
+/* ─── Footer ─────────────────────────────────────────────────────────── */
+.site-footer {
+  border-top: 1.5px solid var(--line);
+  background: var(--card);
+  margin-top: 60px;
+}
+.site-footer-inner {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 38px var(--gutter) 26px;
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) 2.4fr;
+  gap: 34px;
+}
+.site-footer-brand p {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.6;
+  max-width: 30ch;
+}
+.site-footer-cols {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+.site-footer-cols nav { display: flex; flex-direction: column; gap: 7px; }
+.site-footer-heading {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pin);
+  margin-bottom: 3px;
+}
+.site-footer-cols a {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  text-decoration: none;
+  line-height: 1.4;
+}
+.site-footer-cols a:hover { color: var(--ink); text-decoration: underline; }
+
+.site-footer-base {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 14px var(--gutter) 26px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.site-footer-base a { color: var(--ink-3); text-decoration: none; }
+.site-footer-base a:hover { text-decoration: underline; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   RESPONSIVE — the audience for this board is overwhelmingly on a phone.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Tablet / small laptop: the five-item nav plus search plus two buttons
+   stops fitting well before the drawer is strictly needed, so search
+   narrows first, then the drawer takes over. */
+@media (max-width: 1040px) {
+  .hdr-search { width: 150px; }
+  .site-nav { gap: 13px; }
+}
+
+@media (max-width: 900px) {
+  :root { --gutter: 18px; }
+  .site-nav { display: none; }
+  .site-menu-btn { display: inline-flex; }
+  .site-hide-sm { display: none; }
+  .site-footer-inner { grid-template-columns: 1fr; gap: 26px; }
+  .site-footer-cols { grid-template-columns: repeat(2, 1fr); gap: 22px 18px; }
+}
+
+@media (max-width: 560px) {
+  :root { --shell-h: 54px; --gutter: 15px; }
+  /* The header bar drops search to make room for the logo and menu — but the
+     drawer is then the only place search exists on a phone, so it has to
+     re-assert it rather than inherit this. */
+  .hdr-search { display: none; }
+  .site-drawer-search .hdr-search { display: flex; }
+  .site-nav-icon span { display: none; }
+  .site-header-inner { gap: 10px; }
+  .site-footer { margin-top: 40px; }
+  .site-footer-inner { padding-top: 30px; }
+}
+
+/* ─── Shared page-level responsive utilities ─────────────────────────
+   Used by pages converted off fixed desktop grids. `--card-min` lets a
+   grid drop to a single column on a phone instead of forcing a
+   horizontal scroll, which `repeat(auto-fill, minmax(260px, 1fr))`
+   does at 320px. */
+.page-shell {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.card-grid {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-min, 250px), 1fr));
+}
+
+/* ─── Hero search (homepage) ─────────────────────────────────────────── */
+.hero-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 560px;
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: 3px;
+  padding: 10px 13px;
+  margin-bottom: 20px;
+  box-shadow: 3px 3px 0 var(--shadow);
+}
+.hero-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.hero-search button {
+  padding: 8px 16px;
+  border-radius: 2px;
+  border: none;
+  cursor: pointer;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* A long-form reading card (listing body, manifesto). 32px of horizontal
+   padding inside a card on a 360px screen leaves ~260px of measure — this
+   gives the text back its room without changing the desktop look. */
+.card-pad-lg { padding: 36px 32px; }
+
+@media (max-width: 560px) {
+  .card-grid { gap: 16px; --card-min: 100%; }
+  .card-box:hover { transform: none; box-shadow: 4px 4px 0 var(--shadow); }
+  .card-pad-lg { padding: 24px 18px; }
+}
+
+/* Touch devices don't have hover; the lift just leaves cards stuck in the
+   translated state after a tap. */
+@media (hover: none) {
+  .card-box:hover { transform: none; box-shadow: 4px 4px 0 var(--shadow); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .card-box, .site-drawer, .site-drawer-scrim { transition: none; }
 }

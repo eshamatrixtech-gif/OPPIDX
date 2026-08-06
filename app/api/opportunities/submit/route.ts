@@ -5,6 +5,7 @@ import { getClientIp } from '@/lib/ip'
 import { validateSubmission, type SubmissionInput } from '@/lib/submissions/validate'
 import { inferGeo } from '@/lib/scraper/geo'
 import { templateOpportunitySummary } from '@/lib/scraper/summarize'
+import { newSlug } from '@/lib/slug'
 
 /**
  * POST /api/opportunities/submit — public, free. "Enlist your opportunity."
@@ -68,6 +69,7 @@ export async function POST(req: NextRequest) {
     const opp = await prisma.opportunity.create({
       data: {
         title: input.title!,
+        slug: newSlug({ title: input.title!, org: input.org || null }),
         description: input.description!,
         summary,
         url: input.url!,

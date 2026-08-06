@@ -18,7 +18,7 @@ export default async function CollectionsIndexPage() {
 
   return (
     <div style={{ minHeight: '100vh' }}>
-      <header style={{ padding: '40px 24px 24px', borderBottom: '1px solid var(--line)' }}>
+      <header style={{ padding: '40px var(--gutter) 24px', borderBottom: '1px solid var(--line)' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <Link href="/" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>
             ← OppIDX
@@ -32,7 +32,7 @@ export default async function CollectionsIndexPage() {
         </div>
       </header>
 
-      <main style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px 80px' }}>
+      <main style={{ maxWidth: 900, margin: '0 auto', padding: '32px var(--gutter) 80px' }}>
         {GROUPS.map(group => {
           const groupDefs = defs.filter(c => c.group === group)
           if (groupDefs.length === 0) return null

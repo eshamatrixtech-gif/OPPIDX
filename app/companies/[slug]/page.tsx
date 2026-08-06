@@ -38,7 +38,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
         path={`/companies/${slug}`}
         items={items}
       />
-      <header style={{ padding: '40px 24px 24px', borderBottom: '1px solid var(--line)' }}>
+      <header style={{ padding: '40px var(--gutter) 24px', borderBottom: '1px solid var(--line)' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <Breadcrumbs items={[
             { name: 'OppIDX', href: '/' },
@@ -54,18 +54,18 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
         </div>
       </header>
 
-      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px 80px' }}>
-        <div style={{ display: 'grid', gap: 26, gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', marginBottom: 30 }}>
+      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '32px var(--gutter) 80px' }}>
+        <div className="card-grid" style={{ ['--card-min' as string]: '260px', marginBottom: 30 }}>
           {items.map(opp => <OpportunityCard key={opp.id} opp={opp} />)}
         </div>
 
         {restricted && (
-          <div className="card-box" style={{ textAlign: 'center', padding: '26px 24px' }}>
+          <div className="card-box" style={{ textAlign: 'center', padding: '26px var(--gutter)' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13.5, color: 'var(--ink)', marginBottom: 12 }}>
               {(total - items.length).toLocaleString()} more at {org} are subscriber-only.
             </div>
             <Link href="/pricing" style={{
-              display: 'inline-block', padding: '11px 24px', borderRadius: 2,
+              display: 'inline-block', padding: '11px var(--gutter)', borderRadius: 2,
               background: 'var(--btn-bg)', color: 'var(--btn-text)', textDecoration: 'none',
               fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13,
             }}>

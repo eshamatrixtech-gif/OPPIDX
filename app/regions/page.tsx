@@ -15,7 +15,7 @@ export default async function RegionsIndexPage() {
 
   return (
     <div style={{ minHeight: '100vh' }}>
-      <header style={{ padding: '40px 24px 24px', borderBottom: '1px solid var(--line)' }}>
+      <header style={{ padding: '40px var(--gutter) 24px', borderBottom: '1px solid var(--line)' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <Link href="/" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>
             ← OppIDX
@@ -29,7 +29,7 @@ export default async function RegionsIndexPage() {
         </div>
       </header>
 
-      <main style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px 80px' }}>
+      <main style={{ maxWidth: 900, margin: '0 auto', padding: '32px var(--gutter) 80px' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
           {regions.map(r => (
             <Link key={r.slug} href={`/regions/${r.slug}`} className="card-box" style={{

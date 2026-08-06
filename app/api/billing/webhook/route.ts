@@ -5,6 +5,7 @@ import { inferGeo } from '@/lib/scraper/geo'
 import { fetchOgMedia } from '@/lib/ogImage'
 import type { SubmissionInput } from '@/lib/submissions/validate'
 import { FEATURED_DURATION_DAYS } from '@/lib/billing/razorpay'
+import { newSlug } from '@/lib/slug'
 
 const ACTIVATING_EVENTS = new Set(['subscription.activated', 'subscription.charged'])
 const DEACTIVATING_EVENTS = new Set(['subscription.cancelled', 'subscription.halted', 'subscription.completed'])
@@ -114,6 +115,7 @@ async function handleSubmissionPayment(razorpayOrderId: string) {
   const created = await prisma.opportunity.create({
     data: {
       title: (input.title ?? '').trim(),
+      slug: newSlug({ title: (input.title ?? '').trim(), org: input.org?.trim() || null }),
       description: (input.description ?? '').trim(),
       url: (input.url ?? '').trim(),
       org: input.org?.trim() || null,

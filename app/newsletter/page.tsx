@@ -72,7 +72,7 @@ export default async function NewsletterArchivePage() {
         </div>
 
         {digests.length === 0 ? (
-          <div className="card-box" style={{ padding: '40px 24px', textAlign: 'center' }}>
+          <div className="card-box" style={{ padding: '40px var(--gutter)', textAlign: 'center' }}>
             <p style={{ color: 'var(--ink-2)', fontSize: 13.5, lineHeight: 1.65 }}>
               Nothing archived yet — the first daily digest posts tomorrow morning.
               {SOCIAL_CHANNELS_ENABLED && (

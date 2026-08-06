@@ -292,12 +292,9 @@ function BrowseInner() {
 
   return (
     <div style={{ minHeight: '100vh' }}>
-      <header style={{ padding: '28px 24px 24px', borderBottom: '1px solid var(--line)' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <Link href="/" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>
-            ← OppIDX
-          </Link>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(24px, 4vw, 34px)', color: 'var(--ink)', marginTop: 14 }}>
+      <header style={{ padding: '28px 0 24px', borderBottom: '1px solid var(--line)' }}>
+        <div className="page-shell">
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(24px, 4vw, 34px)', color: 'var(--ink)' }}>
             Browse the database
           </h1>
           <p style={{ fontSize: 13.5, color: 'var(--pin)', fontFamily: 'var(--font-mono)', fontWeight: 700, marginTop: 10, letterSpacing: '0.01em' }}>
@@ -306,7 +303,7 @@ function BrowseInner() {
         </div>
       </header>
 
-      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px 80px' }}>
+      <main className="page-shell" style={{ padding: '32px var(--gutter) 60px' }}>
         {/* ── Filter bar ── */}
         <div className="card-box" style={{ padding: '20px 22px', marginBottom: 30 }}>
           <input
@@ -408,10 +405,7 @@ function BrowseInner() {
           </div>
         ) : (
           <>
-            <motion.div layout style={{
-              display: 'grid', gap: 26,
-              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-            }}>
+            <motion.div layout className="card-grid" style={{ ['--card-min' as string]: '260px' }}>
               <AnimatePresence mode="popLayout">
                 {feedSlots.map(slot => slot.kind === 'primary'
                   ? <OpportunityCard key={slot.item.id} opp={slot.item} extras={extras[slot.item.id]} />
@@ -442,7 +436,7 @@ function BrowseInner() {
             )}
 
             {lockedCount > 0 && (
-              <div className="card-box" style={{ textAlign: 'center', marginTop: 40, padding: '26px 24px' }}>
+              <div className="card-box" style={{ textAlign: 'center', marginTop: 40, padding: '26px var(--gutter)' }}>
                 {teaser && (
                   <div style={{ position: 'relative', marginBottom: 20, textAlign: 'left', maxWidth: 420, marginLeft: 'auto', marginRight: 'auto' }}>
                     <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pin)', marginBottom: 8, textAlign: 'center' }}>
@@ -466,7 +460,7 @@ function BrowseInner() {
                   {lockedCount.toLocaleString()} more matching opportunities are subscriber-only — free search shows the first {items.length}.
                 </div>
                 <Link href="/pricing" style={{
-                  display: 'inline-block', padding: '11px 24px', borderRadius: 2,
+                  display: 'inline-block', padding: '11px var(--gutter)', borderRadius: 2,
                   background: 'var(--btn-bg)', color: 'var(--btn-text)', textDecoration: 'none',
                   fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, letterSpacing: '0.02em',
                   boxShadow: '3px 3px 0 var(--shadow)',

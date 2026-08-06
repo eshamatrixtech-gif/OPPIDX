@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
         weekRangeLabel,
         totalOpportunities,
         newLast7Days,
-        topPicks: topPicks.map(o => ({ title: o.title, org: o.org, id: o.id, description: o.description })),
+        topPicks: topPicks.map(o => ({ title: o.title, org: o.org, id: o.id, slug: o.slug, description: o.description })),
       }
     )
 

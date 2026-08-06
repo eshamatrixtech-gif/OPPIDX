@@ -78,7 +78,7 @@ export default async function DailyDigestPage({ params }: { params: Promise<{ da
             The picks featured that day are no longer on the board.
           </div>
         ) : (
-          <div style={{ display: 'grid', gap: 26, gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', marginBottom: 20 }}>
+          <div className="card-grid" style={{ ['--card-min' as string]: '260px', marginBottom: 20 }}>
             {digest.opportunities.map(opp => <OpportunityCard key={opp.id} opp={opp} />)}
           </div>
         )}

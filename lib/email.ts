@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 import { signUnsubscribeToken } from '@/lib/unsubscribeToken'
 import { SITE_URL } from '@/lib/siteUrl'
+import { opportunityPath } from '@/lib/slug'
 
 // Separate from lib/mayatara/email.ts on purpose — same Resend account and
 // free tier, but a different FROM identity and template voice for OppIDX
@@ -28,7 +29,7 @@ export interface WeeklyDigestEmailData {
   weekRangeLabel: string
   totalOpportunities: number
   newLast7Days: number
-  topPicks: { title: string; org: string | null; id: string; description: string }[]
+  topPicks: { title: string; org: string | null; id: string; slug: string | null; description: string }[]
 }
 
 function weeklyDigestHtml(digest: WeeklyDigestEmailData, unsubscribeUrl: string): string {
@@ -39,7 +40,7 @@ function weeklyDigestHtml(digest: WeeklyDigestEmailData, unsubscribeUrl: string)
   const picksHtml = digest.topPicks.map((p, i) => `
     <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #e0d6c4;">
       <span style="color:#5b5346;font-size:12px;font-weight:bold;">${i + 1}.</span>
-      <a href="${SITE_URL}/opportunities/${p.id}" style="color:#c0432a;font-weight:bold;font-size:14px;text-decoration:none;">${p.title}</a>
+      <a href="${SITE_URL}${opportunityPath(p)}" style="color:#c0432a;font-weight:bold;font-size:14px;text-decoration:none;">${p.title}</a>
       ${p.org ? `<div style="color:#5b5346;font-size:12.5px;margin-top:2px;margin-left:16px;">${p.org}</div>` : ''}
       ${p.description ? `<div style="color:#2b2620;font-size:12.5px;margin-top:5px;margin-left:16px;line-height:1.5;">${p.description.slice(0, 110)}${p.description.length > 110 ? '…' : ''}</div>` : ''}
     </div>`).join('')

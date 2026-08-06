@@ -52,7 +52,7 @@ export default function WidgetClient() {
               style={{ border: 'none' }}
               title="Opportunity of the Day — OppIDX preview"
             />
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', marginTop: 4, width: 340 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', marginTop: 4, maxWidth: 340 }}>
               Powered by <Link href="/" style={{ color: 'var(--ink-2)' }}>OppIDX</Link>
             </div>
           </div>

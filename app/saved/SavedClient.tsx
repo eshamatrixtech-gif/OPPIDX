@@ -51,12 +51,9 @@ export default function SavedClient() {
 
   return (
     <div style={{ minHeight: '100vh' }}>
-      <header style={{ padding: '28px 24px 24px', borderBottom: '1px solid var(--line)' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <Link href="/" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>
-            ← OppIDX
-          </Link>
-          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pin)', fontFamily: 'var(--font-mono)', marginTop: 14 }}>
+      <header style={{ padding: '28px 0 24px', borderBottom: '1px solid var(--line)' }}>
+        <div className="page-shell">
+          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pin)', fontFamily: 'var(--font-mono)' }}>
             ◆ Chaser tools ◆
           </div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(24px, 4vw, 34px)', color: 'var(--ink)', marginTop: 8 }}>
@@ -84,7 +81,7 @@ export default function SavedClient() {
         </div>
       </header>
 
-      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px 80px' }}>
+      <main className="page-shell" style={{ padding: '32px var(--gutter) 60px' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
             Loading…
@@ -94,10 +91,7 @@ export default function SavedClient() {
             Nothing saved yet. <Link href="/browse" style={{ color: 'var(--pin)' }}>Browse the board →</Link>
           </div>
         ) : (
-          <div style={{
-            display: 'grid', gap: 26,
-            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-          }}>
+          <div className="card-grid" style={{ ['--card-min' as string]: '260px' }}>
             {items.map(opp => <OpportunityCard key={opp.id} opp={opp} />)}
           </div>
         )}

@@ -1,6 +1,7 @@
 import { createSign } from 'crypto'
 import { SITE_URL } from '@/lib/siteUrl'
 import { isEligibleJobPosting, type JobPostingCandidate } from './jobPosting'
+import { opportunityPath } from '@/lib/slug'
 
 const TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const INDEXING_URL = 'https://indexing.googleapis.com/v3/urlNotifications:publish'
@@ -65,7 +66,7 @@ export async function notifyGoogleJobPostingUpdates(candidates: IndexingCandidat
     const response = await fetch(INDEXING_URL, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: `${SITE_URL}/opportunities/${candidate.id}`, type: 'URL_UPDATED' }),
+      body: JSON.stringify({ url: `${SITE_URL}${opportunityPath(candidate)}`, type: 'URL_UPDATED' }),
     })
     if (!response.ok) throw new Error(`Google Indexing API ${response.status}`)
   }))

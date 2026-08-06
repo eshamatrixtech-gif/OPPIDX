@@ -23,6 +23,15 @@ export async function register() {
 import type { Instrumentation } from 'next'
 
 export const onRequestError: Instrumentation.onRequestError = async (err, request, context) => {
+  // Node-runtime errors only — same guard `register()` above uses, and for
+  // the same reason: everything this hook reaches is Node-only. lib/alerts
+  // pulls in lib/email → lib/unsubscribeToken → node:crypto's createHmac,
+  // none of which exist in the Edge runtime. Next bundles this file for both
+  // runtimes, so without this the Edge copy carried a chain it could never
+  // execute (the build warned about exactly that). The Edge runtime here is
+  // just proxy.ts, which does its own HMAC via crypto.subtle and handles its
+  // own failures.
+  if (process.env.NEXT_RUNTIME !== 'nodejs') return
   if (process.env.NODE_ENV !== 'production') return
 
   const message = err instanceof Error ? err.message : String(err)

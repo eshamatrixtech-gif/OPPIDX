@@ -10,7 +10,7 @@ export const metadata = pageMetadata({
 
 export default function MayataraPage() {
   return (
-    <main style={{ minHeight: '100vh', padding: '56px 24px 80px', background: 'var(--bg)' }}>
+    <main style={{ minHeight: '100vh', padding: '56px var(--gutter) 80px', background: 'var(--bg)' }}>
       <div style={{ maxWidth: 620, margin: '0 auto' }}>
         <Link href="/" style={{ color: 'var(--ink-2)', textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: 12.5 }}>
           ← OppIDX

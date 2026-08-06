@@ -190,7 +190,7 @@ export default function PricingClient() {
                 <input
                   type="email" required placeholder="you@email.com" value={restoreEmail}
                   onChange={e => setRestoreEmail(e.target.value)}
-                  style={{ ...inputStyle(), marginBottom: 0, width: 220 }}
+                  style={{ ...inputStyle(), marginBottom: 0, width: '100%', maxWidth: 220 }}
                 />
                 <button type="submit" disabled={restoreStatus === 'sending'} style={{
                   padding: '11px 18px', borderRadius: 2, border: '1.5px solid var(--line)', cursor: 'pointer',

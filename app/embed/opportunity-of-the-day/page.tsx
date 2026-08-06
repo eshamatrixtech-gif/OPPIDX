@@ -1,5 +1,6 @@
 import { getOpportunityOfTheDay, AUDIENCE_LABEL } from '@/lib/dailyPicks'
 import { SITE_URL } from '@/lib/siteUrl'
+import { opportunityPath } from '@/lib/slug'
 
 /**
  * GET /embed/opportunity-of-the-day — meant to be loaded in an <iframe> on a
@@ -65,7 +66,7 @@ export default async function OpportunityOfTheDayEmbed() {
         marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--line)',
       }}>
         <a
-          href={opp ? `${SITE_URL}/opportunities/${opp.id}` : `${SITE_URL}/browse`}
+          href={opp ? `${SITE_URL}${opportunityPath(opp)}` : `${SITE_URL}/browse`}
           target="_blank" rel="noopener noreferrer"
           style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5, fontWeight: 700, color: 'var(--pin)', textDecoration: 'none' }}
         >

@@ -90,18 +90,36 @@ async function getRelatedPolicyReads(opp: { audience: string; tags: string; coun
   return matchPolicyReadsFromPool(opp, pool)
 }
 
+// A scannable facts line ahead of the summary — compType/location/audience
+// are real, per-listing, already-verified fields (see prisma/schema.prisma),
+// never invented for the snippet. Each clause only appears when that field
+// is actually set; a listing with none of them just falls back to the
+// summary alone, same as before this existed. Deliberately does NOT include
+// anything resembling a deadline — the schema has no such field, and a
+// meta description claiming an application date the page itself doesn't
+// show is exactly the kind of snippet/content mismatch Google penalizes.
+function metaFactsLine(opp: { compType: string | null; audience: string; location: string | null; region: string }): string {
+  const facts = [opp.compType, AUDIENCE_LABEL[opp.audience], opp.location || opp.region || null]
+    .filter((f): f is string => Boolean(f))
+  return facts.join(' • ')
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const opp = await getOpportunity(id)
   if (!opp) return { title: 'Not found — OppIDX' }
+
+  const facts = metaFactsLine(opp)
+  // Prefer the original AI-written summary over a truncated raw
+  // description — the raw text is usually scraped verbatim from the
+  // original posting, so a meta description built from it tends to be
+  // near-identical to what Indeed/LinkedIn/the employer's own listing
+  // shows in the same search results. summary is genuinely unique copy.
+  const body = opp.summary || opp.description
+
   return pageMetadata({
-    title: `${opp.title} — OppIDX`,
-    // Prefer the original AI-written summary over a truncated raw
-    // description — the raw text is usually scraped verbatim from the
-    // original posting, so a meta description built from it tends to be
-    // near-identical to what Indeed/LinkedIn/the employer's own listing
-    // shows in the same search results. summary is genuinely unique copy.
-    description: (opp.summary || opp.description).slice(0, 160),
+    title: opp.org ? `${opp.title} at ${opp.org} — OppIDX` : `${opp.title} — OppIDX`,
+    description: (facts ? `${facts} — ${body}` : body).slice(0, 160),
     canonical: `${SITE_URL}/opportunities/${opp.id}`,
   })
 }

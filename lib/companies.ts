@@ -1,3 +1,4 @@
+import { listOrEmpty } from '@/lib/buildParams'
 import { prisma } from '@/lib/db'
 import { getCurrentPaidSubscriber } from '@/lib/subscriberSession'
 import { FREE_SEARCH_LIMIT, PAYWALL_ENABLED } from '@/lib/limits'
@@ -15,6 +16,7 @@ export function slugifyCompany(name: string): string {
 
 /** Every company with enough real listings to earn its own page, most-listed first. */
 export async function getCompanyList(): Promise<{ org: string; slug: string; count: number }[]> {
+  return listOrEmpty('getCompanyList', async () => {
   const rows = await prisma.opportunity.groupBy({
     by: ['org'],
     where: { verified: true, deletedAt: null, org: { not: null } },
@@ -25,6 +27,7 @@ export async function getCompanyList(): Promise<{ org: string; slug: string; cou
     .filter(r => r.org && r._count._all >= MIN_LISTINGS_FOR_PAGE)
     .map(r => ({ org: r.org!, slug: slugifyCompany(r.org!), count: r._count._all }))
     .sort((a, b) => b.count - a.count)
+  })
 }
 
 /** Resolves a URL slug back to the real org name it was derived from — slugs

@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/db'
 import { COLLECTION_DEFS, type CollectionDef, type MatchInput } from '@/lib/collectionDefs'
+import { matchPool } from '@/lib/opportunityPool'
 
 /**
  * Generates two-dimensional collection pages (topic × location, topic ×
@@ -42,10 +42,33 @@ function buildCombo(
   }
 }
 
-/** Fetched and filtered once per call (build time / hourly ISR revalidate,
- * same cadence as the rest of the collections system) — cheap at ~1,800 rows. */
+/**
+ * Memoised on top of the already-cached match pool.
+ *
+ * Both `getAllCollectionDefs` and `resolveCollectionDef` call this, and each
+ * collection page calls the latter twice (once in generateMetadata, once in
+ * the body), so across a build it ran hundreds of times — each time pulling
+ * every column of every row and then running ~200 candidate predicates over
+ * all of them. The pool read is now cached in lib/opportunityPool.ts and the
+ * candidate evaluation is cached here, since it's a pure function of that
+ * pool. See lib/opportunityPool.ts for why this mattered: it was failing the
+ * production build outright.
+ */
+let combosCache: { at: number; defs: CollectionDef[] } | null = null
+let combosInflight: Promise<CollectionDef[]> | null = null
+const COMBOS_TTL_MS = 60_000
+
 export async function getGeneratedCombos(): Promise<CollectionDef[]> {
-  const rows = await prisma.opportunity.findMany({ where: { verified: true, deletedAt: null } })
+  if (combosCache && Date.now() - combosCache.at < COMBOS_TTL_MS) return combosCache.defs
+  if (combosInflight) return combosInflight
+  combosInflight = computeGeneratedCombos()
+    .then(defs => { combosCache = { at: Date.now(), defs }; return defs })
+    .finally(() => { combosInflight = null })
+  return combosInflight
+}
+
+async function computeGeneratedCombos(): Promise<CollectionDef[]> {
+  const rows = await matchPool()
 
   const topics = COLLECTION_DEFS.filter(d => d.group === 'Topic')
   const audiences = COLLECTION_DEFS.filter(d => d.group === 'Audience')

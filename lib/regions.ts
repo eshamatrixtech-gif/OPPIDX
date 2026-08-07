@@ -1,3 +1,4 @@
+import { listOrEmpty } from '@/lib/buildParams'
 import { prisma } from '@/lib/db'
 import { getCurrentPaidSubscriber } from '@/lib/subscriberSession'
 import { FREE_SEARCH_LIMIT, PAYWALL_ENABLED } from '@/lib/limits'
@@ -19,6 +20,7 @@ const REGION_SLUGS = new Map(REGION_ORDER.map(r => [slugifyRegion(r), r]))
 /** Every region with enough real listings to earn its own page, in the
  * site's canonical region order. */
 export async function getRegionList(): Promise<{ region: string; slug: string; count: number }[]> {
+  return listOrEmpty('getRegionList', async () => {
   const rows = await prisma.opportunity.groupBy({
     by: ['region'],
     where: { verified: true, deletedAt: null, region: { in: REGION_ORDER } },
@@ -29,6 +31,7 @@ export async function getRegionList(): Promise<{ region: string; slug: string; c
   return REGION_ORDER
     .filter(r => (byName.get(r) ?? 0) >= MIN_LISTINGS_FOR_PAGE)
     .map(r => ({ region: r, slug: slugifyRegion(r), count: byName.get(r)! }))
+  })
 }
 
 export async function getRegionOpportunities(slug: string) {

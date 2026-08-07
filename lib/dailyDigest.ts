@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { listOrEmpty } from '@/lib/buildParams'
 import { isUniqueConstraintError } from '@/lib/isUniqueConstraintError'
 import type { Opportunity } from '@/types'
 
@@ -48,5 +49,10 @@ export async function getDigestByDate(date: string) {
 /** Most recent digests, newest first — powers the /newsletter archive and
  * its board-growth chart. */
 export async function getRecentDigests(limit: number) {
-  return prisma.dailyDigest.findMany({ orderBy: { date: 'desc' }, take: limit })
+  // Empty rather than throwing when the database is unreachable — /newsletter
+  // is statically prerendered, so a failure here took the whole build down.
+  // See lib/buildParams.ts.
+  return listOrEmpty('getRecentDigests', () =>
+    prisma.dailyDigest.findMany({ orderBy: { date: 'desc' }, take: limit })
+  )
 }

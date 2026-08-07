@@ -122,28 +122,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const opp = await getOpportunity(id)
   if (!opp) return { title: 'Not found — OppIDX' }
 
-  // Legacy cuid URL for a listing that now has a slug — send the reader to
-  // the readable one.
-  //
-  // Measured behaviour, not the documented ideal: this route is dynamic, so
-  // by the time the lookup resolves Next has already committed the response,
-  // and permanentRedirect() degrades to a client-side
-  // <meta http-equiv="refresh" content="0;url=…"> on a 200 rather than a 308
-  // with a Location header. Confirmed against a production build, from both
-  // here and the page body. It isn't something this route can opt out of —
-  // every dynamic route in this app behaves the same way (notFound() on
-  // /resources/[id] and /collections/[slug] likewise renders on a 200). A
-  // config-level redirect isn't available either: the destination depends on
-  // a database lookup, and next.config.ts redirects are static.
-  //
-  // Acceptable because the redirect is not what consolidates the two URL
-  // forms — the canonical tag below is, and it points at the slug on both.
-  // Google treats an instant meta refresh as a redirect; combined with a
-  // matching canonical, a sitemap listing only slug URLs, and internal links
-  // that only ever emit slugs, the signal is unambiguous. The refresh is for
-  // the person, the canonical for the crawler.
-  if (opp.slug && id !== opp.slug) permanentRedirect(opportunityPath(opp))
-
   const facts = metaFactsLine(opp)
   // Prefer the original AI-written summary over a truncated raw
   // description — the raw text is usually scraped verbatim from the
@@ -256,6 +234,30 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
   const { id } = await params
   const opp = await getOpportunity(id)
   if (!opp) notFound()
+
+  // Legacy cuid URL for a listing that now has a slug — send the reader to
+  // the readable one.
+  //
+  // Deliberately here in the page body rather than in generateMetadata.
+  // permanentRedirect() throws to unwind, so calling it from generateMetadata
+  // aborted that function before it returned — meaning the cuid URL emitted
+  // the redirect and *no canonical tag at all*, which is the opposite of what
+  // was wanted. From here, generateMetadata completes and emits a canonical
+  // pointing at the slug, and this still fires before any of the related-
+  // content queries below.
+  //
+  // Measured behaviour, not the documented ideal: this route is dynamic, so
+  // Next has already committed the response by the time the lookup resolves,
+  // and permanentRedirect() degrades to a client-side
+  // <meta http-equiv="refresh" content="0;url=…"> on a 200 rather than a 308
+  // with a Location header. Confirmed against a production build from both
+  // call sites, so moving it costs nothing and gains the canonical. Every
+  // dynamic route in this app behaves the same way; a config-level redirect
+  // isn't available either, since the destination needs a database lookup.
+  //
+  // So the two signals now work together as intended: the meta refresh moves
+  // the person, and the canonical tells the crawler which URL is real.
+  if (opp.slug && id !== opp.slug) permanentRedirect(opportunityPath(opp))
 
   const tags = opp.tags.split(',').map(t => t.trim()).filter(Boolean)
 

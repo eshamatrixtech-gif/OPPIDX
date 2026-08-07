@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next'
 import { prisma } from '@/lib/db'
 import { SITE_URL } from '@/lib/siteUrl'
 import { opportunityPath } from '@/lib/slug'
+import { listOrEmpty } from '@/lib/buildParams'
 import { PAYWALL_ENABLED } from '@/lib/limits'
 import { getAllCollectionDefs } from '@/lib/collections'
 import { getCompanyList } from '@/lib/companies'
@@ -68,19 +69,24 @@ async function getListedEvents() {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // Every entry below degrades to [] when the database is unreachable, so a
+  // preview build (no Production env vars) still emits a valid sitemap of the
+  // static routes instead of aborting. getCompanyList/getRegionList/
+  // getAllCollectionDefs already guard themselves; these raw queries need it
+  // explicitly. See lib/buildParams.ts.
   const [opportunities, resources, newsletters, pulseDigests, companies, collections, regions, events] = await Promise.all([
-    prisma.opportunity.findMany({
+    listOrEmpty('sitemap:opportunities', () => prisma.opportunity.findMany({
       where: { verified: true, deletedAt: null },
       select: { id: true, slug: true, addedAt: true },
       orderBy: { addedAt: 'desc' },
-    }),
-    prisma.resource.findMany({
+    })),
+    listOrEmpty('sitemap:resources', () => prisma.resource.findMany({
       where: { verified: true, deletedAt: null },
       select: { id: true, addedAt: true },
       orderBy: { addedAt: 'desc' },
-    }),
-    prisma.dailyDigest.findMany({ select: { date: true, createdAt: true } }),
-    prisma.policyDigest.findMany({ select: { period: true, createdAt: true } }),
+    })),
+    listOrEmpty('sitemap:newsletters', () => prisma.dailyDigest.findMany({ select: { date: true, createdAt: true } })),
+    listOrEmpty('sitemap:pulseDigests', () => prisma.policyDigest.findMany({ select: { period: true, createdAt: true } })),
     getCompanyList(),
     getAllCollectionDefs(),
     getRegionList(),

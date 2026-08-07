@@ -69,6 +69,21 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
           </div>
         )}
 
+        {/* Collection pages render at most MAX_ITEMS_PER_PAGE cards (see
+            lib/collections.ts). `total` is still the real count, so rather
+            than quietly showing 96 of 485 this says so and points at the
+            search that can show the rest. Not a paywall prompt — that's the
+            separate `restricted` block below, which only appears when
+            something is genuinely being withheld. */}
+        {!restricted && total > items.length && (
+          <div style={{ textAlign: 'center', marginBottom: 30, fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)' }}>
+            Showing {items.length} of {total.toLocaleString()}.{' '}
+            <Link href={`/browse?search=${encodeURIComponent(def.title)}`} style={{ color: 'var(--pin)', fontWeight: 700 }}>
+              Search the full board →
+            </Link>
+          </div>
+        )}
+
         {restricted && (
           <div className="card-box" style={{ textAlign: 'center', padding: '26px var(--gutter)' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13.5, color: 'var(--ink)', marginBottom: 12 }}>

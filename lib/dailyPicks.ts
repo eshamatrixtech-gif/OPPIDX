@@ -64,14 +64,24 @@ export async function getDailyPicks() {
  * every-request feel would look broken to a third-party site embedding it.
  */
 export async function getOpportunityOfTheDay() {
-  const total = await prisma.opportunity.count({ where: { verified: true, deletedAt: null } })
-  if (total === 0) return null
+  // Returns null rather than throwing when the database is unreachable. The
+  // embed page already renders a graceful "nothing today" state for null, and
+  // this route is statically prerendered — so without this an unreachable
+  // database (a Vercel preview, which has no Production env vars) aborted the
+  // whole build. Same rule as lib/opportunityPool.ts.
+  try {
+    const total = await prisma.opportunity.count({ where: { verified: true, deletedAt: null } })
+    if (total === 0) return null
 
-  return prisma.opportunity.findFirst({
-    where: { verified: true, deletedAt: null },
-    orderBy: { id: 'asc' },
-    skip: daySeed() % total,
-  })
+    return await prisma.opportunity.findFirst({
+      where: { verified: true, deletedAt: null },
+      orderBy: { id: 'asc' },
+      skip: daySeed() % total,
+    })
+  } catch (err) {
+    console.error('[oppidx] getOpportunityOfTheDay: database unreachable —', err instanceof Error ? err.message : err)
+    return null
+  }
 }
 
 export const AUDIENCE_LABEL: Record<string, string> = {

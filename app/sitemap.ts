@@ -3,6 +3,9 @@ import { prisma } from '@/lib/db'
 import { SITE_URL } from '@/lib/siteUrl'
 import { opportunityPath } from '@/lib/slug'
 import { listOrEmpty } from '@/lib/buildParams'
+import { matchPool } from '@/lib/opportunityPool'
+import { collectionPageCount } from '@/lib/collections'
+import { collectionPath } from '@/lib/collectionPaths'
 import { PAYWALL_ENABLED } from '@/lib/limits'
 import { getAllCollectionDefs } from '@/lib/collections'
 import { getCompanyList } from '@/lib/companies'
@@ -93,6 +96,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     getListedEvents(),
   ])
 
+  // Cached and shared with the collection pages themselves, so counting pages
+  // here costs nothing extra (lib/opportunityPool.ts).
+  const pool = await matchPool()
+
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map(r => ({
     url: `${SITE_URL}${r.path}`,
     lastModified: r.lastModified ?? new Date(),
@@ -128,12 +135,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }))
 
-  const collectionEntries: MetadataRoute.Sitemap = collections.map(c => ({
-    url: `${SITE_URL}/collections/${c.slug}`,
-    lastModified: new Date(),
-    changeFrequency: 'hourly',
-    priority: c.group === 'Combo' ? 0.6 : 0.85,
-  }))
+  // Page 1 plus every paginated page of every collection. The paginated URLs
+  // are what make the whole board reachable by following links rather than
+  // only from this file — see components/ui/CollectionView.tsx. Listed at a
+  // lower priority than page 1, which stays the entry point.
+  const collectionEntries: MetadataRoute.Sitemap = collections.flatMap(c => {
+    const total = pool.filter(c.match).length
+    const pageCount = collectionPageCount(total)
+    const basePriority = c.group === 'Combo' ? 0.6 : 0.85
+    return Array.from({ length: pageCount }, (_, i) => ({
+      url: `${SITE_URL}${collectionPath(c.slug, i + 1)}`,
+      lastModified: new Date(),
+      changeFrequency: 'hourly' as const,
+      priority: i === 0 ? basePriority : Math.round((basePriority - 0.2) * 100) / 100,
+    }))
+  })
 
   const companyEntries: MetadataRoute.Sitemap = companies.map(c => ({
     url: `${SITE_URL}/companies/${c.slug}`,

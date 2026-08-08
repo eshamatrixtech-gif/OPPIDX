@@ -46,20 +46,43 @@ export async function resolveCollectionDef(slug: string): Promise<CollectionDef 
  * still the real, uncapped count, so the page keeps telling the truth about
  * how many exist — it just links to /browse for the rest.
  */
-const MAX_ITEMS_PER_PAGE = 96
+export const MAX_ITEMS_PER_PAGE = 96
 
-export async function getCollectionOpportunities(def: CollectionDef) {
+/** Total pages a collection spans at MAX_ITEMS_PER_PAGE, minimum 1. */
+export function collectionPageCount(total: number): number {
+  return Math.max(1, Math.ceil(total / MAX_ITEMS_PER_PAGE))
+}
+
+/**
+ * One page of a collection.
+ *
+ * Paginated rather than capped because the cap alone quietly broke crawling.
+ * Rendering only the first 96 matches meant 1,295 of 2,385 listings had no
+ * internal link pointing at them anywhere on the site — Googlebot knew them
+ * only from the sitemap, which is precisely the condition that produces
+ * "Discovered – currently not indexed" (2,120 of them in Search Console).
+ * A sitemap is a discovery hint; internal links are what tell Google a page
+ * is worth crawling. Collections partition the entire board by audience, so
+ * paginating them makes every listing reachable by following links.
+ */
+export async function getCollectionOpportunities(def: CollectionDef, page = 1) {
   const paidSubscriber = PAYWALL_ENABLED ? await getCurrentPaidSubscriber() : true
 
   // Match against the cached, minimal pool rather than re-reading every
   // column of every row on this page — see lib/opportunityPool.ts. Only the
-  // handful of rows actually being rendered get fetched in full below.
+  // rows actually being rendered get fetched in full below.
   const pool = await matchPool()
   const matchedIds = pool.filter(def.match).map(r => r.id)
   const total = matchedIds.length
+  const pageCount = collectionPageCount(total)
+  const current = Math.min(Math.max(1, page), pageCount)
 
-  const limit = paidSubscriber ? MAX_ITEMS_PER_PAGE : Math.min(FREE_SEARCH_LIMIT, MAX_ITEMS_PER_PAGE)
-  const visibleIds = matchedIds.slice(0, limit)
+  // The free tier only ever sees the first page's worth — paginating past
+  // the paywall would be a back door around it, same rule the RSS feed and
+  // /browse already follow.
+  const visibleIds = paidSubscriber
+    ? matchedIds.slice((current - 1) * MAX_ITEMS_PER_PAGE, current * MAX_ITEMS_PER_PAGE)
+    : matchedIds.slice(0, Math.min(FREE_SEARCH_LIMIT, MAX_ITEMS_PER_PAGE))
 
   const rows = visibleIds.length
     ? await prisma.opportunity.findMany({
@@ -69,10 +92,10 @@ export async function getCollectionOpportunities(def: CollectionDef) {
     : []
 
   const items = rows.map(r => ({ ...r, addedAt: r.addedAt.toISOString() })) as unknown as Opportunity[]
-  // True whenever the paywall is holding something back — deliberately not
-  // set merely because the display cap is in effect, since that isn't a
+  // True only when the paywall is holding something back — deliberately not
+  // set merely because pagination is in effect, since that isn't a
   // restriction and the page shouldn't offer to sell its way past it.
   const restricted = !paidSubscriber && total > items.length
 
-  return { items, total, restricted }
+  return { items, total, restricted, page: current, pageCount }
 }
